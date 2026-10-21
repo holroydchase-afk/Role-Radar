@@ -128,3 +128,53 @@ test("the scan prompt states the same scoring numbers as the module", () => {
   for (const phrase of ["weight × 15", "strong 35", "maybe 20", "stretch 5", "+10 if the posting shows any culture.good_signals", "−10 per culture.red_flags phrase found (max −20)", "+10 if the stated range reaches comp.stretch_target_usd", "−15 if the company's main business is in values_penalty", "clamped 0-100"])
     assert.ok(prompt.includes(phrase), phrase);
 });
+
+// ── Fit badges (values_fit, culture_fit) ─────────────────────
+test("values badge follows sector weight", () => {
+  assert.equal(S.valuesFitOf(job({ sector: "solar_energy" }), spec).rating, "great");
+  assert.equal(S.valuesFitOf(job({ sector: "space_geo" }), spec).rating, "good");
+  assert.equal(S.valuesFitOf(job({ sector: "fintech" }), spec).rating, "neutral");
+});
+
+test("values badge is no for values_penalty and hard excludes", () => {
+  assert.equal(S.valuesFitOf(job({ businessModel: "sports betting app", industry: "gambling or sports betting" }), spec).rating, "no");
+  const v = S.valuesFitOf(job({ businessModel: "payday or cash-advance apps" }), spec);
+  assert.equal(v.rating, "no");
+  assert.match(v.reason, /business model/);
+});
+
+test("a stored values rating wins", () => {
+  const v = S.valuesFitOf(job({ sector: "fintech", valuesFit: { rating: "Good", reason: "mission lending" } }), spec);
+  assert.deepEqual([v.rating, v.reason, v.source], ["good", "mission lending", "stored"]);
+});
+
+test("culture badge is unrated until something is checked", () => {
+  const c = S.cultureFitOf(job({}), spec);
+  assert.equal(c.rating, "unrated");
+  assert.equal(c.reason, "Not checked yet.");
+});
+
+test("culture calibration: calm fintech with launch-crunch risk is good", () => {
+  // Fictional stand-in for a calm, well-reviewed company with a brand-new team.
+  const c = S.cultureFitOf(job({ cultureChecks: ["calm_pace", "remote_us", "pay_same_everywhere", "family_benefits", "good_reviews", "crunch_risk"] }), spec);
+  assert.equal(c.points, 5);
+  assert.equal(c.rating, "good");
+  assert.match(c.reason, /^Calm pace, .*but launch crunch risk\.$/);
+});
+
+test("culture calibration: fast-paced, layoffs and a pay-tier gap is maybe at best", () => {
+  const c = S.cultureFitOf(job({ cultureChecks: { fast_paced: "posting", remote_us: "", pay_tier_gap: "", family_benefits: "", recent_layoffs: "two rounds" } }), spec);
+  assert.equal(c.points, -3);
+  assert.equal(c.rating, "maybe");
+  assert.equal(S.cultureFitOf(job({ cultureChecks: ["fast_paced", "recent_layoffs"] }), spec).rating, "no");
+});
+
+test("culture falls back to posting signals and ignores unknown checks", () => {
+  assert.equal(S.cultureFitOf(job({ postingText: "A fast-paced team" }), spec).hits[0].id, "fast_paced");
+  assert.equal(S.cultureFitOf(job({ cultureChecks: ["not_a_check"] }), spec).rating, "unrated");
+});
+
+test("fit badges never change the score", () => {
+  const base = job({ sector: "solar_energy", fit: "strong" });
+  assert.equal(S.scoreJob({ ...base, cultureChecks: ["recent_layoffs"], valuesFit: { rating: "no" } }, spec).score, S.scoreJob(base, spec).score);
+});
