@@ -36,7 +36,7 @@ flowchart LR
 1. **Criteria as code.** Everything I'm looking for lives in one YAML file ([`criteria.yaml`](criteria.yaml)). It sets sector weights, title and location gates, comp floors, culture red flags, hard excludes, and how many roles from each sector can appear in one digest. I edit it on the Criteria tab, and the next scan follows it.
 2. **A transparent score.** Every role gets 0 to 100 from one formula, and each card shows how its score was reached (`45 sector + 35 fit + 10 comp = 90`). The rules live in [`src/scoring.js`](src/scoring.js) and are pinned down by tests, so the page, the tests and the scan's instructions agree.
 3. **A scheduled scan agent.** Each weekday morning, a scheduled Claude run reads the criteria, checks the boards and aggregators, reads job-alert and application emails (read-only), adds new matches, moves application statuses forward from confirmations and rejections, and sends me a short digest. Its instructions are in [`scan/scan-prompt.template.md`](scan/scan-prompt.template.md).
-4. **One tracker.** New roles land in *New*. Saving or applying moves them to *Pipeline*. *Needs action* lists follow-ups that are due, applications with no reply, and resumes that are ready but not sent. *Recruiters* keeps each contact's last touchpoint and next step.
+4. **One tracker.** New roles land in *New*. Saving or applying moves them to *Pipeline*. *Needs action* lists follow-ups that are due, applications with no reply, and resumes that are ready but not sent. *Recruiters* keeps each contact's last touchpoint and next step, and can be filled from Gmail in one pass (below).
 5. **One-tap intake.** *Apply* copies a prompt for my job-intake agent, which screens the posting, asks only the gap questions that would change a bullet, and builds a tailored resume from my career master doc.
 
 ### Tune it and watch the ranking move
@@ -48,6 +48,12 @@ The Criteria tab previews tomorrow's digest while you edit. In the screenshot be
 | Needs action | Recruiters |
 | --- | --- |
 | ![Follow-ups, stale applications and unsent resumes](docs/screenshots/needs-action.png) | ![Recruiter contacts with next steps and due dates](docs/screenshots/recruiters.png) |
+
+### Start from your inbox
+
+On first run, *Import from Gmail* reads your inbox through Claude's Gmail connector (read-only) and lists the recruiters it finds: name, company, in-house or agency, and the date of the last email. It skips job boards, applicant tracking systems and no-reply senders, marks people you already have, and saves nothing until you pick who to add. Dates come from the emails themselves, never from a guess.
+
+![Gmail import: people found in the inbox, ready to review](docs/screenshots/gmail-import.png)
 
 ## What it saves
 

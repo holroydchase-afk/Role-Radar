@@ -1,6 +1,7 @@
 // In-memory stand-in for the artifact runtime's `window.claude.use("db")`, so the page runs
 // outside claude.ai on demo data. Implements only what role-radar.html uses:
 // collection(name).onSnapshot, doc(path).onSnapshot / update / set.
+// Also fakes the Gmail connector (use("mcp")) with the fictional threads in seed.gmail.
 // FOR DEMOS AND TESTS ONLY. It never talks to a real database.
 (function () {
   const seed = window.__RR_SEED__ || {};
@@ -74,7 +75,25 @@
     },
   };
 
+  // Fake Gmail connector: read-only search_threads and batch_get_threads over seed.gmail.
+  const gmail = seed.gmail ? resolve(seed.gmail) : null;
+  const calls = (window.__RR_MCP_CALLS__ = []);
+  const mcp = {
+    async callTool(server, tool, input) {
+      calls.push({ server, tool, input });
+      if (server !== "Gmail") throw { code: "server_not_connected", server, message: "Not connected" };
+      if (gmail.error) throw { code: gmail.error, server, message: "Demo error" };
+      if (tool === "search_threads") return { content: [], payload: { threads: clone(gmail.threads || []) } };
+      if (tool === "batch_get_threads") {
+        const full = gmail.full || {};
+        const threads = (input.threadIds || []).map((id) => full[id] || (gmail.threads || []).find((t) => t.id === id)).filter(Boolean);
+        return { content: [], payload: { threads: clone(threads) } };
+      }
+      throw { code: "not_in_manifest", server, message: "Tool not allowed" };
+    },
+  };
+
   window.claude = window.claude || {};
-  window.claude.use = async (cap) => (cap === "db" ? db : null);
+  window.claude.use = async (cap) => (cap === "db" ? db : cap === "mcp" && gmail ? mcp : null);
   window.__RR_DEMO__ = true;
 })();

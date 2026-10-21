@@ -6,7 +6,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
-const ALLOWED_EMAILS = [/^[^@]*no-?reply@/i, /@anthropic\.com$/i, /@example\.(com|org|net)$/i, /@users\.noreply\.github\.com$/i];
+const ALLOWED_EMAILS = [/^[^@]*no-?reply@/i, /@anthropic\.com$/i, /@example\.(com|org|net)$/i, /@[a-z0-9.-]+\.example$/i, /@users\.noreply\.github\.com$/i];
 export const PATTERNS = [
   { name: "email address", re: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, allow: (m) => ALLOWED_EMAILS.some((r) => r.test(m)) },
   { name: "phone number", re: /(?<![\d-])(?:\+1[ .-]?)?\(?\d{3}\)?[ .-]\d{3}[ .-]\d{4}(?![\d-])/g },

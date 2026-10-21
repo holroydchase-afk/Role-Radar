@@ -49,6 +49,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .btn{font:500 .84rem var(--f-body);border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:7px;padding:5px 10px;cursor:pointer}
 .btn:hover{border-color:var(--accent)}
 .btn.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.gmlist{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}.gmlist label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.gmlist input{margin-top:4px}.gmlist .hint{display:block}.gmhave{font-style:normal;font-size:.8rem;color:var(--muted)}.gmfoot{display:flex;gap:10px;flex-wrap:wrap}details.gmail>summary{font-weight:600}
 .empty{border:1px dashed var(--line);border-radius:10px;padding:22px 18px;color:var(--muted);display:grid;gap:6px}
 .empty strong{color:var(--ink);font-family:var(--f-display);font-weight:500;font-size:1.05rem}
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);min-width:0}
@@ -169,6 +170,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
 <script src="scoring.js"></script>
+<script src="gmail-import.js"></script>
 <script>
 const TABS=[
   {id:"inbox",label:"New"},{id:"pipeline",label:"Pipeline"},{id:"action",label:"Needs action"},
@@ -187,6 +189,9 @@ let LANES=config.lanes, SKIP_REASONS=config.skipReasons;
 function setConfig(c){config={...DEF_CONFIG,...(c||{})}; LANES=config.lanes; SKIP_REASONS=config.skipReasons;}
 const ATS=["greenhouse","ashby","lever"];
 const DEF_VIEW={q:"",status:"",lane:"",fit:"",values:"",culture:"",source:"",tag:"",found:"",conflict:"",sort:"fit"};
+// Gmail import: the viewer's Gmail connector, read-only (search_threads, batch_get_threads).
+let mcp=null, mcpState="checking", gm={state:"idle",items:[],picked:new Set(),msg:""};
+const GM=window.RoleRadarGmail||null;
 let recruiters=[], editRec=null, filtersOpen=false;
 // Privacy: recruiter details are hidden on screen until this viewer chooses to show them.
 let recPrivate=true;
@@ -544,7 +549,69 @@ function renderPeople(){
       <label for="ar-d">Next step due<input id="ar-d" type="date"></label>
     </div><label for="ar-x">Next step<input id="ar-x"></label><button class="primary" type="submit">Add recruiter</button></form></details>`;
   const note=`<div class="privbar"><p class="hint">${recPrivate?"Details hidden: initials and company only.":"Showing names, notes and email links."} This only changes the screen; anyone with access to the page can still read the saved data.</p><button class="btn" type="button" id="recPrivacy" aria-pressed="${recPrivate}">${recPrivate?"Show details":"Hide details"}</button></div>`;
-  return note+(recPrivate?"":add)+(list.length?`<div class="list">${list.map(recCard).join("")}</div>`:`<div class="empty"><strong>No recruiters yet</strong><span>Add one above.</span></div>`);
+  const empty=recPrivate?`<div class="empty"><strong>No recruiters yet</strong><span>Choose "Show details" to import them from Gmail or add one by hand.</span></div>`
+    :`<div class="empty"><strong>No recruiters yet</strong><span>Import them from Gmail above, or add one by hand.</span></div>`;
+  return note+(recPrivate?"":gmailImport()+add)+(list.length?`<div class="list">${list.map(recCard).join("")}</div>`:empty);
+}
+function gmailImport(){
+  if(!GM) return "";
+  const open=openMore.has("_gmail")||(!recruiters.length&&!openMore.has("_gmail-closed"));
+  let body;
+  if(mcpState==="none") body=`<p class="hint">Gmail import works when this page is open in Claude with the Gmail connector added.</p>`;
+  else if(gm.state==="loading") body=`<p class="hint" role="status">Reading your Gmail…</p>`;
+  else if(gm.state==="done"){
+    const fresh=gm.items.filter(c=>!c.exists), n=gm.picked.size;
+    body=gm.items.length?`<p class="hint">Found ${gm.items.length} ${gm.items.length===1?"person":"people"}${fresh.length<gm.items.length?`, ${gm.items.length-fresh.length} already in your list`:""}. Untick anyone who isn't a recruiter, then add the rest.</p>
+      <ul class="gmlist">${gm.items.map(c=>`<li><label><input type="checkbox" data-gmpick="${esc(c.key)}"${gm.picked.has(c.key)?" checked":""}${c.exists?" disabled":""}>
+        <span><b>${esc(c.name||c.email)}</b>${c.company?` · ${esc(c.company)}`:""} <span class="chip lane">${esc(c.type)}</span>${c.exists?` <i class="gmhave">already added</i>`:""}
+        <span class="hint">${c.lastContact?`Last email <span class="mono">${fmtDate(c.lastContact)}</span>`:"No date on these emails"}${c.threads>1?` · ${c.threads} threads`:""}${c.subject?` · ${esc(c.subject)}`:""}</span></span></label></li>`).join("")}</ul>
+      <div class="gmfoot"><button class="primary" type="button" id="gmAdd"${n?"":" disabled"}>Add ${n} ${n===1?"recruiter":"recruiters"}</button><button class="btn" type="button" id="gmFind">Search again</button></div>`
+      :`<p class="hint">No recruiter emails found in the last two years. You can still add people by hand.</p><button class="btn" type="button" id="gmFind">Search again</button>`;
+  }
+  else body=`${gm.state==="error"?`<p class="err" role="alert">${esc(gm.msg)}</p>`:""}<p class="hint">Role Radar searches your Gmail (read-only) for recruiter emails from the last two years and lists the people it finds. Nothing is saved until you choose who to add, and the dates come from the emails themselves.</p>
+    <button class="primary" type="button" id="gmFind"${mcpState==="checking"?" disabled":""}>Find recruiters in Gmail</button>`;
+  return `<details class="more gmail" data-more="_gmail"${open?" open":""}><summary>Import from Gmail</summary>${body}</details>`;
+}
+function gmError(e){
+  const c=e&&e.code;
+  if(c==="server_not_connected"||c==="server_not_found") return "Gmail isn't connected. Add the Gmail connector in claude.ai Settings, Connectors, then try again.";
+  if(c==="needs_reauth") return "Gmail needs you to sign in again. Reconnect it in claude.ai Settings, Connectors, then try again.";
+  if(c==="selection_required") return "You have more than one Gmail connector. Choose one when Claude asks, then try again.";
+  if(c==="not_in_manifest"||c==="approval_required"||c==="consent_required") return "Gmail wasn't allowed for this page. Try again and choose Allow when Claude asks.";
+  if(c==="blocked_by_policy") return "Your organization's policy blocks Gmail for this page.";
+  if(c==="not_granted"||c==="capability_disabled"||c==="capability_removed") return "Gmail import isn't available in this view of the page.";
+  if(c==="server_unavailable"||c==="rate_limited") return "Gmail didn't answer just now. Try again in a minute.";
+  if(c==="tool_error") return "Gmail reported a problem: "+String(e.message||"").slice(0,160);
+  return "Couldn't read Gmail. Try again.";
+}
+async function gmFind(){
+  if(!mcp||gm.state==="loading") return;
+  gm={state:"loading",items:[],picked:new Set(),msg:""}; render();
+  try{
+    const q=(config&&config.gmailQuery)||GM.DEFAULT_QUERY;
+    const res=await mcp.callTool("Gmail","search_threads",{query:q,pageSize:50,view:"THREAD_VIEW_MINIMAL"});
+    let threads=GM.threadsFrom(res.payload);
+    // The search shows only each thread's oldest 5 messages; read longer threads in full for the real last date.
+    const longIds=threads.filter(GM.needsFullThread).map(t=>t.id).filter(Boolean);
+    if(longIds.length){
+      const full=new Map();
+      for(let i=0;i<longIds.length;i+=10){
+        try{ const r=await mcp.callTool("Gmail","batch_get_threads",{threadIds:longIds.slice(i,i+10),messageFormat:"MINIMAL"}); GM.threadsFrom(r.payload).forEach(t=>t&&t.id&&full.set(t.id,t)); }catch(_){}
+      }
+      threads=threads.map(t=>full.get(t.id)||t);
+    }
+    const items=GM.candidates(threads,{existing:recruiters});
+    gm={state:"done",items,picked:new Set(items.filter(c=>!c.exists).map(c=>c.key)),msg:""};
+  }catch(e){ gm={state:"error",items:[],picked:new Set(),msg:gmError(e)}; }
+  render();
+}
+async function gmAdd(){
+  if(!db||!gm.picked.size) return;
+  const picks=gm.items.filter(c=>gm.picked.has(c.key)&&!c.exists), now=new Date().toISOString();
+  let ok=0;
+  for(const c of picks){ try{ await db.doc("recruiters/"+c.key).set(GM.recruiterDoc(c,now)); ok++; c.exists=true; gm.picked.delete(c.key);}catch(_){} }
+  toast(ok===picks.length?`Added ${ok} ${ok===1?"recruiter":"recruiters"}`:`Added ${ok} of ${picks.length}. Try the rest again.`);
+  render();
 }
 function renderCriteria(){
   const text=critDraft??(criteria&&criteria.spec)??"";
@@ -633,6 +700,10 @@ document.addEventListener("click",async e=>{
   if(e.target.id==="applyClose"){ const d=$("#applyDlg"); try{d.close();}catch(_){d.removeAttribute("open");} return; }
   const rd=e.target.closest("[data-recdone]");
   if(rd&&db){ try{await db.doc("recruiters/"+rd.dataset.recdone).update({lastContact:today(),nextStep:"",nextStepDue:""}); toast("Marked done");}catch(_){toast("Couldn't save that.");} return; }
+  if(e.target.id==="gmFind"){ gmFind(); return; }
+  if(e.target.id==="gmAdd"){ gmAdd(); return; }
+  const gp=e.target.closest("[data-gmpick]");
+  if(gp){ if(gp.checked) gm.picked.add(gp.dataset.gmpick); else gm.picked.delete(gp.dataset.gmpick); const b=$("#gmAdd"); if(b){const n=gm.picked.size; b.disabled=!n; b.textContent=`Add ${n} ${n===1?"recruiter":"recruiters"}`;} return; }
   if(e.target.id==="recPrivacy"){ recPrivate=!recPrivate; editRec=null; try{localStorage.setItem("rr-rec-private",recPrivate?"1":"0")}catch(_){} render(); return; }
   const re=e.target.closest("[data-recedit]");
   if(re){ editRec=editRec===re.dataset.recedit?null:re.dataset.recedit; render(); return; }
@@ -660,7 +731,7 @@ document.addEventListener("click",async e=>{
 document.addEventListener("toggle",e=>{
   const d=e.target; if(!d.matches||!d.matches("details[data-more]")) return;
   const id=d.dataset.more;
-  if(d.open){ openMore.add(id); markViewed(jobs.find(x=>x._id===id)); } else openMore.delete(id);
+  if(d.open){ openMore.add(id); openMore.delete(id+"-closed"); markViewed(jobs.find(x=>x._id===id)); } else { openMore.delete(id); openMore.add(id+"-closed"); }
 },true);
 document.addEventListener("change",async e=>{
   const s=e.target.closest("[data-setstatus]");
@@ -736,6 +807,7 @@ document.addEventListener("keydown",e=>{
 if(window.__RR_DEMO__) $("#demoNote").hidden=false;
 render();
 (async()=>{
+  Promise.resolve(window.claude?.use?.("mcp")).then(m=>{mcp=m||null; mcpState=m?"ready":"none";},()=>{mcpState="none";}).then(()=>{ if(tab==="people") render(); });
   try{ db=await window.claude?.use?.("db"); }catch(e){ db=null; }
   if(!db){ render(); return; }
   render();

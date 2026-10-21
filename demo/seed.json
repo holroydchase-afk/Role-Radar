@@ -468,5 +468,171 @@
       "updatedAt": "@t-1",
       "version": 2
     }
+  },
+  "gmail": {
+    "_about": "DEMO Gmail threads for the import preview. Fictional people; .example domains are reserved and never deliver.",
+    "threads": [
+      {
+        "id": "g1",
+        "messageCount": 7,
+        "viewUrl": "https://example.com/mail/thread/g1",
+        "messages": [
+          {
+            "id": "g1m1",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-30",
+            "subject": "Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g1m2",
+            "sender": "Demo Candidate <candidate@example.com>",
+            "date": "@t-29",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "SENT"
+            ]
+          },
+          {
+            "id": "g1m3",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-28",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g1m4",
+            "sender": "Demo Candidate <candidate@example.com>",
+            "date": "@t-27",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "SENT"
+            ]
+          },
+          {
+            "id": "g1m5",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-25",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g2",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g2",
+        "messages": [
+          {
+            "id": "g2m1",
+            "sender": "Avery Brooks <avery@northstar-talent.example>",
+            "date": "@t-40",
+            "subject": "Staff PM opportunity (climate)",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g3",
+        "messageCount": 2,
+        "viewUrl": "https://example.com/mail/thread/g3",
+        "messages": [
+          {
+            "id": "g3m1",
+            "sender": "Jordan Reyes <jordan@brightwell-solar.example>",
+            "date": "@t-60",
+            "subject": "Following up on Brightwell",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g3m2",
+            "sender": "Demo Candidate <candidate@example.com>",
+            "date": "@t-59",
+            "subject": "Re: Following up on Brightwell",
+            "labelIds": [
+              "SENT"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g4",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g4",
+        "messages": [
+          {
+            "id": "g4m1",
+            "sender": "Ledgerly Careers <no-reply@ashbyhq.example>",
+            "date": "@t-5",
+            "subject": "Thanks for applying to Ledgerly",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g5",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g5",
+        "messages": [
+          {
+            "id": "g5m1",
+            "sender": "Taylor Morgan <taylor.morgan@gmail.example>",
+            "date": "@t-90",
+            "subject": "Intro: PM role at Pebblepay",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      }
+    ],
+    "full": {
+      "g1": {
+        "id": "g1",
+        "messageCount": 7,
+        "viewUrl": "https://example.com/mail/thread/g1",
+        "messages": [
+          {
+            "id": "g1m1",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-30",
+            "subject": "Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g1m6",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-3",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g1m7",
+            "sender": "Demo Candidate <candidate@example.com>",
+            "date": "@t-2",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "SENT"
+            ]
+          }
+        ]
+      }
+    }
   }
 }

@@ -15,11 +15,14 @@ export function buildDemo({ seed: seedOverride } = {}) {
   const inject = `<script>window.__RR_SEED__=${seedJson};</script>\n<script>${read("demo/mock-claude.js")}</script>\n`;
   const marker = '<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/';
   if (!page.includes(marker)) throw new Error("Could not find the js-yaml script tag to inject before.");
-  const scoringTag = '<script src="scoring.js"></script>';
-  if (!page.includes(scoringTag)) throw new Error("Could not find the scoring.js script tag.");
-  const scoring = `<script>${read("src/scoring.js")}</script>`;
+  let out = page;
+  for (const name of ["scoring.js", "gmail-import.js"]) {
+    const tag = `<script src="${name}"></script>`;
+    if (!out.includes(tag)) throw new Error(`Could not find the ${name} script tag.`);
+    out = out.replace(tag, () => `<script>${read("src/" + name)}</script>`);
+  }
   const head = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>\n';
-  return head + page.replace(marker, () => inject + marker).replace(scoringTag, () => scoring) + "\n</body></html>\n";
+  return head + out.replace(marker, () => inject + marker) + "\n</body></html>\n";
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

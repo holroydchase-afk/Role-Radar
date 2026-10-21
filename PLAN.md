@@ -29,9 +29,16 @@ Ground rules: the repo is public, so it only ever holds demo data (see CLAUDE.md
   - Docs: how to run your own copy (`docs/SETUP.md`).
   - Phone: filters fold behind one button so roles show on the first screen.
 
-## Later (not in v1)
+## After v1
 
-- Onboarding: a first-run step that connects Gmail (read-only), then seeds the Recruiters tab and status updates from the inbox, so someone running their own copy doesn't have to set up the scan's email access by hand. (Chase, 2026-10-21)
+- [x] **Gmail onboarding** (`gmail-onboarding`, asked for by Chase on 2026-10-21)
+  - Recruiters tab: *Import from Gmail* searches the inbox through the viewer's Gmail connector (read-only tools only), lists the people found for review, and saves only the ones picked. Opens by itself while the list is empty.
+  - Pure, tested module `src/gmail-import.js`: skips sent mail, no-reply senders, job boards and applicant tracking systems; company from the email domain; agency vs in-house vs referral; last contact from the newest email (long threads read in full); marks people already in the list.
+  - Demo: a fake Gmail connector over fictional threads, so the flow runs in tests and screenshots.
+- [ ] Status updates from Gmail in the same onboarding pass (applications confirmed or declined). The daily scan already does this; onboarding could backfill history.
+
+## Later
+
 - Chat with Role Radar.
 - "Reuse this resume": find other saved roles a tailored resume already fits.
 - Open-source kit so other job seekers can run their own copy.
