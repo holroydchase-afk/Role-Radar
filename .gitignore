@@ -3,3 +3,6 @@ node_modules/
 *.log
 screenshots/tmp/
 .env
+dist/
+profile.local.json
+.private-denylist
