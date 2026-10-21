@@ -34,3 +34,9 @@ test("scan prompt renders every placeholder from a profile", () => {
   assert.ok(out.startsWith("You are running Demo Candidate's weekday job scan."));
   assert.throws(() => renderScanPrompt({ ...profile, TRACKER_URL: "" }), /missing: TRACKER_URL/);
 });
+
+test("injected data survives $-patterns that String.replace would expand", () => {
+  const tricky = "Pays $' and $& and $1";
+  const html = buildDemo({ seed: { jobs: { x: { company: tricky } } } });
+  assert.ok(html.includes(JSON.stringify(tricky)));
+});
