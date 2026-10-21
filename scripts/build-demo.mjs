@@ -7,16 +7,19 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p) => readFileSync(join(root, p), "utf8");
 
-export function buildDemo() {
+export function buildDemo({ seed: seedOverride } = {}) {
   const page = read("app/role-radar.html");
-  const seed = JSON.parse(read("demo/seed.json"), (k, v) =>
+  const seed = seedOverride || JSON.parse(read("demo/seed.json"), (k, v) =>
     typeof v === "string" && v.startsWith("@file:") ? read(v.slice(6)) : v);
   const seedJson = JSON.stringify(seed).replace(/</g, "\\u003c");
   const inject = `<script>window.__RR_SEED__=${seedJson};</script>\n<script>${read("demo/mock-claude.js")}</script>\n`;
   const marker = '<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/';
   if (!page.includes(marker)) throw new Error("Could not find the js-yaml script tag to inject before.");
+  const scoringTag = '<script src="scoring.js"></script>';
+  if (!page.includes(scoringTag)) throw new Error("Could not find the scoring.js script tag.");
+  const scoring = `<script>${read("src/scoring.js")}</script>`;
   const head = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>\n';
-  return head + page.replace(marker, inject + marker) + "\n</body></html>\n";
+  return head + page.replace(marker, () => inject + marker).replace(scoringTag, () => scoring) + "\n</body></html>\n";
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -11,7 +11,7 @@ Ground rules: the repo is public, so it only ever holds demo data (see CLAUDE.md
   - Fictional demo data (`demo/seed.json`) and an in-memory database (`demo/mock-claude.js`) run the page outside claude.ai: `npm run build:demo` writes `dist/demo.html`.
   - `npm run check:private` blocks personal data (emails, phones, artifact links, task ids, Gmail links, plus a private denylist kept outside the repo); a pre-commit hook runs it.
   - `npm test` passes.
-- [ ] **M2: Core flow** (`m2-core-flow`)
+- [x] **M2: Core flow** (`m2-core-flow`)
   - Scoring from `criteria.yaml` lives in a pure, tested module (`src/scoring.js`): matching gates, hard excludes, sector weight, fit, culture, comp, values penalty, clamp, minimum score, and digest caps per sector.
   - The page uses the same module to show a score breakdown, so the rules the scan follows are visible and checkable.
   - Known page bugs fixed, with a browser test for each (see HANDOFF.md).

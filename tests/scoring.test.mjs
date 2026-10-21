@@ -122,3 +122,9 @@ test("works with an empty or partial spec", () => {
   assert.ok(S.matchJob(job({}), {}).ok);
   assert.equal(S.buildDigest([job({})], null).items.length, 1);
 });
+
+test("the scan prompt states the same scoring numbers as the module", () => {
+  const prompt = readFileSync(new URL("../scan/scan-prompt.template.md", import.meta.url), "utf8");
+  for (const phrase of ["weight × 15", "strong 35", "maybe 20", "stretch 5", "+10 if the posting shows any culture.good_signals", "−10 per culture.red_flags phrase found (max −20)", "+10 if the stated range reaches comp.stretch_target_usd", "−15 if the company's main business is in values_penalty", "clamped 0-100"])
+    assert.ok(prompt.includes(phrase), phrase);
+});

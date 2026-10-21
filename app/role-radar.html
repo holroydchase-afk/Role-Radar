@@ -76,7 +76,6 @@ dialog h3{font-family:var(--f-display);font-weight:500;font-size:1.1rem;margin:0
 dialog textarea{width:100%;box-sizing:border-box;min-height:150px;font:400 .85rem var(--f-mono)}
 dialog .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
 @media (prefers-reduced-motion: no-preference){.job{transition:border-color .15s}}
-<style>
 /* Added: filter bar, status select, lanes, tags, dates line, details editor, action reasons */
 .fbar{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:10px}
 .fbar .fields{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
@@ -121,12 +120,18 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 .rec .who{font-family:var(--f-display);font-weight:500;font-size:1.08rem;margin:2px 0 0}
 .rec .next{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.9rem}
 .rec .next b{font-weight:600}
+.why-score{font:400 .78rem var(--f-mono);color:var(--muted)}
+.demo{font:600 .72rem var(--f-body);letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--warn-soft);color:var(--warn);justify-self:start}
+.dig{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.dig li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:baseline}
+.dig .sub2{grid-column:2;color:var(--muted);font-size:.8rem}
 .cnote{font:500 .84rem var(--f-body);color:var(--warn);background:var(--warn-soft);border-radius:7px;padding:5px 9px;margin:0;max-width:65ch}
 </style>
 
 <div class="wrap">
   <header>
     <h1>Role Radar</h1>
+    <span class="demo" id="demoNote" hidden>Demo data: fictional companies and people</span>
     <p class="sub" id="scanLine">Remote Senior and Staff PM roles from company boards, ZipRecruiter, Himalayas and job alerts, checked every weekday morning.</p>
   </header>
 
@@ -143,6 +148,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<script src="scoring.js"></script>
 <script>
 const TABS=[
   {id:"inbox",label:"New"},{id:"pipeline",label:"Pipeline"},{id:"action",label:"Needs action"},
@@ -162,12 +168,15 @@ function setConfig(c){config={...DEF_CONFIG,...(c||{})}; LANES=config.lanes; SKI
 const ATS=["greenhouse","ashby","lever"];
 const DEF_VIEW={q:"",status:"",lane:"",fit:"",source:"",tag:"",found:"",conflict:"",sort:"fit"};
 let recruiters=[], editRec=null;
-let criteria=null, critDraft=null, critErr="";
+let criteria=null, critDraft=null, critErr="", specData=null;
+const SC=window.RoleRadarScoring||null;
 let tab="inbox", jobs=[], companies=[], filters=null, scan=null, db=null, view={...DEF_VIEW}, openMore=new Set(), skipOpen=null;
 try{const t=localStorage.getItem("rr-tab"); if(TABS.some(x=>x.id===t)) tab=t; const v=JSON.parse(localStorage.getItem("rr-view")||"null"); if(v) view={...DEF_VIEW,...v};}catch(e){}
 const saveView=()=>{try{localStorage.setItem("rr-view",JSON.stringify(view))}catch(_){}};
 
 const $=s=>document.querySelector(s);
+// Only http(s) links from scan or email data become clickable.
+const safeUrl=u=>/^https?:\/\//i.test(String(u||"").trim())?String(u).trim():"";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmtDate=s=>{if(!s)return"";const d=new Date(String(s).length===10?s+"T12:00:00":s);return isNaN(d)?esc(s):d.toLocaleDateString(undefined,{month:"short",day:"numeric"});};
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
@@ -231,8 +240,15 @@ function datesLine(j){
   if(j.statusAt&&!INBOX.includes(st(j))) p.push(`${esc(STATUS_LABEL[st(j)]||st(j))} since <b>${fmtDate(j.statusAt)}</b>`);
   return p.length?`<div class="dates">${p.join("")}</div>`:"";
 }
+// How the criteria arrive at this role's score, using the same rules as the scan.
+function scoreLine(j){
+  if(!SC||!specData) return "";
+  const r=SC.scoreJob(j,specData);
+  const differs=typeof j.score==="number"&&j.score!==r.score;
+  return `<div class="why-score" title="Score from your criteria">${esc(SC.explain(r))} = ${r.score}${differs?` · scan said ${esc(j.score)} (it also reads the posting)`:""}</div>`;
+}
 function jobCard(j){
-  const id=esc(j._id), s=st(j), fit=(j.fit||"").toLowerCase();
+  const id=esc(j._id), s=st(j), fit=(j.fit||"").toLowerCase(), url=safeUrl(j.url), resumeUrl=safeUrl(j.resumeUrl);
   const fitChip=(typeof j.score==="number"?`<span class="score${j.score>=70?" hi":""}" title="Criteria score">${esc(j.score)}</span>`:"")+(fit?`<span class="chip fit-${esc(fit)}">${esc(fit)}</span>`:"");
   const stChip=s!=="new"?`<span class="chip st st-${esc(s)}">${esc(STATUS_LABEL[s]||s)}</span>`:"";
   const laneChip=j.lane?`<span class="chip lane">${esc(j.lane)}</span>`:"";
@@ -244,7 +260,7 @@ function jobCard(j){
   return `<article class="job">
     <div class="top"><div style="min-width:0">
       <div class="co">${esc(j.company)}</div>
-      <h2>${j.url?`<a href="${esc(j.url)}" target="_blank" rel="noopener" data-view="${id}">${esc(j.title)}</a>`:esc(j.title)}</h2>
+      <h2>${url?`<a href="${esc(url)}" target="_blank" rel="noopener" data-view="${id}">${esc(j.title)}</a>`:esc(j.title)}</h2>
     </div><div class="actions">${fitChip}${cfChip}${stChip}</div></div>
     ${cf?`<p class="cnote">Overlaps ${esc(cf.names.join(", "))}${cf.note?`: ${esc(cf.note)}`:""}</p>`:""}
     ${why?`<div class="why">${esc(why)}</div>`:""}
@@ -256,14 +272,15 @@ function jobCard(j){
       ${j.sector?`<span class="chip lane">${esc(j.sector)}</span>`:""}
     </div>
     ${datesLine(j)}
+    ${scoreLine(j)}
     ${tags.length?`<div class="tags">${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
     ${j.fitNote?`<p class="note">${esc(j.fitNote)}</p>`:""}
     ${j.nextStep?`<p class="note"><b>Next:</b> ${esc(j.nextStep)}</p>`:""}
     ${j.emailNote?`<p class="note" style="color:var(--muted)">Inbox: ${esc(j.emailNote)}</p>`:""}
     ${j.skipReason&&s==="skipped"?`<p class="note" style="color:var(--muted)">Skipped: ${esc(j.skipReason)}</p>`:""}
     <div class="apply-row">
-      <button class="apply" data-apply="${id}">${j.resumeUrl?"Re-run intake":"Apply"}</button>
-      ${j.resumeUrl?`<a class="resume" href="${esc(j.resumeUrl)}" target="_blank" rel="noopener">${esc(j.resumeName||"Tailored resume")} ↗</a>`:(j.resumeName?`<span class="hint">Resume: ${esc(j.resumeName)}</span>`:`<span class="hint">Copies an intake prompt for a new chat</span>`)}
+      <button class="apply" data-apply="${id}">${resumeUrl?"Re-run intake":"Apply"}</button>
+      ${resumeUrl?`<a class="resume" href="${esc(resumeUrl)}" target="_blank" rel="noopener">${esc(j.resumeName||"Tailored resume")} ↗</a>`:(j.resumeName?`<span class="hint">Resume: ${esc(j.resumeName)}</span>`:`<span class="hint">Copies an intake prompt for a new chat</span>`)}
     </div>
     <div class="ctl">
       <label class="sr" for="st-${id}" style="display:flex;gap:6px;align-items:center">Status
@@ -271,7 +288,7 @@ function jobCard(j){
       ${INBOX.includes(s)?`<button class="btn" type="button" data-quick="saved" data-job="${id}">Save</button>`:""}
       ${s==="applying"?`<button class="btn" type="button" data-quick="applied" data-job="${id}">I submitted it</button>`:""}
       ${!DONE.includes(s)?`<button class="btn" type="button" data-quick="skipped" data-job="${id}">Skip</button>`:""}
-      ${j.url?`<a class="btn" href="${esc(j.url)}" target="_blank" rel="noopener" style="text-decoration:none" data-view="${id}">Open posting</a>`:""}
+      ${url?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none" data-view="${id}">Open posting</a>`:""}
     </div>
     ${skipRow}
     <details class="more" data-more="${id}"${openMore.has(j._id)?" open":""}>
@@ -440,7 +457,7 @@ function recCard(r){
     <div class="meta">${r.roles?`<span>${esc(r.roles)}</span>`:""}${r.lastContact?`<span>Last contact <b class="mono">${fmtDate(r.lastContact)}</b></span>`:""}${r.sector?`<span>${esc(r.sector)}</span>`:""}</div>
     ${r.lastNote?`<p class="note">${esc(r.lastNote)}</p>`:""}
     ${hasNext||due?`<div class="next" style="${late?"color:var(--warn);background:var(--warn-soft);border-radius:7px;padding:5px 9px":"color:var(--muted)"}"><b>Next:</b> ${esc(r.nextStep||"")}${due?` · <span class="mono">${late?"due ":""}${fmtDate(due)}</span>`:""}</div>`:""}
-    <div class="ctl">${hasNext?`<button class="btn" type="button" data-recdone="${id}">Done today</button>`:""}<button class="btn" type="button" data-recedit="${id}">${edit?"Close":"Edit"}</button>${r.mailSearch?`<a class="btn" href="${esc(r.mailSearch)}" target="_blank" rel="noopener" style="text-decoration:none">Emails ↗</a>`:""}</div>
+    <div class="ctl">${hasNext?`<button class="btn" type="button" data-recdone="${id}">Done today</button>`:""}<button class="btn" type="button" data-recedit="${id}">${edit?"Close":"Edit"}</button>${safeUrl(r.mailSearch)?`<a class="btn" href="${esc(safeUrl(r.mailSearch))}" target="_blank" rel="noopener" style="text-decoration:none">Emails ↗</a>`:""}</div>
     ${edit?`<form class="ccard" data-recform="${id}" style="padding:10px 0 0;border:0">
       <div class="fields">
         <label>Outcome<input name="outcome" value="${esc(r.outcome||"")}"></label>
@@ -476,10 +493,22 @@ function renderCriteria(){
     <form class="ccard" id="critForm"><h3>criteria.yaml</h3>
       <p class="sub" style="margin:0">The scan reads this before every run. Change a weight, add a company to <span class="mono">hard_exclude</span>, or move the comp floor, then save.${when?` Last saved <span class="mono">${esc(when)}</span>.`:""}</p>
       ${critErr||p.err?`<p class="err">${esc(critErr||p.err)}</p>`:""}
+      ${!window.jsyaml?`<p class="err">The YAML reader didn't load, so the summary and preview are off. You can still edit and save.</p>`:""}
       <label for="critText" class="sr" style="position:absolute;left:-9999px">Criteria YAML</label>
       <textarea id="critText" class="code" spellcheck="false" autocapitalize="off" autocomplete="off">${esc(text)}</textarea>
       <div class="ctl"><button class="primary" type="submit">Save criteria</button>${critDraft!==null?`<button class="btn" type="button" id="critReset">Discard changes</button>`:""}</div>
-    </form></div>`;
+    </form>
+    <div class="ccard"><h3>Digest preview</h3><p class="sub" style="margin:0">How tomorrow's digest would rank the roles in New with the criteria above. Edit a weight and watch it change.</p><div id="digestPreview">${digestPreview(p.data)}</div></div></div>`;
+}
+function digestPreview(spec){
+  if(!SC||!spec) return `<p class="hint">Preview needs a valid spec.</p>`;
+  const pool=jobs.filter(j=>INBOX.includes(st(j)));
+  if(!pool.length) return `<p class="hint">No new roles to rank yet.</p>`;
+  const d=SC.buildDigest(pool,spec);
+  const labels=Object.fromEntries((Array.isArray(spec.sectors)?spec.sectors:[]).map(s=>[s.id,s.label||s.id]));
+  const extra=Object.entries(d.extras).map(([k,n])=>k==="_overflow"?`+${n} more past the digest limit`:`+${n} more ${esc(labels[k]||k)} (capped)`);
+  return (d.items.length?`<ol class="dig">${d.items.map(x=>`<li><span class="score${x.result.score>=70?" hi":""}">${x.result.score}</span><span>${esc(x.job.company)} · ${esc(x.job.title)}</span><span class="sub2">${esc(x.result.sector.label||"Other")} · ${esc(SC.explain(x.result))}</span></li>`).join("")}</ol>`:`<p class="hint">Nothing in New clears the minimum score.</p>`)
+    +`<p class="hint">${d.passed} of ${d.considered} pass the gates and minimum score.${extra.length?" "+extra.join(" · "):""}</p>`;
 }
 
 function render(){
@@ -577,7 +606,7 @@ document.addEventListener("change",async e=>{
   const f=e.target.closest("#fbar [data-v]");
   if(f){ view[f.dataset.v]=f.value; saveView(); render(); }
 });
-document.addEventListener("input",e=>{ if(e.target.id==="critText"){critDraft=e.target.value; return;} if(e.target.id==="q"){view.q=e.target.value; saveView(); const pos=e.target.selectionStart; render(); const el=$("#q"); if(el){el.focus(); el.setSelectionRange(pos,pos);} }});
+document.addEventListener("input",e=>{ if(e.target.id==="critText"){critDraft=e.target.value; clearTimeout(digestPreview._t); digestPreview._t=setTimeout(()=>{const el=$("#digestPreview"); if(el) el.innerHTML=digestPreview(parseSpec(critDraft).data);},250); return;} if(e.target.id==="q"){view.q=e.target.value; saveView(); const pos=e.target.selectionStart; render(); const el=$("#q"); if(el){el.focus(); el.setSelectionRange(pos,pos);} }});
 document.addEventListener("submit",async e=>{
   e.preventDefault(); if(!db) return;
   const ed=e.target.closest("form[data-edit]");
@@ -640,6 +669,7 @@ document.addEventListener("keydown",e=>{
   e.preventDefault(); const t=e.target, a=t.selectionStart; t.setRangeText("  ",a,t.selectionEnd,"end"); critDraft=t.value;
 });
 
+if(window.__RR_DEMO__) $("#demoNote").hidden=false;
 render();
 (async()=>{
   try{ db=await window.claude?.use?.("db"); }catch(e){ db=null; }
@@ -650,7 +680,7 @@ render();
   db.doc("meta/filters").onSnapshot(s=>{filters=s.exists?s.data():null; if(tab==="filters"&&document.activeElement?.closest("form")) return; softRender();},()=>{});
   db.doc("meta/config").onSnapshot(s=>{setConfig(s.exists?s.data():null); softRender();},()=>{});
   db.collection("recruiters").onSnapshot(s=>{recruiters=s.docs.map(d=>({...d.data(),_id:d.id})); if(tab==="people") softRender(); else renderTabs();},()=>{});
-  db.doc("meta/criteria").onSnapshot(s=>{criteria=s.exists?s.data():null; if(tab==="criteria"&&critDraft!==null) return; softRender();},()=>{});
+  db.doc("meta/criteria").onSnapshot(s=>{criteria=s.exists?s.data():null; specData=criteria&&criteria.spec?parseSpec(criteria.spec).data||null:null; if(tab==="criteria"&&critDraft!==null) return; softRender();},()=>{});
   db.doc("meta/scan").onSnapshot(s=>{scan=s.exists?s.data():null; renderScan();},()=>{});
 })();
 </script>
