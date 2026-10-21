@@ -50,6 +50,8 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
   - Scan prompt template: the scan stores posting-level `cultureChecks` and notes roles closed to `planned_move.state`. Also fixed three pronoun-replacement typos ("ttheir").
   - 8 unit tests (including two calibration cases) and 3 browser tests; 55 passing.
 
+- Board health on `board-health` (from main): the Watchlist tab shows a strip from `meta/scan.coverage` (boards read, solar/climate coverage, amber under 90%, failed/partial/moved boards, source status) and a health dot per company (green: read in the last 3 days; amber: partial, 1-2 failures or stale; red: 3+ failures or board not found; grey: never checked). Requested by the daily scan's thread, which writes the fields. One browser test and one edge test (57 passing).
+
 ## In progress
 - M2.2 Gmail onboarding (Chase asked to start building it, 2026-10-21).
 

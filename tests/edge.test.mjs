@@ -82,3 +82,21 @@ test("due dates: past ones are flagged, future ones are not", async () => {
   assert.deepEqual(errors, []);
   await page.close();
 });
+
+test("board health copes with missing and junk coverage fields", async () => {
+  const seed = baseSeed();
+  seed.meta.scan.coverage = { mode: null, attempted: "x", failedList: ["Acme", null, { error: "no name" }], moved: [null, {}], sources: "nope" };
+  seed.companies["greenhouse-sunfield"] = { name: "Sunfield Energy", failStreak: "lots", lastOk: "not a date", status: "active" };
+  const { page, errors } = await openSeed(seed);
+  await page.click("#tab-watch");
+  const t = await page.locator(".health").innerText();
+  assert.match(t, /Boards: 0\/0 read/);
+  assert.match(t, /Failed\s*Acme/);
+  delete seed.meta.scan.coverage;
+  const again = await openSeed(seed);
+  await again.page.click("#tab-watch");
+  assert.match(await again.page.locator(".health").innerText(), /after the next scan run/);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(again.errors, []);
+  await page.close(); await again.page.close();
+});
