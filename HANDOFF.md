@@ -27,10 +27,10 @@ Updated: 2026-10-21 (overnight run)
 - 44 tests passing.
 
 ## In progress
-- Nothing. v1 milestones are all done and ready for review.
+- Nothing. PRs #1 to #5 were merged into `main` on 2026-10-21 at Chase's request.
 
 ## Exact next step
-- Chase reviews PRs #1 to #5 in order and merges them (merging is his call). After that, pick from PLAN.md "Later": the strongest next step for sharing is moving recruiters to separate private storage, so the page itself can be shared safely.
+- Pick the next item from PLAN.md "Later". Chase asked for a Gmail onboarding step (connect Gmail read-only on first run, then seed recruiters and status updates). Before sharing the page with anyone, move recruiter records out of the page's shared database.
 
 ## How to work here
 - `npm install`, then `npm test`, `npm run build:demo` (open `dist/demo.html`).
