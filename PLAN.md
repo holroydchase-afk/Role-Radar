@@ -17,7 +17,7 @@ Ground rules: the repo is public, so it only ever holds demo data (see CLAUDE.md
   - Known page bugs fixed, with a browser test for each (see HANDOFF.md).
   - A browser smoke test loads every tab on demo data with no console errors.
   - Fixes are applied to the live private artifact too.
-- [ ] **M3: Case study** (`m3-case-study`)
+- [x] **M3: Case study** (`m3-case-study`)
   - README reads as a short case study: the problem, how it works (diagram), what it saves, what I would do next.
   - Screenshots of the main tabs, captured by script from demo data only (`npm run screenshots`).
 - [ ] **M4: Privacy toggle** (`m4-privacy-toggle`)

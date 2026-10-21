@@ -1,5 +1,99 @@
 # Role Radar
 
-A personal job-search radar that finds senior and staff product roles every weekday morning, scores them against criteria written as code, and keeps applications and recruiter follow-ups in one place.
+**A job search that runs itself every weekday morning.** Role Radar scans job boards, scores each new role against criteria written as code, and keeps every application, follow-up and recruiter in one place. I built it for my own search for a senior product role, and I use it every day.
 
-Work in progress. See `PLAN.md` and `HANDOFF.md` once the first milestone lands.
+![New roles, each with a score and the reason for it](docs/screenshots/new-roles.png)
+
+*All screenshots use fictional demo data.*
+
+## The problem
+
+A senior job search is a part-time job made of small chores:
+
+- **Finding roles is a daily slog.** The companies I care about post on dozens of separate boards (Greenhouse, Ashby, Lever, Workday), plus job alerts and aggregators. Checking them by hand every morning costs time I'd rather spend on applications.
+- **Search filters can't say what I actually want.** I care most about energy, solar and climate work. Fintech is fine but should rank lower, and some business models are a hard no. Keyword alerts can't express "prefer this, cap that, never show those".
+- **Status lived in three places.** A spreadsheet, my inbox and my head disagreed about what I'd applied to and who I owed a follow-up.
+- **Recruiter relationships went cold.** A recruiter who said "reach out if another role opens" two years ago is a warm lead, but only if I remember them.
+
+## How it works
+
+```mermaid
+flowchart LR
+  subgraph Morning["Every weekday, 7:45 ET"]
+    S["Scan agent<br/>(scheduled Claude run)"]
+  end
+  B["Company boards<br/>Greenhouse · Ashby · Lever"] --> S
+  Z["Aggregators<br/>ZipRecruiter · Himalayas · Climatebase"] --> S
+  G["Gmail, read-only<br/>job alerts and application emails"] --> S
+  C["criteria.yaml<br/>weights · gates · caps"] --> S
+  S -->|"new roles, scores, status updates"| DB[("Role Radar<br/>tracker")]
+  S -->|"top matches"| P["Phone notification<br/>and digest"]
+  DB --> UI["Role Radar page<br/>New · Pipeline · Needs action · Recruiters"]
+  UI -->|"Apply"| I["Intake agent<br/>tailored resume in Google Docs"]
+  I --> DB
+```
+
+1. **Criteria as code.** Everything I'm looking for lives in one YAML file ([`criteria.yaml`](criteria.yaml)). It sets sector weights, title and location gates, comp floors, culture red flags, hard excludes, and how many roles from each sector can appear in one digest. I edit it on the Criteria tab, and the next scan follows it.
+2. **A transparent score.** Every role gets 0 to 100 from one formula, and each card shows how its score was reached (`45 sector + 35 fit + 10 comp = 90`). The rules live in [`src/scoring.js`](src/scoring.js) and are pinned down by tests, so the page, the tests and the scan's instructions agree.
+3. **A scheduled scan agent.** Each weekday morning, a scheduled Claude run reads the criteria, checks the boards and aggregators, reads job-alert and application emails (read-only), adds new matches, moves application statuses forward from confirmations and rejections, and sends me a short digest. Its instructions are in [`scan/scan-prompt.template.md`](scan/scan-prompt.template.md).
+4. **One tracker.** New roles land in *New*. Saving or applying moves them to *Pipeline*. *Needs action* lists follow-ups that are due, applications with no reply, and resumes that are ready but not sent. *Recruiters* keeps each contact's last touchpoint and next step.
+5. **One-tap intake.** *Apply* copies a prompt for my job-intake agent, which screens the posting, asks only the gap questions that would change a bullet, and builds a tailored resume from my career master doc.
+
+### Tune it and watch the ranking move
+
+The Criteria tab previews tomorrow's digest while you edit. In the screenshot below, raising fintech from weight 1 to 3 moves a checkout role to the top.
+
+![Editing a sector weight re-ranks the digest preview live](docs/screenshots/criteria-preview.png)
+
+| Needs action | Recruiters |
+| --- | --- |
+| ![Follow-ups, stale applications and unsent resumes](docs/screenshots/needs-action.png) | ![Recruiter contacts with next steps and due dates](docs/screenshots/recruiters.png) |
+
+## What it saves
+
+- **The morning search.** I no longer open job boards. The scan covers about 110 company boards plus aggregators and alert emails, and a phone notification tells me if anything is worth a look.
+- **Triage time.** Roles arrive ranked by what I care about, each with a one-line reason and its score breakdown. Fintech roles still show up, but they no longer crowd out energy and climate work.
+- **Status bookkeeping.** Confirmation and rejection emails update the tracker on their own, and follow-up dates are set when I mark something applied.
+- **Lost leads.** Past recruiters sit next to the roles, with a next step and a due date.
+
+## Product decisions
+
+- **Rules over vibes.** An LLM judges fit, but the ranking itself is plain arithmetic in a file anyone can read. When a result looks wrong, I can see why and change one line.
+- **Read-only by default.** The scan never applies, never sends email and never contacts anyone. Gmail access is read-only, and every status it changes can be changed back from the page.
+- **Flags, not filters, for gray areas.** Culture red flags and overlaps with my own side projects lower a score or add a flag. They never hide a role.
+- **Built for reuse.** Per-person settings (lanes, follow-up timing, intake prompt) live in config, the scan prompt is a template, and the demo runs on fictional data, so someone else can run their own copy.
+- **Privacy first.** This repo is public, so it holds only demo data. A pre-commit check blocks emails, phone numbers, private links and a private list of names. Recruiter details stay in the private app.
+
+## Run the demo
+
+```sh
+npm install
+npm run build:demo        # writes dist/demo.html; open it in a browser
+npm test                  # unit tests plus headless-browser tests on demo data
+npm run screenshots       # regenerates docs/screenshots
+```
+
+The demo runs the real page against an in-memory database ([`demo/mock-claude.js`](demo/mock-claude.js)) seeded with fictional companies and people ([`demo/seed.json`](demo/seed.json)). In production, the page is a private Claude artifact with a small database, and the scan is a scheduled Claude run.
+
+## Project layout
+
+| Path | What it is |
+| --- | --- |
+| `app/role-radar.html` | The tracker page (single file, no build step) |
+| `src/scoring.js` | Scoring and matching rules, shared by the page and the tests |
+| `criteria.yaml` | Example criteria for a demo candidate |
+| `scan/` | The weekday scan prompt, as a template |
+| `demo/` | Fictional seed data and the in-memory database |
+| `scripts/` | Demo build, screenshots, scan-prompt renderer, privacy check |
+| `tests/` | Node test runner: scoring, privacy check, demo build, Playwright UI |
+| `PLAN.md`, `HANDOFF.md` | The v1 plan and the current state of work |
+
+## What's next
+
+- **Ask Role Radar.** Chat with the tracker: "which saved roles fit my checkout resume?"
+- **Resume reuse.** For a tailored resume, find other open roles it already fits with little or no change.
+- **A kit for other job seekers.** A setup guide and a blank config so friends can run their own copy.
+
+---
+
+Built by Chase Holroyd, a senior product manager working in energy, fintech and AI, with Claude as the build partner.
