@@ -176,3 +176,23 @@ test("the Criteria tab explains the fit ratings", async () => {
   assert.match(await page.locator("div.ccard", { hasText: "At a glance" }).innerText(), /Home state\s+CO → UT/);
   await page.close();
 });
+
+test("the Watchlist shows board health from the last scan", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-watch");
+  const strip = page.locator(".health");
+  const t = await strip.innerText();
+  assert.match(t, /Boards: 7\/9 read \(solar\/climate 4\/5\)/);
+  assert.match(t, /mode full/);
+  assert.ok(await strip.evaluate((el) => el.classList.contains("low")), "80% priority coverage is flagged");
+  assert.equal(await strip.locator(".hchip.bad").first().getAttribute("title"), "404 from board API (demo)");
+  assert.match(t, /Orbitline: greenhouse:orbitline → lever:orbitline/);
+  const dot = (co) => page.locator(".row", { hasText: co }).locator(".hdot").getAttribute("class");
+  assert.match(await dot("Sunfield Energy"), /green/);
+  assert.match(await dot("Gridlark"), /amber/);
+  assert.match(await dot("Watermark Climate"), /red/);
+  assert.match(await dot("Copperleaf Insurance"), /grey/);
+  assert.equal(await page.locator(".row", { hasText: "QuickCash" }).locator(".hdot").count(), 0);
+  assert.deepEqual(errors, []);
+  await page.close();
+});

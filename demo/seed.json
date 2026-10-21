@@ -279,7 +279,11 @@
       "slug": "sunfield",
       "industry": "Solar, storage & distributed energy",
       "status": "active",
-      "via": "discovery"
+      "via": "discovery",
+      "lastOk": "@t-0",
+      "lastChecked": "@t-0",
+      "readMode": "full",
+      "failStreak": 0
     },
     "ashby-gridlark": {
       "name": "Gridlark",
@@ -287,7 +291,11 @@
       "slug": "gridlark",
       "industry": "Solar, storage & distributed energy",
       "status": "active",
-      "via": "discovery"
+      "via": "discovery",
+      "lastOk": "@t-0",
+      "lastChecked": "@t-0",
+      "readMode": "partial",
+      "failStreak": 0
     },
     "lever-orbitline": {
       "name": "Orbitline",
@@ -295,7 +303,12 @@
       "slug": "orbitline",
       "industry": "Space & geospatial",
       "status": "active",
-      "via": "you"
+      "via": "you",
+      "lastOk": "@t-0",
+      "lastChecked": "@t-0",
+      "readMode": "full",
+      "failStreak": 0,
+      "reviewNote": "Board moved from greenhouse:orbitline (demo)"
     },
     "greenhouse-ledgerly": {
       "name": "Ledgerly",
@@ -303,7 +316,11 @@
       "slug": "ledgerly",
       "industry": "General fintech & payments",
       "status": "active",
-      "via": "you"
+      "via": "you",
+      "lastOk": "@t-1",
+      "lastChecked": "@t-1",
+      "readMode": "full",
+      "failStreak": 0
     },
     "greenhouse-brightwell": {
       "name": "Brightwell Solar",
@@ -327,7 +344,11 @@
       "slug": "watermark",
       "industry": "Climate & sustainability software",
       "status": "active",
-      "via": "discovery"
+      "via": "discovery",
+      "lastOk": "@t-5",
+      "lastChecked": "@t-0",
+      "failStreak": 3,
+      "lastError": "404 from board API (demo)"
     },
     "lever-copperleaf": {
       "name": "Copperleaf Insurance",
@@ -461,7 +482,38 @@
       "lastRun": "@t-0",
       "boardsChecked": 42,
       "newMatches": 5,
-      "note": "demo data"
+      "note": "demo data",
+      "coverage": {
+        "mode": "full",
+        "attempted": 9,
+        "read": 7,
+        "partial": 1,
+        "failed": 1,
+        "priorityRead": 4,
+        "priorityTotal": 5,
+        "moved": [
+          {
+            "name": "Orbitline",
+            "from": "greenhouse:orbitline",
+            "to": "lever:orbitline"
+          }
+        ],
+        "partialList": [
+          "Gridlark"
+        ],
+        "failedList": [
+          {
+            "name": "Watermark Climate",
+            "error": "404 from board API (demo)"
+          }
+        ],
+        "sources": {
+          "ziprecruiter": "ok",
+          "gmail": "ok",
+          "himalayas": "ok",
+          "climatebase": "skipped"
+        }
+      }
     },
     "criteria": {
       "spec": "@file:criteria.yaml",
