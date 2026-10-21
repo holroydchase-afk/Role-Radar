@@ -18,7 +18,14 @@
       "lane": "Geospatial / clean energy",
       "tags": [],
       "status": "new",
-      "statusAt": "@t-0"
+      "statusAt": "@t-0",
+      "cultureChecks": {
+        "calm_pace": "posting: sustainable pace",
+        "remote_us": "",
+        "pay_same_everywhere": "one national band",
+        "family_benefits": "16 weeks parental leave",
+        "good_reviews": "work-life 4.3"
+      }
     },
     "ashby-1002": {
       "company": "Gridlark",
@@ -81,6 +88,10 @@
         "red": [
           "fast-paced"
         ]
+      },
+      "valuesFit": {
+        "rating": "great",
+        "reason": "Demo: earth observation for wildfire response, rated up at intake."
       }
     },
     "greenhouse-1005": {
@@ -100,7 +111,15 @@
       "lane": "Checkout",
       "tags": [],
       "status": "new",
-      "statusAt": "@t-2"
+      "statusAt": "@t-2",
+      "cultureChecks": [
+        "calm_pace",
+        "remote_us",
+        "pay_same_everywhere",
+        "family_benefits",
+        "good_reviews",
+        "crunch_risk"
+      ]
     },
     "himalayas-1006": {
       "company": "Trailhead Outfitters",
@@ -166,7 +185,11 @@
       "statusAt": "@t-3",
       "viewedAt": "@t-18",
       "appliedAt": "@t-15",
-      "followUpDue": "@d-10"
+      "followUpDue": "@d-10",
+      "cultureChecks": {
+        "fast_paced": "posting: fast-paced, wear many hats",
+        "recent_layoffs": "demo: layoffs this spring"
+      }
     },
     "manual-heliohome-sr-pm": {
       "company": "HelioHome",

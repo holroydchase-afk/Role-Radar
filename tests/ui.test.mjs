@@ -141,3 +141,38 @@ test("on a wide screen, filters are always shown", async () => {
   assert.ok(!(await page.locator("#ftoggle").isVisible()));
   await page.close();
 });
+
+test("cards show Values and Culture badges with a reason", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-all");
+  const card = (co) => page.locator("article.job", { hasText: co }).first().locator(".fitr");
+  assert.match(await card("Sunfield Energy").innerText(), /Values\s+Great[\s\S]*Culture\s+Great/i);
+  assert.match(await card("Ledgerly").innerText(), /Values\s+Neutral[\s\S]*Culture\s+Good[\s\S]*but launch crunch risk/i);
+  assert.match(await card("Pebblepay").innerText(), /Culture\s+No/i);
+  assert.match(await card("Orbitline").innerText(), /rated up at intake/);
+  assert.match(await card("Gridlark").innerText(), /Unrated[\s\S]*Not checked yet/i);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("Values and Culture filters narrow the list", async () => {
+  const { page } = await openDemo({ width: 1100 });
+  await page.click("#tab-all");
+  await page.selectOption("#fv-culture", "good+");
+  await page.waitForFunction(() => document.querySelectorAll("article.job").length === 2);
+  const cos = await page.locator("article.job .co").allTextContents();
+  assert.deepEqual(cos.sort(), ["Ledgerly", "Sunfield Energy"]);
+  await page.selectOption("#fv-values", "great");
+  await page.waitForFunction(() => document.querySelectorAll("article.job").length === 1);
+  await page.close();
+});
+
+test("the Criteria tab explains the fit ratings", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-criteria");
+  const card = page.locator("div.ccard", { has: page.locator("h3", { hasText: "Fit ratings" }) });
+  assert.match(await card.innerText(), /\+2\s+calm pace/);
+  assert.match(await card.innerText(), /−1\s+launch crunch risk/);
+  assert.match(await page.locator("div.ccard", { hasText: "At a glance" }).innerText(), /Home state\s+CO → UT/);
+  await page.close();
+});

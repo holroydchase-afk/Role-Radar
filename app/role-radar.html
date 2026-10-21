@@ -119,6 +119,23 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 .err{font:500 .84rem var(--f-mono);color:var(--bad);background:var(--bad-soft);border-radius:7px;padding:6px 9px;margin:0;white-space:pre-wrap}
 .score{font:600 .74rem var(--f-mono);padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
 .score.hi{background:var(--good-soft);color:var(--good)}
+.fitr{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:baseline;font:500 .84rem var(--f-body)}
+.fitr .k{display:flex;gap:6px;align-items:baseline;white-space:nowrap}
+.fitr .k small{font:600 .7rem var(--f-body);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);min-width:4.6em}
+.fitr .r{color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.rate{font:600 .72rem var(--f-body);letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid transparent}
+.r-great{background:var(--good);color:var(--surface)}
+.r-good{background:var(--good-soft);color:var(--good)}
+.r-neutral{background:var(--accent-soft);color:var(--accent)}
+.r-maybe{background:var(--warn-soft);color:var(--warn)}
+.r-no{background:var(--bad-soft);color:var(--bad)}
+.r-unrated{background:none;color:var(--muted);border:1px dashed var(--line)}
+.checks{display:grid;gap:4px}.checks div{display:grid;grid-template-columns:2em 1fr;gap:8px;font:500 .86rem var(--f-body)}
+.checks .pt{font:600 .8rem var(--f-mono);text-align:right}.checks .pt.pos{color:var(--good)}.checks .pt.neg{color:var(--bad)}
+.checks .m{color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font:500 .84rem var(--f-body)}
+.legend small{flex-basis:100%;color:var(--muted)}
+.legend span{white-space:nowrap}
 .rec .who{font-family:var(--f-display);font-weight:500;font-size:1.08rem;margin:2px 0 0}
 .rec .next{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.9rem}
 .rec .next b{font-weight:600}
@@ -169,7 +186,7 @@ let config={...DEF_CONFIG};
 let LANES=config.lanes, SKIP_REASONS=config.skipReasons;
 function setConfig(c){config={...DEF_CONFIG,...(c||{})}; LANES=config.lanes; SKIP_REASONS=config.skipReasons;}
 const ATS=["greenhouse","ashby","lever"];
-const DEF_VIEW={q:"",status:"",lane:"",fit:"",source:"",tag:"",found:"",conflict:"",sort:"fit"};
+const DEF_VIEW={q:"",status:"",lane:"",fit:"",values:"",culture:"",source:"",tag:"",found:"",conflict:"",sort:"fit"};
 let recruiters=[], editRec=null, filtersOpen=false;
 // Privacy: recruiter details are hidden on screen until this viewer chooses to show them.
 let recPrivate=true;
@@ -254,6 +271,19 @@ function scoreLine(j){
   const differs=typeof j.score==="number"&&j.score!==r.score;
   return `<div class="why-score" title="Score from your criteria">${esc(SC.explain(r))} = ${r.score}${differs?` · scan said ${esc(j.score)} (it also reads the posting)`:""}</div>`;
 }
+// Values and Culture badges: same rules as the scan and intake (criteria.yaml values_fit, culture_fit).
+const RATE_LABEL={great:"Great",good:"Good",neutral:"Neutral",maybe:"Maybe",no:"No",unrated:"Unrated"};
+const RATE_RANK={great:0,good:1,neutral:2,maybe:3,no:4,unrated:5};
+function fitsOf(j){
+  if(!SC||!specData||!SC.valuesFitOf) return null;
+  return {values:SC.valuesFitOf(j,specData),culture:SC.cultureFitOf(j,specData)};
+}
+function fitRows(j){
+  const f=fitsOf(j); if(!f) return "";
+  const row=(k,x)=>`<div class="k"><small>${k}</small><span class="rate r-${esc(x.rating)}">${esc(RATE_LABEL[x.rating]||x.rating)}</span></div><div class="r">${esc(x.reason)}</div>`;
+  return `<div class="fitr" aria-label="Fit ratings">${row("Values",f.values)}${row("Culture",f.culture)}</div>`;
+}
+function rateMatch(want,got){ if(!want) return true; if(want==="good+") return got==="great"||got==="good"; return got===want; }
 function jobCard(j){
   const id=esc(j._id), s=st(j), fit=(j.fit||"").toLowerCase(), url=safeUrl(j.url), resumeUrl=safeUrl(j.resumeUrl);
   const fitChip=(typeof j.score==="number"?`<span class="score${j.score>=70?" hi":""}" title="Criteria score">${esc(j.score)}</span>`:"")+(fit?`<span class="chip fit-${esc(fit)}">${esc(fit)}</span>`:"");
@@ -278,6 +308,7 @@ function jobCard(j){
       ${laneChip}
       ${j.sector?`<span class="chip lane">${esc(j.sector)}</span>`:""}
     </div>
+    ${fitRows(j)}
     ${datesLine(j)}
     ${scoreLine(j)}
     ${tags.length?`<div class="tags">${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
@@ -320,7 +351,7 @@ function filterBar(){
   const statusList=(tab==="inbox"?STATUSES.filter(([v])=>INBOX.includes(v)):tab==="pipeline"?STATUSES.filter(([v])=>PIPE.includes(v)):STATUSES);
   const sources=[...new Set(jobs.map(j=>j.source||j.ats).filter(Boolean))].sort().map(s=>[s,s]);
   const tags=[...new Set(jobs.flatMap(tagsOf))].sort().map(t=>[t,t]);
-  const active=["q","status","lane","fit","source","tag","found","conflict"].filter(k=>view[k]).length;
+  const active=["q","status","lane","fit","values","culture","source","tag","found","conflict"].filter(k=>view[k]).length;
   const nf=active-(view.q?1:0);
   return `<form class="fbar${filtersOpen?" open":""}" id="fbar">
     <label for="q">Search company, title or notes<input id="q" class="search" value="${esc(view.q)}" placeholder="e.g. solar, payments"></label>
@@ -328,11 +359,13 @@ function filterBar(){
       <label for="fv-status">Status<select id="fv-status" data-v="status">${opts(statusList,view.status,"Any")}</select></label>
       <label for="fv-lane">Lane<select id="fv-lane" data-v="lane">${opts(LANES.map(l=>[l,l]),view.lane,"Any")}</select></label>
       <label for="fv-fit">Fit<select id="fv-fit" data-v="fit">${opts([["strong","Strong"],["maybe","Maybe"],["stretch","Stretch"]],view.fit,"Any")}</select></label>
+      <label for="fv-values">Values<select id="fv-values" data-v="values">${opts([["good+","Good or better"],["great","Great"],["good","Good"],["neutral","Neutral"],["no","No"]],view.values,"Any")}</select></label>
+      <label for="fv-culture">Culture<select id="fv-culture" data-v="culture">${opts([["good+","Good or better"],["great","Great"],["good","Good"],["maybe","Maybe"],["no","No"],["unrated","Unrated"]],view.culture,"Any")}</select></label>
       <label for="fv-source">Source<select id="fv-source" data-v="source">${opts(sources,view.source,"Any")}</select></label>
       ${tags.length?`<label for="fv-tag">Tag<select id="fv-tag" data-v="tag">${opts(tags,view.tag,"Any")}</select></label>`:""}
       <label for="fv-found">Found<select id="fv-found" data-v="found">${opts([["1","Today"],["7","Last 7 days"],["30","Last 30 days"]],view.found,"Any time")}</select></label>
       <label for="fv-conflict">Product conflict<select id="fv-conflict" data-v="conflict">${opts([["flag","Flagged"],["clear","No conflict"]],view.conflict,"Any")}</select></label>
-      <label for="fv-sort">Sort<select id="fv-sort" data-v="sort">${[["fit","Best match"],["found","Newest found"],["posted","Newest posted"],["updated","Recently changed"],["followup","Follow-up date"]].map(([v,l])=>`<option value="${v}"${v===view.sort?" selected":""}>${l}</option>`).join("")}</select></label>
+      <label for="fv-sort">Sort<select id="fv-sort" data-v="sort">${[["fit","Best match"],["culture","Best culture"],["found","Newest found"],["posted","Newest posted"],["updated","Recently changed"],["followup","Follow-up date"]].map(([v,l])=>`<option value="${v}"${v===view.sort?" selected":""}>${l}</option>`).join("")}</select></label>
     </div>
     <div class="foot"><span id="fcount"></span><button class="btn" type="button" id="ftoggle" aria-expanded="${filtersOpen}">${filtersOpen?"Hide filters":"Filters and sort"}${nf?` (${nf})`:""}</button>${active?`<button class="linkbtn" type="button" id="fclear">Clear filters</button>`:""}</div>
   </form>`;
@@ -344,6 +377,7 @@ function applyView(list){
     if(view.status&&st(j)!==view.status) return false;
     if(view.lane&&j.lane!==view.lane) return false;
     if(view.fit&&(j.fit||"").toLowerCase()!==view.fit) return false;
+    if(view.values||view.culture){const f=fitsOf(j); if(f&&(!rateMatch(view.values,f.values.rating)||!rateMatch(view.culture,f.culture.rating))) return false;}
     if(view.source&&(j.source||j.ats)!==view.source) return false;
     if(view.tag&&!tagsOf(j).includes(view.tag)) return false;
     if(view.found){const d=daysSince(j.firstSeen); if(d===null||d>Number(view.found)) return false;}
@@ -355,6 +389,7 @@ function sortList(list){
   const rank={strong:0,maybe:1,stretch:2};
   const by={
     fit:(a,b)=>((typeof b.score==="number"?b.score:-1)-(typeof a.score==="number"?a.score:-1))||(rank[(a.fit||"").toLowerCase()]??3)-(rank[(b.fit||"").toLowerCase()]??3)||String(b.firstSeen||"").localeCompare(String(a.firstSeen||"")),
+    culture:(a,b)=>{const fa=fitsOf(a),fb=fitsOf(b); const c=fa&&fb?(RATE_RANK[fa.culture.rating]-RATE_RANK[fb.culture.rating])||(RATE_RANK[fa.values.rating]-RATE_RANK[fb.values.rating]):0; return c||by.fit(a,b);},
     found:(a,b)=>String(b.firstSeen||"").localeCompare(String(a.firstSeen||"")),
     posted:(a,b)=>String(b.postedAt||"").localeCompare(String(a.postedAt||"")),
     updated:(a,b)=>String(b.statusAt||b.firstSeen||"").localeCompare(String(a.statusAt||a.firstSeen||"")),
@@ -443,6 +478,7 @@ function critSummary(d){
   return `<div class="ccard"><h3>At a glance</h3><div class="kv">
       <div><small>Level</small><b>${listTxt(r.levels)}</b></div>
       <div><small>Work</small><b>${esc(String(w.remote||"").replace(/_/g," "))}</b></div>
+      ${w.home_state?`<div><small>Home state</small><b>${esc(w.home_state)}${w.planned_move&&w.planned_move.state?` → ${esc(w.planned_move.state)}${w.planned_move.when?` (${esc(w.planned_move.when)})`:""}`:""}</b></div>`:""}
       <div><small>Base floor</small><b>${money(c.base_floor_usd)}</b></div>
       <div><small>Priority-sector floor</small><b>${money(c.priority_sector_floor_usd)}</b></div>
       <div><small>Min score to add</small><b>${esc(sc.min_score_to_add??"—")}</b></div>
@@ -453,7 +489,20 @@ function critSummary(d){
     <div class="ccard"><h3>Scoring</h3><p class="formula">sector  = weight × 15        (0–45)
 fit     = strong 35 · maybe 20 · stretch 5
 culture = +10 good signals, −10 per red flag
-comp    = +10 if the range reaches ${money(c.stretch_target_usd)}</p></div>`;
+comp    = +10 if the range reaches ${money(c.stretch_target_usd)}</p></div>
+    ${fitCard(d)}`;
+}
+function fitCard(d){
+  const cf=d.culture_fit||{}, checks=Array.isArray(cf.checks)?cf.checks:[], b=cf.bands||{great:6,good:3,maybe:-3};
+  const vw=(d.values_fit&&d.values_fit.by_weight)||{3:"great",2:"good",1:"neutral",0:"no"};
+  if(!checks.length&&!d.values_fit) return "";
+  const badge=r=>`<span class="rate r-${esc(r)}">${esc(RATE_LABEL[r]||r)}</span>`;
+  return `<div class="ccard"><h3>Fit ratings</h3>
+    <p class="sub" style="margin:0">Two badges on every role. They explain a role and never change its score.</p>
+    <div class="legend"><small>Values by sector weight</small>${[3,2,1,0].map(w=>`<span>${badge(vw[w]||"no")} weight ${w}</span>`).join("")}</div>
+    <div class="legend"><small>Culture by total points</small><span>${badge("great")} ${esc(b.great)}+</span><span>${badge("good")} ${esc(b.good)}+</span><span>${badge("maybe")} ${esc(b.maybe)}+</span><span>${badge("no")} below ${esc(b.maybe)}</span></div>
+    ${checks.length?`<div class="checks">${checks.map(k=>{const n=Number(k.points)||0;return `<div><span class="pt ${n>0?"pos":n<0?"neg":""}">${n>0?"+":n<0?"−":""}${Math.abs(n)}</span><span>${esc(k.short||k.id)}${k.means?` <span class="m">· ${esc(k.means)}</span>`:""}</span></div>`;}).join("")}</div>`:""}
+    <p class="hint" style="margin:0">Hard excludes and <span class="mono">values_penalty</span> always rate Values "No". Intake research can set either badge directly.</p></div>`;
 }
 function recCard(r){
   const id=esc(r._id), due=r.nextStepDue, late=due&&due<=today();
