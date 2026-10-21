@@ -122,3 +122,22 @@ test("recruiter details are hidden until the viewer shows them", async () => {
   assert.deepEqual(errors, []);
   await page.close();
 });
+
+test("on a phone, filters fold away behind one button", async () => {
+  const { page } = await openDemo({ width: 390, height: 844 });
+  await page.click("#tab-inbox");
+  assert.ok(await page.locator("#q").isVisible());
+  assert.ok(!(await page.locator("#fv-status").isVisible()));
+  const firstCard = await page.locator(".job").first().boundingBox();
+  assert.ok(firstCard.y < 844, `first card starts below the fold at ${firstCard.y}`);
+  await page.click("#ftoggle");
+  assert.ok(await page.locator("#fv-status").isVisible());
+  await page.close();
+});
+
+test("on a wide screen, filters are always shown", async () => {
+  const { page } = await openDemo({ width: 1100 });
+  assert.ok(await page.locator("#fv-status").isVisible());
+  assert.ok(!(await page.locator("#ftoggle").isVisible()));
+  await page.close();
+});

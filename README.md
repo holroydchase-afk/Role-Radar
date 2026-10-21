@@ -75,6 +75,8 @@ npm test                  # unit tests plus headless-browser tests on demo data
 npm run screenshots       # regenerates docs/screenshots
 ```
 
+To run your own copy with your own criteria, see [docs/SETUP.md](docs/SETUP.md).
+
 The demo runs the real page against an in-memory database ([`demo/mock-claude.js`](demo/mock-claude.js)) seeded with fictional companies and people ([`demo/seed.json`](demo/seed.json)). In production, the page is a private Claude artifact with a small database, and the scan is a scheduled Claude run.
 
 ## Project layout

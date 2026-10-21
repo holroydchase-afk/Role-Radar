@@ -77,8 +77,10 @@ dialog textarea{width:100%;box-sizing:border-box;min-height:150px;font:400 .85re
 dialog .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
 @media (prefers-reduced-motion: no-preference){.job{transition:border-color .15s}}
 /* Added: filter bar, status select, lanes, tags, dates line, details editor, action reasons */
-.fbar{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:10px}
+.fbar{margin:0 0 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:10px}
 .fbar .fields{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+#ftoggle{display:none}
+@media (max-width:600px){#ftoggle{display:inline-flex}.fbar:not(.open) .fields{display:none}}
 .fbar .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
 .linkbtn{font:500 .82rem var(--f-body);background:none;border:0;color:var(--accent);cursor:pointer;padding:0}
 .dates{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:.8rem;color:var(--muted)}
@@ -168,7 +170,7 @@ let LANES=config.lanes, SKIP_REASONS=config.skipReasons;
 function setConfig(c){config={...DEF_CONFIG,...(c||{})}; LANES=config.lanes; SKIP_REASONS=config.skipReasons;}
 const ATS=["greenhouse","ashby","lever"];
 const DEF_VIEW={q:"",status:"",lane:"",fit:"",source:"",tag:"",found:"",conflict:"",sort:"fit"};
-let recruiters=[], editRec=null;
+let recruiters=[], editRec=null, filtersOpen=false;
 // Privacy: recruiter details are hidden on screen until this viewer chooses to show them.
 let recPrivate=true;
 try{recPrivate=localStorage.getItem("rr-rec-private")!=="0";}catch(_){}
@@ -319,7 +321,8 @@ function filterBar(){
   const sources=[...new Set(jobs.map(j=>j.source||j.ats).filter(Boolean))].sort().map(s=>[s,s]);
   const tags=[...new Set(jobs.flatMap(tagsOf))].sort().map(t=>[t,t]);
   const active=["q","status","lane","fit","source","tag","found","conflict"].filter(k=>view[k]).length;
-  return `<form class="fbar" id="fbar">
+  const nf=active-(view.q?1:0);
+  return `<form class="fbar${filtersOpen?" open":""}" id="fbar">
     <label for="q">Search company, title or notes<input id="q" class="search" value="${esc(view.q)}" placeholder="e.g. solar, payments"></label>
     <div class="fields">
       <label for="fv-status">Status<select id="fv-status" data-v="status">${opts(statusList,view.status,"Any")}</select></label>
@@ -331,7 +334,7 @@ function filterBar(){
       <label for="fv-conflict">Product conflict<select id="fv-conflict" data-v="conflict">${opts([["flag","Flagged"],["clear","No conflict"]],view.conflict,"Any")}</select></label>
       <label for="fv-sort">Sort<select id="fv-sort" data-v="sort">${[["fit","Best match"],["found","Newest found"],["posted","Newest posted"],["updated","Recently changed"],["followup","Follow-up date"]].map(([v,l])=>`<option value="${v}"${v===view.sort?" selected":""}>${l}</option>`).join("")}</select></label>
     </div>
-    <div class="foot"><span id="fcount"></span>${active?`<button class="linkbtn" type="button" id="fclear">Clear filters</button>`:""}</div>
+    <div class="foot"><span id="fcount"></span><button class="btn" type="button" id="ftoggle" aria-expanded="${filtersOpen}">${filtersOpen?"Hide filters":"Filters and sort"}${nf?` (${nf})`:""}</button>${active?`<button class="linkbtn" type="button" id="fclear">Clear filters</button>`:""}</div>
   </form>`;
 }
 function applyView(list){
@@ -585,6 +588,7 @@ document.addEventListener("click",async e=>{
   const re=e.target.closest("[data-recedit]");
   if(re){ editRec=editRec===re.dataset.recedit?null:re.dataset.recedit; render(); return; }
   if(e.target.id==="critReset"){ critDraft=null; critErr=""; render(); return; }
+  if(e.target.id==="ftoggle"){ filtersOpen=!filtersOpen; render(); return; }
   if(e.target.id==="fclear"){ view={...DEF_VIEW,sort:view.sort}; saveView(); render(); return; }
   const t=e.target.closest("[data-tab]");
   if(t){tab=t.dataset.tab; view.status=""; saveView(); try{localStorage.setItem("rr-tab",tab)}catch(_){} render(); return;}

@@ -19,13 +19,18 @@ Updated: 2026-10-21 (overnight run)
   - Recruiters tab hides names, notes, next-step text, email links and editing by default; cards show initials, company, type and the due date. "Show details" reveals them, and the choice is remembered per viewer in localStorage (try/catch, so it falls back to hidden).
   - Browser test: no demo recruiter name or note appears in the rendered page while hidden; they appear after "Show details" and the choice survives a reload.
   - New screenshot `recruiters-hidden.png` in the README. Applied to the live private page.
-- 37 tests passing.
+- Hardening on `hardening` (stacked on M4):
+  - New `tests/edge.test.mjs`: empty tracker, invalid YAML, odd criteria shapes, jobs and recruiters with missing or junk fields, past vs future due dates. The page already handled all of them; the tests now pin that down.
+  - Phone: below 600px the filters fold behind a "Filters and sort" button (with an active-filter count), so the first role shows on the first screen. Search stays visible. Filter bar also gets space below it. Two browser tests.
+  - `docs/SETUP.md`: run your own copy (criteria, publish the tracker, render the scan prompt, schedule it, keep data out of git). Linked from the README.
+  - Applied to the live private page.
+- 44 tests passing.
 
 ## In progress
-- Nothing. M4 is ready for review.
+- Nothing. v1 milestones are all done and ready for review.
 
 ## Exact next step
-- Start Hardening on `hardening`, branched from `m4-privacy-toggle`: collapse the filter bar behind a "Filters" button below 600px wide; handle empty collections, missing or broken criteria and past or future due dates, each with a browser test; write `docs/SETUP.md` (run your own copy).
+- Chase reviews PRs #1 to #5 in order and merges them (merging is his call). After that, pick from PLAN.md "Later": the strongest next step for sharing is moving recruiters to separate private storage, so the page itself can be shared safely.
 
 ## How to work here
 - `npm install`, then `npm test`, `npm run build:demo` (open `dist/demo.html`).
