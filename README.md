@@ -101,3 +101,7 @@ The demo runs the real page against an in-memory database ([`demo/mock-claude.js
 ---
 
 Built by Chase Holroyd, a senior product manager working in energy, fintech and AI, with Claude as the build partner.
+
+## License
+
+MIT ([LICENSE](LICENSE)). The demo companies, roles and people are fictional; any resemblance to real ones is a coincidence.

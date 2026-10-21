@@ -26,6 +26,8 @@ Updated: 2026-10-21 (overnight run)
   - Applied to the live private page.
 - 44 tests passing.
 
+- License audit (2026-10-21): added `LICENSE` (MIT, matching package.json) and a License section in the README. Demo data checked: fictional, labeled, no real people.
+
 ## In progress
 - Nothing. v1 milestones are all done and ready for review.
 
