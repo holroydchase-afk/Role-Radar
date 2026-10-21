@@ -44,6 +44,7 @@ role:
 work:
   remote: fully_remote_us              # remote-first or "Remote, US" with no hub requirement
   home_state: CO                       # reject state lists that leave out CO
+  planned_move: { state: UT, when: next year }   # optional: flag roles closed to your next state
   hybrid_ok_near: [Denver, CO]        # the only place hybrid is fine
   reject: [hybrid, in_office, relocation, non_us_only, travel_over_25pct]
 
@@ -134,6 +135,28 @@ values_penalty:                        # −15 score, still shown if otherwise s
   - weapons or defense prime contractors
   - gambling or sports betting
   - crypto trading or speculation
+
+# ── Fit ratings: two badges on every role (Values · Culture) ───
+#  Values: great · good · neutral · no.  Culture: great · good · maybe · no, or "unrated" until checked.
+#  They explain the role; they don't change the 0–100 score above.
+values_fit:                            # does the company's business match what you care about?
+  by_weight: { 3: great, 2: good, 1: neutral, 0: no }   # from the sector weight
+  # anything on hard_exclude or values_penalty is always "no"
+
+culture_fit:                           # would you actually like working there?
+  bands: { great: 6, good: 3, maybe: -3 }   # total points at or above → that rating; below maybe → no
+  checks:                              # the scan fills posting checks; intake adds research checks
+    - { id: calm_pace,           points:  2, short: "calm pace",                  means: "posting or reviews say sustainable pace, ~40-hour weeks, or anti-hustle" }
+    - { id: fast_paced,          points: -2, short: "fast-paced",                 means: "posting says fast-paced, hustle, scrappy, wear many hats, 50+ hours" }
+    - { id: remote_us,           points:  1, short: "remote anywhere in the US",  means: "remote with no hub and home_state is eligible" }
+    - { id: pay_same_everywhere, points:  1, short: "same pay in your state",     means: "one national band, or home_state is in the pay tiers" }
+    - { id: pay_tier_gap,        points: -1, short: "your state not in pay tiers", means: "posting lists pay tiers that leave out home_state" }
+    - { id: planned_move_gap,    points: -1, short: "not open in your next state", means: "state list leaves out work.planned_move.state" }
+    - { id: family_benefits,     points:  1, short: "strong family benefits",     means: "12+ weeks parental leave, or unlimited PTO with a minimum" }
+    - { id: good_reviews,        points:  1, short: "good reviews",               means: "Glassdoor work-life 4.0+ or similar" }
+    - { id: poor_reviews,        points: -1, short: "weak work-life reviews",     means: "Glassdoor work-life under 3.5, or burnout themes" }
+    - { id: recent_layoffs,      points: -2, short: "recent layoffs",             means: "layoffs in the last 12 months" }
+    - { id: crunch_risk,         points: -1, short: "launch crunch risk",         means: "new team, greenfield launch, or reviews mention crunches" }
 
 # ── Digest shape ─────────────────────────────────────────────
 scoring:

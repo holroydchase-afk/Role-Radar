@@ -33,9 +33,14 @@ IDs follow the studio standard (`docs/planning-ids.md` in holroydchase-afk/studi
   - Docs: how to run your own copy (`docs/SETUP.md`).
   - Phone: filters fold behind one button so roles show on the first screen.
 
-## Later (not in v1)
+### M2: v1.1, fit ratings and onboarding
 
-Unnumbered until scheduled into a milestone (the next one is M2).
+- [x] **M2.1: Culture and values ratings** (done, PR #11) (`culture-values-ratings`): values and culture badges with reasons, filters and a "Best culture" sort. Badges never change the score.
+- [ ] **M2.2: Gmail onboarding** (doing): a first-run step that connects Gmail (read-only), then seeds the Recruiters tab and status updates from the inbox, so someone running their own copy doesn't have to set up the scan's email access by hand. (Chase, 2026-10-21)
+
+## Later
+
+Unnumbered until scheduled into a milestone.
 
 - Chat with Role Radar.
 - "Reuse this resume": find other saved roles a tailored resume already fits.
