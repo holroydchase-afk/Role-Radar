@@ -2,24 +2,36 @@
 
 Updated: 2026-10-21 (overnight run)
 
+## Planning IDs (Oct 21, 2026)
+The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs, starting at M2.
+
+| Old | New | What |
+|---|---|---|
+| M1 | RR-M1.1 | Plan and source |
+| M2 | RR-M1.2 | Core flow |
+| M3 | RR-M1.3 | Case study |
+| M4 | RR-M1.4 | Privacy toggle |
+| Hardening | RR-M1.5 | Edge cases, phone filters, setup guide |
+| (milestone) | RR-M1 | Portfolio-ready v1 |
+
 ## Done
-- M1 on `m1-plan-and-source` (PR #1): scrubbed page source, example criteria, scan prompt template and renderer, demo seed data, in-memory db mock, demo build, personal-data check plus pre-commit hook, PLAN.md.
-- M2 on `m2-core-flow` (stacked on M1):
+- M1.1 (was M1) on `m1-plan-and-source` (PR #1): scrubbed page source, example criteria, scan prompt template and renderer, demo seed data, in-memory db mock, demo build, personal-data check plus pre-commit hook, PLAN.md.
+- M1.2 (was M2) on `m2-core-flow` (stacked on M1.1):
   - `src/scoring.js`: the criteria rules as a pure module (gates, sector weight, fit, culture, comp, values, clamp, digest caps), 17 unit tests, plus a test that the scan prompt states the same numbers.
   - Page: every card shows how its score was reached; the Criteria tab has a live digest preview that re-ranks as you edit the YAML.
   - Bugs fixed, each with a browser test: stray `<style>` tag that dropped the filter bar's styles; no message when js-yaml fails to load; non-http links from scan data were clickable; `$` patterns in injected data could corrupt the demo build.
   - 8 headless Chromium tests on demo data (all tabs, no console errors, phone width has no sideways scroll).
   - Live private artifact republished with the same page plus `scoring.js` (checked locally against a private copy of the real data: all 62 cards render, no errors).
   - Scan prompt now asks the scan to store `cultureSignals` on new jobs; the daily scan's thread was asked to apply it.
-- M3 on `m3-case-study` (stacked on M2):
+- M1.3 (was M3) on `m3-case-study` (stacked on M1.2):
   - README.md rewritten as a case study: problem, flow diagram (mermaid), how it works, criteria-preview screenshot, what it saves, product decisions, how to run the demo, layout, what's next.
   - `npm run screenshots` captures six PNGs from demo data into `docs/screenshots/` (1200px light, 390px phone, one dark). Shared browser setup lives in `scripts/browser.mjs` and is reused by the UI tests; fonts come from `@fontsource` packages so shots match the live page offline.
   - Bug fixed with a test: the search box overflowed the filter bar (missing `box-sizing`). Applied to the live page too.
-- M4 on `m4-privacy-toggle` (stacked on M3):
+- M1.4 (was M4) on `m4-privacy-toggle` (stacked on M1.3):
   - Recruiters tab hides names, notes, next-step text, email links and editing by default; cards show initials, company, type and the due date. "Show details" reveals them, and the choice is remembered per viewer in localStorage (try/catch, so it falls back to hidden).
   - Browser test: no demo recruiter name or note appears in the rendered page while hidden; they appear after "Show details" and the choice survives a reload.
   - New screenshot `recruiters-hidden.png` in the README. Applied to the live private page.
-- Hardening on `hardening` (stacked on M4):
+- M1.5 (was Hardening) on `hardening` (stacked on M1.4):
   - New `tests/edge.test.mjs`: empty tracker, invalid YAML, odd criteria shapes, jobs and recruiters with missing or junk fields, past vs future due dates. The page already handled all of them; the tests now pin that down.
   - Phone: below 600px the filters fold behind a "Filters and sort" button (with an active-filter count), so the first role shows on the first screen. Search stays visible. Filter bar also gets space below it. Two browser tests.
   - `docs/SETUP.md`: run your own copy (criteria, publish the tracker, render the scan prompt, schedule it, keep data out of git). Linked from the README.
