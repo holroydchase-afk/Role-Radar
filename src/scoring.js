@@ -8,6 +8,10 @@
  *         − values (15 if the business is on values_penalty)
  *   clamped to 0–100.
  *
+ * Two badges sit beside the score and never change it (criteria.yaml values_fit and culture_fit):
+ *   Values  = great · good · neutral · no, from the sector weight, hard excludes and values_penalty
+ *   Culture = great · good · maybe · no, from the culture_fit checks that apply; "unrated" until checked
+ *
  * Classic script: sets window.RoleRadarScoring in the browser, module.exports in Node. */
 (function (root, factory) {
   const api = factory();
@@ -133,6 +137,59 @@
     return { score: clamp(raw), raw, parts, sector, culture, valuesHit: values };
   }
 
+  const VALUES_BY_WEIGHT = { 3: "great", 2: "good", 1: "neutral", 0: "no" };
+  const RATINGS = ["great", "good", "neutral", "maybe", "no", "unrated"];
+  const rating = (r) => (RATINGS.includes(lc(r)) ? lc(r) : null);
+
+  /** Values badge: does the business match what the candidate cares about?
+   *  A stored job.valuesFit {rating, reason} wins; otherwise hard excludes and values_penalty say "no",
+   *  and the sector weight picks the rest (values_fit.by_weight). */
+  function valuesFitOf(job, spec) {
+    spec = spec || {};
+    const stored = job.valuesFit && rating(job.valuesFit.rating);
+    if (stored) return { rating: stored, reason: job.valuesFit.reason || "", source: "stored" };
+    const gate = matchJob(job, spec).reasons.find((r) => /hard_exclude|business model/.test(r));
+    if (gate) return { rating: "no", reason: gate, source: "computed" };
+    const hit = valuesHit(job, spec);
+    if (hit) return { rating: "no", reason: "on values_penalty: " + hit, source: "computed" };
+    const sector = sectorFor(job, spec);
+    const w = Math.max(0, Math.min(3, Number(sector.weight) || 0));
+    const map = { ...VALUES_BY_WEIGHT, ...((spec.values_fit && spec.values_fit.by_weight) || {}) };
+    return { rating: rating(map[w]) || VALUES_BY_WEIGHT[w], reason: sector.label + " (weight " + w + ")", source: "computed" };
+  }
+
+  /** Which culture_fit checks apply: job.cultureChecks (ids, or {id: note}), else a rough read of cultureSignals. */
+  function cultureHits(job, spec) {
+    const checks = arr(spec && spec.culture_fit && spec.culture_fit.checks);
+    const byId = Object.fromEntries(checks.map((c) => [c.id, c]));
+    let given = job.cultureChecks;
+    if (given && !Array.isArray(given) && typeof given === "object") given = Object.entries(given).map(([id, note]) => ({ id, note }));
+    else given = arr(given).map((x) => (typeof x === "string" ? { id: x } : x));
+    if (!given.length) {
+      const c = cultureOf(job, spec);
+      if (c.red.length && byId.fast_paced) given.push({ id: "fast_paced", note: c.red.join(", ") });
+      if (c.good.length && byId.family_benefits) given.push({ id: "family_benefits", note: c.good.join(", ") });
+    }
+    return given.filter((g) => byId[g.id]).map((g) => ({ ...byId[g.id], note: g.note || "" }));
+  }
+
+  /** Culture badge: sum the culture_fit checks that apply and band the total.
+   *  A stored job.cultureFit {rating, reason} wins (intake research); no checks at all → "unrated". */
+  function cultureFitOf(job, spec) {
+    spec = spec || {};
+    const hits = cultureHits(job, spec);
+    const points = hits.reduce((n, h) => n + (Number(h.points) || 0), 0);
+    const stored = job.cultureFit && rating(job.cultureFit.rating);
+    if (stored) return { rating: stored, reason: job.cultureFit.reason || "", points, hits, source: "stored" };
+    if (!hits.length) return { rating: "unrated", reason: "Not checked yet.", points: 0, hits, source: "computed" };
+    const b = { great: 6, good: 3, maybe: -3, ...((spec.culture_fit && spec.culture_fit.bands) || {}) };
+    const r = points >= b.great ? "great" : points >= b.good ? "good" : points >= b.maybe ? "maybe" : "no";
+    const plus = hits.filter((h) => h.points > 0).map((h) => h.short || h.id);
+    const minus = hits.filter((h) => h.points < 0).map((h) => h.short || h.id);
+    const reason = [plus.join(", "), minus.length ? "but " + minus.join(", ") : ""].filter(Boolean).join("; ");
+    return { rating: r, reason: reason.charAt(0).toUpperCase() + reason.slice(1) + ".", points, hits, source: "computed" };
+  }
+
   /** "45 sector + 35 fit + 10 comp" — the parts that moved the score. */
   function explain(result) {
     const p = result.parts, out = [];
@@ -165,5 +222,5 @@
     return { items, extras, considered: arr(jobs).length, passed: scored.length };
   }
 
-  return { parseComp, sectorFor, matchJob, scoreJob, explain, buildDigest, FIT_POINTS };
+  return { parseComp, sectorFor, matchJob, scoreJob, explain, buildDigest, valuesFitOf, cultureFitOf, FIT_POINTS };
 });
