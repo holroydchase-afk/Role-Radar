@@ -1,29 +1,12 @@
 // Browser tests: the real page on demo data, in headless Chromium.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { buildDemo } from "../scripts/build-demo.mjs";
+import { openDemo as open } from "../scripts/browser.mjs";
 
-const yamlJs = readFileSync(new URL("../node_modules/js-yaml/dist/js-yaml.min.js", import.meta.url), "utf8");
-const demoFile = new URL("../dist/test-demo.html", import.meta.url).pathname;
 let browser;
-
-// Serve js-yaml from node_modules so tests don't depend on the CDN being reachable.
-async function openDemo({ html = buildDemo(), blockYaml = false, width = 900 } = {}) {
-  mkdirSync(new URL("../dist/", import.meta.url).pathname, { recursive: true });
-  writeFileSync(demoFile, html);
-  const page = await browser.newPage({ viewport: { width, height: 1200 } });
-  const errors = [];
-  page.on("pageerror", (e) => errors.push(String(e)));
-  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-  await page.route("https://cdnjs.cloudflare.com/**", (route) =>
-    blockYaml ? route.abort() : route.fulfill({ contentType: "text/javascript", body: yamlJs }));
-  await page.route("https://fonts.googleapis.com/**", (route) => route.fulfill({ contentType: "text/css", body: "" }));
-  await page.goto("file://" + demoFile);
-  await page.waitForSelector(".job");
-  return { page, errors };
-}
+const openDemo = (opts = {}) => open(browser, { ...opts, file: "dist/test-demo.html" });
 
 before(async () => { browser = await chromium.launch(); });
 after(async () => { await browser?.close(); });
@@ -99,5 +82,12 @@ test("no horizontal scroll at phone width", async () => {
     const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     assert.ok(over <= 0, `${id} overflows by ${over}px`);
   }
+  await page.close();
+});
+
+test("the search box stays inside the filter bar", async () => {
+  const { page } = await openDemo();
+  const [bar, box] = await Promise.all([page.locator("#fbar").boundingBox(), page.locator("#q").boundingBox()]);
+  assert.ok(box.x + box.width <= bar.x + bar.width, `search ends at ${box.x + box.width}, bar at ${bar.x + bar.width}`);
   await page.close();
 });
