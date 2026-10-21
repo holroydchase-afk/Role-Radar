@@ -15,13 +15,17 @@ Updated: 2026-10-21 (overnight run)
   - README.md rewritten as a case study: problem, flow diagram (mermaid), how it works, criteria-preview screenshot, what it saves, product decisions, how to run the demo, layout, what's next.
   - `npm run screenshots` captures six PNGs from demo data into `docs/screenshots/` (1200px light, 390px phone, one dark). Shared browser setup lives in `scripts/browser.mjs` and is reused by the UI tests; fonts come from `@fontsource` packages so shots match the live page offline.
   - Bug fixed with a test: the search box overflowed the filter bar (missing `box-sizing`). Applied to the live page too.
-- 36 tests passing.
+- M4 on `m4-privacy-toggle` (stacked on M3):
+  - Recruiters tab hides names, notes, next-step text, email links and editing by default; cards show initials, company, type and the due date. "Show details" reveals them, and the choice is remembered per viewer in localStorage (try/catch, so it falls back to hidden).
+  - Browser test: no demo recruiter name or note appears in the rendered page while hidden; they appear after "Show details" and the choice survives a reload.
+  - New screenshot `recruiters-hidden.png` in the README. Applied to the live private page.
+- 37 tests passing.
 
 ## In progress
-- Nothing. M3 is ready for review.
+- Nothing. M4 is ready for review.
 
 ## Exact next step
-- Start M4 on `m4-privacy-toggle`, branched from `m3-case-study`: add a "Hide recruiter details" switch on the Recruiters tab that shows initials plus company only and hides notes and email links; store the choice per viewer in localStorage (wrapped in try/catch); default to hidden when the page is not the owner's (demo flag or `?share=1`). Add a browser test that no full recruiter name appears in the page text when hidden.
+- Start Hardening on `hardening`, branched from `m4-privacy-toggle`: collapse the filter bar behind a "Filters" button below 600px wide; handle empty collections, missing or broken criteria and past or future due dates, each with a browser test; write `docs/SETUP.md` (run your own copy).
 
 ## How to work here
 - `npm install`, then `npm test`, `npm run build:demo` (open `dist/demo.html`).
@@ -31,6 +35,7 @@ Updated: 2026-10-21 (overnight run)
 - The live page is `app/role-radar.html` published with `src/scoring.js` as a supporting file named `scoring.js`.
 
 ## Decisions to review
+- The privacy toggle hides details on screen only. Anyone the page is shared with can still read the recruiter records through the page's database, so the real fix before sharing is moving recruiters to separate private storage. Hidden is the default for every viewer, including the owner (one click to show, remembered).
 - The README is written in the first person as Chase's case study and names him as the builder; it holds no contact details.
 - Screenshots are committed (about 2 MB) so the README renders on GitHub without a build.
 - The repo keeps a demo persona's `criteria.yaml` (fictional comp floors, home state and example companies), not the real one.

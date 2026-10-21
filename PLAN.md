@@ -20,7 +20,7 @@ Ground rules: the repo is public, so it only ever holds demo data (see CLAUDE.md
 - [x] **M3: Case study** (`m3-case-study`)
   - README reads as a short case study: the problem, how it works (diagram), what it saves, what I would do next.
   - Screenshots of the main tabs, captured by script from demo data only (`npm run screenshots`).
-- [ ] **M4: Privacy toggle** (`m4-privacy-toggle`)
+- [x] **M4: Privacy toggle** (`m4-privacy-toggle`)
   - One switch hides recruiter names and notes (initials plus company only) and remembers the choice per viewer; on by default on any shared view.
   - Browser test proves names are absent from the page when hidden.
   - Applied to the live private artifact.

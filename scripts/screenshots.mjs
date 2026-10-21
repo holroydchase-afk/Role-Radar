@@ -13,7 +13,8 @@ const SHOTS = [
   { name: "new-roles", tab: "inbox", width: 1000, height: 1250 },
   { name: "criteria-preview", tab: "criteria", width: 1000, height: 2600, tweak: true, clip: ["#critForm", "#digestPreview"] },
   { name: "needs-action", tab: "action", width: 1000, height: 1100 },
-  { name: "recruiters", tab: "people", width: 1000, height: 1100 },
+  { name: "recruiters", tab: "people", width: 1000, height: 1100, click: "#recPrivacy" },
+  { name: "recruiters-hidden", tab: "people", width: 1000, height: 700 },
   { name: "phone-new-roles", tab: "inbox", width: 390, height: 844 },
   { name: "dark-all-roles", tab: "all", width: 1000, height: 1100, colorScheme: "dark" },
 ];
@@ -35,6 +36,7 @@ try {
         el.blur();
       });
     }
+    if (s.click) await page.click(s.click);
     if (s.scrollTo) await page.locator(s.scrollTo).scrollIntoViewIfNeeded();
     await page.mouse.move(0, 0);
     await page.waitForTimeout(150);
