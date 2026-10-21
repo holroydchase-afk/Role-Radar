@@ -1,0 +1,8 @@
+{
+  "_about": "DEMO profile for rendering the scan prompt. Keep your real profile in profile.local.json (gitignored).",
+  "CANDIDATE_NAME": "Demo Candidate",
+  "TARGET_ROLE": "a senior or staff individual-contributor Product Manager role, fully remote in the US",
+  "PRIORITY_SUMMARY": "energy, solar and climate work first; fintech is allowed but ranks lower",
+  "TRACKER_URL": "https://example.com/role-radar",
+  "CANDIDATE_BACKGROUND": "8 years as a B2B product manager in energy software: utility data ingestion, pricing and checkout flows, installer and partner platforms, and ops automation with LLMs. Earlier work as a solar designer."
+}
