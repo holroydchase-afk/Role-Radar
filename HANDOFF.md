@@ -52,11 +52,19 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 
 - Board health on `board-health` (from main): the Watchlist tab shows a strip from `meta/scan.coverage` (boards read, solar/climate coverage, amber under 90%, failed/partial/moved boards, source status) and a health dot per company (green: read in the last 3 days; amber: partial, 1-2 failures or stale; red: 3+ failures or board not found; grey: never checked). Requested by the daily scan's thread, which writes the fields. One browser test and one edge test (57 passing).
 
+- Gmail onboarding on `gmail-onboarding` (branched from main):
+  - `src/gmail-import.js` (UMD like `scoring.js`): parses Gmail search results into recruiter suggestions. Skips SENT messages, no-reply senders, job boards and ATS domains; company from the domain (blank for personal mail, typed "referral"); last contact = newest message date; marks existing people by email, id or name. 9 unit tests.
+  - Page: *Import from Gmail* on the Recruiters tab (only while details are shown). Calls `Gmail.search_threads`, then `batch_get_threads` for threads longer than the 5-message preview. Review list with checkboxes; *Add N recruiters* writes `recruiters/<slug>` with `source: "gmail"`, `email`, `lastContact`, `lastNote` (subject) and `mailSearch` (thread link). Each connector error code gets its own message. Opens by itself while the list is empty.
+  - Demo: `demo/mock-claude.js` fakes the Gmail connector from `seed.gmail` (fictional threads on reserved `.example` domains, which the privacy check now allows). 3 browser tests. New screenshot `gmail-import.png`.
+  - Live page republished with `gmail-import.js` and the Gmail connector capability (read-only tools only).
+- 69 tests passing after merging main (board health).
+
+
 ## In progress
-- M2.2 Gmail onboarding (Chase asked to start building it, 2026-10-21).
+- Nothing. Gmail onboarding is ready for review.
 
 ## Exact next step
-- M2.2: build the Gmail onboarding step on a branch from `main`. PRs #1 to #5 and #11 are merged. Before sharing the page with anyone, move recruiter records out of the page's shared database.
+- Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
 
 ## How to work here
 - `npm install`, then `npm test`, `npm run build:demo` (open `dist/demo.html`).
@@ -66,6 +74,9 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 - The live page is `app/role-radar.html` published with `src/scoring.js` as a supporting file named `scoring.js`.
 
 ## Decisions to review
+- The Gmail search result shape was taken from the connector's own documentation, not a live call (reading real mail from the build session was blocked as personal data). The parser accepts the documented camelCase fields and a few likely variants; first real use will confirm it.
+- Gmail import is hidden while recruiter details are hidden, like *Add a recruiter*, since its list shows names.
+- Personal-mail senders (gmail.com and similar) are typed "referral" with a blank company.
 - The privacy toggle hides details on screen only. Anyone the page is shared with can still read the recruiter records through the page's database, so the real fix before sharing is moving recruiters to separate private storage. Hidden is the default for every viewer, including the owner (one click to show, remembered).
 - The README is written in the first person as Chase's case study and names him as the builder; it holds no contact details.
 - Screenshots are committed (about 2 MB) so the README renders on GitHub without a build.

@@ -6,7 +6,7 @@ Ground rules: the repo is public, so it only ever holds demo data (see CLAUDE.md
 
 ## Plan
 
-IDs follow the studio standard (`docs/planning-ids.md` in holroydchase-afk/studio-agents): milestone `M1`, task `M1.1`, step `M1.1.1`. Across products this repo's code is `RR` (for example `RR-M1.5`). Status is todo, doing, blocked, done or dropped. The old M1–M4 and Hardening labels map to these IDs in `HANDOFF.md`. New branches are named `m2.1-short-name`.
+IDs follow the studio standard (`docs/planning-ids.md` in the studio-agents repo): milestone `M1`, task `M1.1`, step `M1.1.1`. Across products this repo's code is `RR` (for example `RR-M1.5`). Status is todo, doing, blocked, done or dropped. The old M1–M4 and Hardening labels map to these IDs in `HANDOFF.md`. New branches are named `m2.1-short-name`.
 
 ### M1: Portfolio-ready v1 (done, merged Oct 21, 2026)
 
@@ -36,12 +36,16 @@ IDs follow the studio standard (`docs/planning-ids.md` in holroydchase-afk/studi
 ### M2: v1.1, fit ratings and onboarding
 
 - [x] **M2.1: Culture and values ratings** (done, PR #11) (`culture-values-ratings`): values and culture badges with reasons, filters and a "Best culture" sort. Badges never change the score.
-- [ ] **M2.2: Gmail onboarding** (doing): a first-run step that connects Gmail (read-only), then seeds the Recruiters tab and status updates from the inbox, so someone running their own copy doesn't have to set up the scan's email access by hand. (Chase, 2026-10-21)
+- [x] **M2.2: Gmail onboarding** (done, PR #12) (`gmail-onboarding`)
+  - Recruiters tab: *Import from Gmail* searches the inbox through the viewer's Gmail connector (read-only tools only), lists the people found for review, and saves only the ones picked. Opens by itself while the list is empty.
+  - Pure, tested module `src/gmail-import.js`: skips sent mail, no-reply senders, job boards and applicant tracking systems; company from the email domain; agency vs in-house vs referral; last contact from the newest email (long threads read in full); marks people already in the list.
+  - Demo: a fake Gmail connector over fictional threads, so the flow runs in tests and screenshots.
 
 ## Later
 
 Unnumbered until scheduled into a milestone.
 
+- Status updates from Gmail in the onboarding pass (backfill applications confirmed or declined). The daily scan already does this going forward.
 - Chat with Role Radar.
 - "Reuse this resume": find other saved roles a tailored resume already fits.
 - Open-source kit so other job seekers can run their own copy.

@@ -15,4 +15,4 @@ A job-search radar: a weekday scan finds senior/staff PM roles, scores each one 
 
 - Before starting: read this file and `HANDOFF.md` (a SessionStart hook prints it), then the doc this file points to for the task. Check open PRs and branches and resume, never redo.
 - Every commit or PR that makes progress updates `HANDOFF.md` in the same commit or PR: done, in progress, exact next step, decisions to review, blockers. The `handoff-check` PR workflow enforces it; use `[skip handoff]` in the PR title only for changes that do not move the work.
-- Full rules: `docs/session-rules.md` in holroydchase-afk/studio-agents.
+- Full rules: `docs/session-rules.md` in the studio-agents repo.

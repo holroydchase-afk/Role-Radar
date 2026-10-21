@@ -177,6 +177,65 @@ test("the Criteria tab explains the fit ratings", async () => {
   await page.close();
 });
 
+test("Gmail import: finds recruiters, skips known ones and job boards, adds only the picked", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-people");
+  await page.click("#recPrivacy");
+  await page.locator("details.gmail summary").click();
+  await page.click("#gmFind");
+  await page.waitForSelector(".gmlist");
+  const rows = await page.locator(".gmlist li").allInnerTexts();
+  assert.equal(rows.length, 4, rows.join("\n"));
+  assert.ok(!rows.some((r) => /Ledgerly|ashby/i.test(r)), "job board mail skipped");
+  assert.match(rows.find((r) => /Jordan Reyes/.test(r)), /already added/);
+  // The long thread was read in full, so the last contact is the newest email, not the preview's.
+  const riley = rows.find((r) => /Riley Chen/.test(r));
+  const d = new Date(Date.now() - 2 * 864e5);
+  assert.match(riley, new RegExp(d.toLocaleDateString(undefined, { month: "short" }) + "\\s+" + d.getDate()));
+  // Only read-only Gmail tools were called.
+  const tools = await page.evaluate(() => window.__RR_MCP_CALLS__.map((c) => c.tool));
+  assert.deepEqual([...new Set(tools)].sort(), ["batch_get_threads", "search_threads"]);
+  // Untick the friend, add the other two.
+  await page.locator(".gmlist li", { hasText: "Taylor Morgan" }).locator("input").uncheck();
+  assert.match(await page.locator("#gmAdd").innerText(), /Add 2 recruiters/);
+  await page.click("#gmAdd");
+  await page.waitForFunction(() => document.querySelectorAll(".rec").length === 7);
+  const list = await page.locator(".list").innerText();
+  assert.match(list, /Riley Chen/);
+  assert.match(list, /Avery Brooks/);
+  assert.doesNotMatch(list, /Taylor Morgan/);
+  assert.match(list, /NORTHSTAR TALENT[\s\S]*AGENCY/i);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("Gmail import explains a missing connector instead of failing silently", async () => {
+  const seed = JSON.parse(readFileSync(new URL("../demo/seed.json", import.meta.url), "utf8"), (k, v) => (typeof v === "string" && v.startsWith("@file:") ? readFileSync(new URL("../" + v.slice(6), import.meta.url), "utf8") : v));
+  seed.gmail.error = "server_not_connected";
+  const { page } = await openDemo({ html: buildDemo({ seed }) });
+  await page.click("#tab-people");
+  await page.click("#recPrivacy");
+  await page.locator("details.gmail summary").click();
+  await page.click("#gmFind");
+  assert.match(await page.locator("details.gmail .err").innerText(), /Add the Gmail connector/);
+  await page.close();
+
+  delete seed.gmail;
+  const { page: p2 } = await openDemo({ html: buildDemo({ seed }) });
+  await p2.click("#tab-people");
+  await p2.click("#recPrivacy");
+  await p2.locator("details.gmail summary").click();
+  assert.match(await p2.locator("details.gmail").innerText(), /works when this page is open in Claude/);
+  await p2.close();
+});
+
+test("Gmail import is hidden while recruiter details are hidden", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-people");
+  assert.equal(await page.locator("details.gmail").count(), 0);
+  await page.close();
+});
+
 test("the Watchlist shows board health from the last scan", async () => {
   const { page, errors } = await openDemo();
   await page.click("#tab-watch");
