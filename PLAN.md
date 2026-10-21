@@ -31,6 +31,7 @@ Ground rules: the repo is public, so it only ever holds demo data (see CLAUDE.md
 
 ## Later (not in v1)
 
+- Onboarding: a first-run step that connects Gmail (read-only), then seeds the Recruiters tab and status updates from the inbox, so someone running their own copy doesn't have to set up the scan's email access by hand. (Chase, 2026-10-21)
 - Chat with Role Radar.
 - "Reuse this resume": find other saved roles a tailored resume already fits.
 - Open-source kit so other job seekers can run their own copy.

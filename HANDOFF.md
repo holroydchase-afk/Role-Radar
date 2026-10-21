@@ -36,10 +36,10 @@ Updated: 2026-10-21 (culture and values ratings)
   - 8 unit tests (including two calibration cases) and 3 browser tests; 55 passing.
 
 ## In progress
-- Nothing.
+- Gmail onboarding (Chase asked to start building it, 2026-10-21).
 
 ## Exact next step
-- Chase reviews the culture-values-ratings draft PR. Earlier: Chase reviews PRs #1 to #5 in order and merges them (merging is his call). After that, pick from PLAN.md "Later": the strongest next step for sharing is moving recruiters to separate private storage, so the page itself can be shared safely.
+- Build the Gmail onboarding step on a branch from `main`. PRs #1 to #5 and #11 are merged. Before sharing the page with anyone, move recruiter records out of the page's shared database.
 
 ## How to work here
 - `npm install`, then `npm test`, `npm run build:demo` (open `dist/demo.html`).
