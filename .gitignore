@@ -6,3 +6,4 @@ screenshots/tmp/
 dist/
 profile.local.json
 .private-denylist
+*.local.txt

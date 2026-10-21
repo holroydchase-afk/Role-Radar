@@ -24,9 +24,10 @@ Ground rules: the repo is public, so it only ever holds demo data (see CLAUDE.md
   - One switch hides recruiter names and notes (initials plus company only) and remembers the choice per viewer; on by default on any shared view.
   - Browser test proves names are absent from the page when hidden.
   - Applied to the live private artifact.
-- [ ] **Hardening**
+- [x] **Hardening**
   - Edge cases: missing or broken criteria, js-yaml failing to load, empty collections, past and future due dates.
   - Docs: how to run your own copy (`docs/SETUP.md`).
+  - Phone: filters fold behind one button so roles show on the first screen.
 
 ## Later (not in v1)
 
