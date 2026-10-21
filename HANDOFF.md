@@ -17,6 +17,7 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 | Gmail onboarding | RR-M2.2 | First-run Gmail onboarding |
 
 ## Done
+- 2026-10-21: studio session rules installed: `.claude/settings.json` SessionStart hook prints this file into every Claude Code session, `.github/workflows/handoff-check.yml` fails a PR that changes files without updating this file, and CLAUDE.md has a "Session rules" section.
 - M1.1 (was M1) on `m1-plan-and-source` (PR #1): scrubbed page source, example criteria, scan prompt template and renderer, demo seed data, in-memory db mock, demo build, personal-data check plus pre-commit hook, PLAN.md.
 - M1.2 (was M2) on `m2-core-flow` (stacked on M1.1):
   - `src/scoring.js`: the criteria rules as a pure module (gates, sector weight, fit, culture, comp, values, clamp, digest caps), 17 unit tests, plus a test that the scan prompt states the same numbers.
@@ -70,6 +71,7 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 - The scan prompt is a template with five placeholders filled from a profile file; the real profile stays out of the repo (`profile.local.json` is gitignored).
 - Demo companies and people are invented; job links point to example.com.
 - The score breakdown is computed in the page from stored fields. Older jobs have no culture data, so their breakdown can differ from the scan's score; the card then says "scan said N (it also reads the posting)".
+- **Shared studio agents (branch `studio-agents`):** adds six generic agents to `.claude/agents/` (staff-pm, qa-tdd, engineer, privacy-security, ux-reviewer, positioning). Each one reads this repo's `CLAUDE.md` and `HANDOFF.md` for its rules. They don't change any code. Merge or close.
 
 - Fit badges are separate from the 0–100 score on purpose: the score ranks the digest, the badges explain a role. Folding culture into the score twice (signals and checks) would double-count.
 - Values uses "neutral" (not "maybe") for weight-1 sectors, since an allowed-but-lower sector isn't a values concern.
