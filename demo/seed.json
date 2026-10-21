@@ -1,42 +1,449 @@
 {
   "_about": "DEMO DATA. Every company, role, person and date here is fictional. Dates written as @d-N / @t-N mean N days before the day the demo is opened (date only / full timestamp).",
   "jobs": {
-    "greenhouse-1001": {"company": "Sunfield Energy", "title": "Senior Product Manager, Utility Data", "location": "Remote, US", "url": "https://example.com/jobs/sunfield-utility-data", "ats": "greenhouse", "source": "greenhouse", "postedAt": "@d-1", "firstSeen": "@t-0", "comp": "$170K–$205K", "fit": "strong", "score": 90, "sector": "Solar, storage & distributed energy", "fitNote": "Utility rate and interconnection data maps straight to past pricing and utility-data work. Gap: no hardware experience.", "lane": "Geospatial / clean energy", "tags": [], "status": "new", "statusAt": "@t-0"},
-    "ashby-1002": {"company": "Gridlark", "title": "Staff Product Manager, Virtual Power Plants", "location": "Remote, US", "url": "https://example.com/jobs/gridlark-vpp", "ats": "ashby", "source": "ashby", "postedAt": "@d-2", "firstSeen": "@t-0", "comp": "$185K–$220K", "fit": "maybe", "score": 85, "sector": "Solar, storage & distributed energy", "fitNote": "Strong energy domain match; staff scope asks for prior platform ownership across three teams.", "lane": "Geospatial / clean energy", "tags": [], "status": "new", "statusAt": "@t-0"},
-    "ziprecruiter-1003": {"company": "Carbonmark", "title": "Senior Product Manager, Emissions Reporting", "location": "Remote, US", "url": "https://example.com/jobs/carbonmark-reporting", "source": "ziprecruiter", "postedAt": "@d-1", "firstSeen": "@t-0", "comp": "$160K–$190K", "fit": "maybe", "score": 75, "sector": "Climate & sustainability software", "fitNote": "B2B SaaS and data-pipeline experience fit; carbon accounting standards would be new.", "lane": "Ops & processing", "tags": [], "status": "new", "statusAt": "@t-0"},
-    "lever-1004": {"company": "Orbitline", "title": "Senior Product Manager, Earth Observation API", "location": "Remote, US", "url": "https://example.com/jobs/orbitline-eo-api", "ats": "lever", "source": "lever", "postedAt": "@d-3", "firstSeen": "@t-1", "comp": "", "fit": "maybe", "score": 60, "sector": "Space & geospatial", "fitNote": "API product and partner platform experience fit; imagery pipelines are a gap. Posting says fast-paced.", "lane": "Geospatial / clean energy", "tags": [], "status": "viewed", "statusAt": "@t-1", "viewedAt": "@t-1"},
-    "greenhouse-1005": {"company": "Ledgerly", "title": "Senior Product Manager, Checkout", "location": "Remote, US", "url": "https://example.com/jobs/ledgerly-checkout", "ats": "greenhouse", "source": "greenhouse", "postedAt": "@d-4", "firstSeen": "@t-2", "comp": "$175K–$210K", "fit": "strong", "score": 60, "sector": "General fintech & payments", "fitNote": "Checkout and point-of-sale financing are core strengths. Fintech is weighted lower in the criteria.", "lane": "Checkout", "tags": [], "status": "new", "statusAt": "@t-2"},
-    "himalayas-1006": {"company": "Trailhead Outfitters", "title": "Senior Product Manager, Membership", "location": "Remote, US", "url": "https://example.com/jobs/trailhead-membership", "ats": "himalayas", "source": "himalayas", "postedAt": "@d-2", "firstSeen": "@t-1", "comp": "$150K–$175K", "fit": "stretch", "score": 45, "sector": "Adventure & outdoor brands", "fitNote": "Mission fit; consumer membership is a stretch from B2B platforms.", "lane": "Other", "tags": [], "status": "new", "statusAt": "@t-1"},
-    "greenhouse-1007": {"company": "Brightwell Solar", "title": "Senior Product Manager, Installer Platform", "location": "Remote, US", "url": "https://example.com/jobs/brightwell-installer", "ats": "greenhouse", "source": "greenhouse", "postedAt": "@d-12", "firstSeen": "@t-11", "comp": "$165K–$195K", "fit": "strong", "score": 80, "sector": "Solar, storage & distributed energy", "fitNote": "Installer and channel-partner tooling is a direct match.", "lane": "Geospatial / clean energy", "tags": ["priority"], "status": "applied", "statusAt": "@t-9", "viewedAt": "@t-11", "appliedAt": "@t-9", "followUpDue": "@d-2", "resumeName": "Tailored resume (demo)", "emailNote": "Application received (demo email)."},
-    "ashby-1008": {"company": "Pebblepay", "title": "Senior Product Manager, Merchant Risk", "location": "Remote, US", "url": "https://example.com/jobs/pebblepay-risk", "ats": "ashby", "source": "ashby", "postedAt": "@d-20", "firstSeen": "@t-19", "comp": "$180K–$215K", "fit": "maybe", "score": 55, "sector": "General fintech & payments", "lane": "Pricing & payments", "tags": [], "status": "screen", "statusAt": "@t-3", "viewedAt": "@t-18", "appliedAt": "@t-15", "followUpDue": "@d-10"},
-    "manual-heliohome-sr-pm": {"company": "HelioHome", "title": "Senior Product Manager, Home Electrification", "location": "Remote, US", "url": "https://example.com/jobs/heliohome-electrification", "source": "manual", "firstSeen": "@t-5", "fit": "strong", "score": 85, "sector": "Solar, storage & distributed energy", "lane": "Geospatial / clean energy", "tags": ["referral"], "referral": "Former teammate (demo)", "status": "applying", "statusAt": "@t-4", "viewedAt": "@t-5", "resumeName": "Tailored resume (demo)"},
-    "greenhouse-1010": {"company": "Watermark Climate", "title": "Principal Product Manager, Climate Risk", "location": "Remote, US", "url": "https://example.com/jobs/watermark-risk", "ats": "greenhouse", "source": "greenhouse", "postedAt": "@d-30", "firstSeen": "@t-28", "comp": "$190K–$230K", "fit": "stretch", "score": 70, "sector": "Climate & sustainability software", "lane": "AI platform", "tags": [], "status": "interviewing", "statusAt": "@t-6", "viewedAt": "@t-27", "appliedAt": "@t-25", "nextStep": "Panel with the climate science team", "followUpDue": "@d-20"},
-    "lever-1011": {"company": "Copperleaf Insurance", "title": "Senior Product Manager, Claims Automation", "location": "Remote, US", "url": "https://example.com/jobs/copperleaf-claims", "ats": "lever", "source": "lever", "postedAt": "@d-14", "firstSeen": "@t-13", "comp": "$155K–$180K", "fit": "maybe", "score": 50, "sector": "Home services & insurance", "lane": "AI platform", "tags": [], "status": "skipped", "skipReason": "Not remote", "statusAt": "@t-12", "viewedAt": "@t-13"},
-    "alert-northstar-sr-pm": {"company": "Northstar Utilities", "title": "Senior Product Manager, Customer Programs", "location": "Remote, US", "url": "https://example.com/jobs/northstar-programs", "source": "alert", "postedAt": "@d-9", "firstSeen": "@t-8", "comp": "$150K–$170K", "fit": "maybe", "score": 65, "sector": "Solar, storage & distributed energy", "lane": "Ops & processing", "tags": [], "status": "saved", "statusAt": "@t-8", "viewedAt": "@t-8"}
+    "greenhouse-1001": {
+      "company": "Sunfield Energy",
+      "title": "Senior Product Manager, Utility Data",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/sunfield-utility-data",
+      "ats": "greenhouse",
+      "source": "greenhouse",
+      "postedAt": "@d-1",
+      "firstSeen": "@t-0",
+      "comp": "$170K–$205K",
+      "fit": "strong",
+      "score": 90,
+      "sector": "Solar, storage & distributed energy",
+      "fitNote": "Utility rate and interconnection data maps straight to past pricing and utility-data work. Gap: no hardware experience.",
+      "lane": "Geospatial / clean energy",
+      "tags": [],
+      "status": "new",
+      "statusAt": "@t-0"
+    },
+    "ashby-1002": {
+      "company": "Gridlark",
+      "title": "Staff Product Manager, Virtual Power Plants",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/gridlark-vpp",
+      "ats": "ashby",
+      "source": "ashby",
+      "postedAt": "@d-2",
+      "firstSeen": "@t-0",
+      "comp": "$185K–$220K",
+      "fit": "maybe",
+      "score": 75,
+      "sector": "Solar, storage & distributed energy",
+      "fitNote": "Strong energy domain match; staff scope asks for prior platform ownership across three teams.",
+      "lane": "Geospatial / clean energy",
+      "tags": [],
+      "status": "new",
+      "statusAt": "@t-0"
+    },
+    "ziprecruiter-1003": {
+      "company": "Carbonmark",
+      "title": "Senior Product Manager, Emissions Reporting",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/carbonmark-reporting",
+      "source": "ziprecruiter",
+      "postedAt": "@d-1",
+      "firstSeen": "@t-0",
+      "comp": "$160K–$190K",
+      "fit": "maybe",
+      "score": 75,
+      "sector": "Climate & sustainability software",
+      "fitNote": "B2B SaaS and data-pipeline experience fit; carbon accounting standards would be new.",
+      "lane": "Ops & processing",
+      "tags": [],
+      "status": "new",
+      "statusAt": "@t-0"
+    },
+    "lever-1004": {
+      "company": "Orbitline",
+      "title": "Senior Product Manager, Earth Observation API",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/orbitline-eo-api",
+      "ats": "lever",
+      "source": "lever",
+      "postedAt": "@d-3",
+      "firstSeen": "@t-1",
+      "comp": "$175K–$195K",
+      "fit": "maybe",
+      "score": 50,
+      "sector": "Space & geospatial",
+      "fitNote": "API product and partner platform experience fit; imagery pipelines are a gap. Posting says fast-paced.",
+      "lane": "Geospatial / clean energy",
+      "tags": [],
+      "status": "viewed",
+      "statusAt": "@t-1",
+      "viewedAt": "@t-1",
+      "cultureSignals": {
+        "good": [],
+        "red": [
+          "fast-paced"
+        ]
+      }
+    },
+    "greenhouse-1005": {
+      "company": "Ledgerly",
+      "title": "Senior Product Manager, Checkout",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/ledgerly-checkout",
+      "ats": "greenhouse",
+      "source": "greenhouse",
+      "postedAt": "@d-4",
+      "firstSeen": "@t-2",
+      "comp": "$175K–$210K",
+      "fit": "strong",
+      "score": 60,
+      "sector": "General fintech & payments",
+      "fitNote": "Checkout and point-of-sale financing are core strengths. Fintech is weighted lower in the criteria.",
+      "lane": "Checkout",
+      "tags": [],
+      "status": "new",
+      "statusAt": "@t-2"
+    },
+    "himalayas-1006": {
+      "company": "Trailhead Outfitters",
+      "title": "Senior Product Manager, Membership",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/trailhead-membership",
+      "ats": "himalayas",
+      "source": "himalayas",
+      "postedAt": "@d-2",
+      "firstSeen": "@t-1",
+      "comp": "$150K–$175K",
+      "fit": "maybe",
+      "score": 50,
+      "sector": "Adventure & outdoor brands",
+      "fitNote": "Mission fit; consumer membership is new ground after B2B platforms.",
+      "lane": "Other",
+      "tags": [],
+      "status": "new",
+      "statusAt": "@t-1"
+    },
+    "greenhouse-1007": {
+      "company": "Brightwell Solar",
+      "title": "Senior Product Manager, Installer Platform",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/brightwell-installer",
+      "ats": "greenhouse",
+      "source": "greenhouse",
+      "postedAt": "@d-12",
+      "firstSeen": "@t-11",
+      "comp": "$165K–$195K",
+      "fit": "strong",
+      "score": 90,
+      "sector": "Solar, storage & distributed energy",
+      "fitNote": "Installer and channel-partner tooling is a direct match.",
+      "lane": "Geospatial / clean energy",
+      "tags": [
+        "priority"
+      ],
+      "status": "applied",
+      "statusAt": "@t-9",
+      "viewedAt": "@t-11",
+      "appliedAt": "@t-9",
+      "followUpDue": "@d-2",
+      "resumeName": "Tailored resume (demo)",
+      "emailNote": "Application received (demo email)."
+    },
+    "ashby-1008": {
+      "company": "Pebblepay",
+      "title": "Senior Product Manager, Merchant Risk",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/pebblepay-risk",
+      "ats": "ashby",
+      "source": "ashby",
+      "postedAt": "@d-20",
+      "firstSeen": "@t-19",
+      "comp": "$180K–$215K",
+      "fit": "maybe",
+      "score": 45,
+      "sector": "General fintech & payments",
+      "lane": "Pricing & payments",
+      "tags": [],
+      "status": "screen",
+      "statusAt": "@t-3",
+      "viewedAt": "@t-18",
+      "appliedAt": "@t-15",
+      "followUpDue": "@d-10"
+    },
+    "manual-heliohome-sr-pm": {
+      "company": "HelioHome",
+      "title": "Senior Product Manager, Home Electrification",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/heliohome-electrification",
+      "source": "manual",
+      "firstSeen": "@t-5",
+      "fit": "strong",
+      "score": 80,
+      "sector": "Solar, storage & distributed energy",
+      "lane": "Geospatial / clean energy",
+      "tags": [
+        "referral"
+      ],
+      "referral": "Former teammate (demo)",
+      "status": "applying",
+      "statusAt": "@t-4",
+      "viewedAt": "@t-5",
+      "resumeName": "Tailored resume (demo)"
+    },
+    "greenhouse-1010": {
+      "company": "Watermark Climate",
+      "title": "Principal Product Manager, Climate Risk",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/watermark-risk",
+      "ats": "greenhouse",
+      "source": "greenhouse",
+      "postedAt": "@d-30",
+      "firstSeen": "@t-28",
+      "comp": "$190K–$230K",
+      "fit": "stretch",
+      "score": 60,
+      "sector": "Climate & sustainability software",
+      "lane": "AI platform",
+      "tags": [],
+      "status": "interviewing",
+      "statusAt": "@t-6",
+      "viewedAt": "@t-27",
+      "appliedAt": "@t-25",
+      "nextStep": "Panel with the climate science team",
+      "followUpDue": "@d-20"
+    },
+    "lever-1011": {
+      "company": "Copperleaf Insurance",
+      "title": "Senior Product Manager, Claims Automation",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/copperleaf-claims",
+      "ats": "lever",
+      "source": "lever",
+      "postedAt": "@d-14",
+      "firstSeen": "@t-13",
+      "comp": "$155K–$180K",
+      "fit": "strong",
+      "score": 50,
+      "sector": "Home services & insurance",
+      "lane": "AI platform",
+      "tags": [],
+      "status": "skipped",
+      "skipReason": "Not remote",
+      "statusAt": "@t-12",
+      "viewedAt": "@t-13"
+    },
+    "alert-northstar-sr-pm": {
+      "company": "Northstar Utilities",
+      "title": "Senior Product Manager, Customer Programs",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/northstar-programs",
+      "source": "alert",
+      "postedAt": "@d-9",
+      "firstSeen": "@t-8",
+      "comp": "$150K–$170K",
+      "fit": "maybe",
+      "score": 65,
+      "sector": "Solar, storage & distributed energy",
+      "lane": "Ops & processing",
+      "tags": [],
+      "status": "saved",
+      "statusAt": "@t-8",
+      "viewedAt": "@t-8"
+    }
   },
   "companies": {
-    "greenhouse-sunfield": {"name": "Sunfield Energy", "ats": "greenhouse", "slug": "sunfield", "industry": "Solar, storage & distributed energy", "status": "active", "via": "discovery"},
-    "ashby-gridlark": {"name": "Gridlark", "ats": "ashby", "slug": "gridlark", "industry": "Solar, storage & distributed energy", "status": "active", "via": "discovery"},
-    "lever-orbitline": {"name": "Orbitline", "ats": "lever", "slug": "orbitline", "industry": "Space & geospatial", "status": "active", "via": "you"},
-    "greenhouse-ledgerly": {"name": "Ledgerly", "ats": "greenhouse", "slug": "ledgerly", "industry": "General fintech & payments", "status": "active", "via": "you"},
-    "greenhouse-brightwell": {"name": "Brightwell Solar", "ats": "greenhouse", "slug": "brightwell", "industry": "Solar, storage & distributed energy", "status": "active", "via": "discovery"},
-    "ashby-pebblepay": {"name": "Pebblepay", "ats": "ashby", "slug": "pebblepay", "industry": "General fintech & payments", "status": "active", "via": "you"},
-    "greenhouse-watermark": {"name": "Watermark Climate", "ats": "greenhouse", "slug": "watermark", "industry": "Climate & sustainability software", "status": "active", "via": "discovery"},
-    "lever-copperleaf": {"name": "Copperleaf Insurance", "ats": "lever", "slug": "copperleaf", "industry": "Home services & insurance", "status": "unverified", "via": "you"},
-    "greenhouse-quickcash": {"name": "QuickCash Advance", "ats": "greenhouse", "slug": "quickcash", "industry": "Short-term consumer lending", "status": "vetoed", "via": "discovery"},
-    "lever-tundra": {"name": "Tundra Maps", "ats": "lever", "slug": "tundramaps", "industry": "Space & geospatial", "status": "not_found", "via": "discovery"}
+    "greenhouse-sunfield": {
+      "name": "Sunfield Energy",
+      "ats": "greenhouse",
+      "slug": "sunfield",
+      "industry": "Solar, storage & distributed energy",
+      "status": "active",
+      "via": "discovery"
+    },
+    "ashby-gridlark": {
+      "name": "Gridlark",
+      "ats": "ashby",
+      "slug": "gridlark",
+      "industry": "Solar, storage & distributed energy",
+      "status": "active",
+      "via": "discovery"
+    },
+    "lever-orbitline": {
+      "name": "Orbitline",
+      "ats": "lever",
+      "slug": "orbitline",
+      "industry": "Space & geospatial",
+      "status": "active",
+      "via": "you"
+    },
+    "greenhouse-ledgerly": {
+      "name": "Ledgerly",
+      "ats": "greenhouse",
+      "slug": "ledgerly",
+      "industry": "General fintech & payments",
+      "status": "active",
+      "via": "you"
+    },
+    "greenhouse-brightwell": {
+      "name": "Brightwell Solar",
+      "ats": "greenhouse",
+      "slug": "brightwell",
+      "industry": "Solar, storage & distributed energy",
+      "status": "active",
+      "via": "discovery"
+    },
+    "ashby-pebblepay": {
+      "name": "Pebblepay",
+      "ats": "ashby",
+      "slug": "pebblepay",
+      "industry": "General fintech & payments",
+      "status": "active",
+      "via": "you"
+    },
+    "greenhouse-watermark": {
+      "name": "Watermark Climate",
+      "ats": "greenhouse",
+      "slug": "watermark",
+      "industry": "Climate & sustainability software",
+      "status": "active",
+      "via": "discovery"
+    },
+    "lever-copperleaf": {
+      "name": "Copperleaf Insurance",
+      "ats": "lever",
+      "slug": "copperleaf",
+      "industry": "Home services & insurance",
+      "status": "unverified",
+      "via": "you"
+    },
+    "greenhouse-quickcash": {
+      "name": "QuickCash Advance",
+      "ats": "greenhouse",
+      "slug": "quickcash",
+      "industry": "Short-term consumer lending",
+      "status": "vetoed",
+      "via": "discovery"
+    },
+    "lever-tundra": {
+      "name": "Tundra Maps",
+      "ats": "lever",
+      "slug": "tundramaps",
+      "industry": "Space & geospatial",
+      "status": "not_found",
+      "via": "discovery"
+    }
   },
   "recruiters": {
-    "demo-jordan-reyes": {"name": "Jordan Reyes (demo)", "company": "Brightwell Solar", "title": "Senior Technical Recruiter", "type": "in-house", "roles": "Senior PM, Installer Platform", "lastContact": "@d-9", "outcome": "Applied", "nextStep": "Follow up on the application", "nextStepDue": "@d-0", "sector": "Solar, storage & distributed energy", "lastNote": "Fictional contact for the demo. Shared the posting and asked for a resume."},
-    "demo-priya-shah": {"name": "Priya Shah (demo)", "company": "Watermark Climate", "title": "Talent Partner", "type": "in-house", "roles": "Principal PM, Climate Risk", "lastContact": "@d-6", "outcome": "Interviewing", "nextStep": "Send thank-you note after the panel", "nextStepDue": "@d--2", "sector": "Climate & sustainability software", "lastNote": "Fictional contact for the demo. Scheduled the panel interview."},
-    "demo-sam-ortiz": {"name": "Sam Ortiz (demo)", "company": "Cleanpath Search", "title": "Agency Recruiter", "type": "agency", "roles": "Contract Senior PM, utility programs", "lastContact": "@d-40", "outcome": "Role paused", "nextStep": "Check whether the role reopened", "nextStepDue": "@d--10", "sector": "Solar, storage & distributed energy", "lastNote": "Fictional agency contact. The client paused hiring."},
-    "demo-alex-kim": {"name": "Alex Kim (demo)", "company": "Orbitline", "title": "Recruiting Coordinator", "type": "in-house", "roles": "Senior PM, Earth Observation API", "lastContact": "@d-200", "outcome": "Role filled", "nextStep": "None", "sector": "Space & geospatial", "lastNote": "Fictional contact. An earlier role was filled; invited a future reach-out."},
-    "demo-morgan-lee": {"name": "Morgan Lee (demo)", "company": "Ledgerly", "title": "Product Manager", "type": "referral", "roles": "Senior PM, Checkout", "lastContact": "@d-3", "outcome": "Offered a referral", "nextStep": "Send the job link for the referral", "nextStepDue": "@d-1", "sector": "General fintech & payments", "lastNote": "Fictional former teammate who offered a referral."}
+    "demo-jordan-reyes": {
+      "name": "Jordan Reyes (demo)",
+      "company": "Brightwell Solar",
+      "title": "Senior Technical Recruiter",
+      "type": "in-house",
+      "roles": "Senior PM, Installer Platform",
+      "lastContact": "@d-9",
+      "outcome": "Applied",
+      "nextStep": "Follow up on the application",
+      "nextStepDue": "@d-0",
+      "sector": "Solar, storage & distributed energy",
+      "lastNote": "Fictional contact for the demo. Shared the posting and asked for a resume."
+    },
+    "demo-priya-shah": {
+      "name": "Priya Shah (demo)",
+      "company": "Watermark Climate",
+      "title": "Talent Partner",
+      "type": "in-house",
+      "roles": "Principal PM, Climate Risk",
+      "lastContact": "@d-6",
+      "outcome": "Interviewing",
+      "nextStep": "Send thank-you note after the panel",
+      "nextStepDue": "@d--2",
+      "sector": "Climate & sustainability software",
+      "lastNote": "Fictional contact for the demo. Scheduled the panel interview."
+    },
+    "demo-sam-ortiz": {
+      "name": "Sam Ortiz (demo)",
+      "company": "Cleanpath Search",
+      "title": "Agency Recruiter",
+      "type": "agency",
+      "roles": "Contract Senior PM, utility programs",
+      "lastContact": "@d-40",
+      "outcome": "Role paused",
+      "nextStep": "Check whether the role reopened",
+      "nextStepDue": "@d--10",
+      "sector": "Solar, storage & distributed energy",
+      "lastNote": "Fictional agency contact. The client paused hiring."
+    },
+    "demo-alex-kim": {
+      "name": "Alex Kim (demo)",
+      "company": "Orbitline",
+      "title": "Recruiting Coordinator",
+      "type": "in-house",
+      "roles": "Senior PM, Earth Observation API",
+      "lastContact": "@d-200",
+      "outcome": "Role filled",
+      "nextStep": "None",
+      "sector": "Space & geospatial",
+      "lastNote": "Fictional contact. An earlier role was filled; invited a future reach-out."
+    },
+    "demo-morgan-lee": {
+      "name": "Morgan Lee (demo)",
+      "company": "Ledgerly",
+      "title": "Product Manager",
+      "type": "referral",
+      "roles": "Senior PM, Checkout",
+      "lastContact": "@d-3",
+      "outcome": "Offered a referral",
+      "nextStep": "Send the job link for the referral",
+      "nextStepDue": "@d-1",
+      "sector": "General fintech & payments",
+      "lastNote": "Fictional former teammate who offered a referral."
+    }
   },
   "meta": {
-    "config": {"owner": "Demo Candidate", "lanes": ["Pricing & payments", "Checkout", "Ops & processing", "AI platform", "Geospatial / clean energy", "Other"], "skipReasons": ["Comp too low", "Not remote", "Wrong level", "Wrong domain", "Culture", "Other"], "followUpBusinessDays": 5, "staleAppliedDays": 14, "staleSavedDays": 7, "intakeCommand": "/job-intake", "intakeWhere": "a new chat in your job-search project", "intakeInstructions": "Ask only what you need. Then build the tailored resume and link it on this role in Role Radar (status \"applying\")."},
-    "filters": {"products": [{"name": "My side project", "keywords": ["photo sharing", "family albums"]}]},
-    "scan": {"lastRun": "@t-0", "boardsChecked": 42, "newMatches": 5, "note": "demo data"},
-    "criteria": {"spec": "@file:criteria.yaml", "updatedAt": "@t-1", "version": 2}
+    "config": {
+      "owner": "Demo Candidate",
+      "lanes": [
+        "Pricing & payments",
+        "Checkout",
+        "Ops & processing",
+        "AI platform",
+        "Geospatial / clean energy",
+        "Other"
+      ],
+      "skipReasons": [
+        "Comp too low",
+        "Not remote",
+        "Wrong level",
+        "Wrong domain",
+        "Culture",
+        "Other"
+      ],
+      "followUpBusinessDays": 5,
+      "staleAppliedDays": 14,
+      "staleSavedDays": 7,
+      "intakeCommand": "/job-intake",
+      "intakeWhere": "a new chat in your job-search project",
+      "intakeInstructions": "Ask only what you need. Then build the tailored resume and link it on this role in Role Radar (status \"applying\")."
+    },
+    "filters": {
+      "products": [
+        {
+          "name": "My side project",
+          "keywords": [
+            "photo sharing",
+            "family albums"
+          ]
+        }
+      ]
+    },
+    "scan": {
+      "lastRun": "@t-0",
+      "boardsChecked": 42,
+      "newMatches": 5,
+      "note": "demo data"
+    },
+    "criteria": {
+      "spec": "@file:criteria.yaml",
+      "updatedAt": "@t-1",
+      "version": 2
+    }
   }
 }

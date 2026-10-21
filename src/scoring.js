@@ -1,0 +1,169 @@
+/* Role Radar scoring: the rules in criteria.yaml, as code.
+ * One source of truth for the page (score breakdowns, digest preview) and the tests.
+ * The weekday scan follows the same rules in its prompt; tests/scoring.test.mjs pins them down.
+ *
+ *   score = sector (weight × 15) + fit (strong 35 · maybe 20 · stretch 5)
+ *         + culture (+10 any good signal, −10 per red flag, floor −20)
+ *         + comp (+10 if the range reaches stretch_target_usd)
+ *         − values (15 if the business is on values_penalty)
+ *   clamped to 0–100.
+ *
+ * Classic script: sets window.RoleRadarScoring in the browser, module.exports in Node. */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.RoleRadarScoring = api;
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  const FIT_POINTS = { strong: 35, maybe: 20, stretch: 5 };
+  const SECTOR_POINTS_PER_WEIGHT = 15;
+  const CULTURE_GOOD = 10, CULTURE_RED = -10, CULTURE_FLOOR = -20;
+  const COMP_BONUS = 10, VALUES_PENALTY = -15;
+
+  const lc = (s) => String(s == null ? "" : s).toLowerCase();
+  const arr = (a) => (Array.isArray(a) ? a : a == null || a === "" ? [] : [a]);
+  const has = (hay, needle) => {
+    const n = lc(needle).trim();
+    if (!n) return false;
+    // Whole-word-ish match so "PV" doesn't hit "provider".
+    const esc = n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp("(^|[^a-z0-9])" + esc + "($|[^a-z0-9])").test(lc(hay));
+  };
+  const clamp = (n) => Math.max(0, Math.min(100, n));
+
+  /** "$170K–$205K", "$160,000 - $180,000", "170k" → {min, max} in dollars, or null. */
+  function parseComp(comp) {
+    if (comp && typeof comp === "object") {
+      const min = Number(comp.min), max = Number(comp.max);
+      if (isFinite(min) || isFinite(max)) return { min: isFinite(min) ? min : max, max: isFinite(max) ? max : min };
+      return null;
+    }
+    const nums = [];
+    String(comp == null ? "" : comp).replace(/\$?\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*([kKmM]?)/g, (_, n, unit) => {
+      let v = Number(n.replace(/,/g, ""));
+      if (/k/i.test(unit)) v *= 1e3;
+      else if (/m/i.test(unit)) v *= 1e6;
+      else if (v < 1000) v *= 1e3; // "170 - 205" in a salary field means thousands
+      if (v >= 20000 && v <= 2e6) nums.push(v);
+      return _;
+    });
+    if (!nums.length) return null;
+    return { min: Math.min(...nums), max: Math.max(...nums) };
+  }
+
+  /** Best-matching sector entry for a job: an explicit label/id first, then examples, then keywords. */
+  function sectorFor(job, spec) {
+    const sectors = arr(spec && spec.sectors);
+    const fallback = { id: "default", label: "Other", weight: Number((spec && spec.default_sector_weight) ?? 1) };
+    if (job.sector) {
+      const s = sectors.find((x) => lc(x.label) === lc(job.sector) || lc(x.id) === lc(job.sector));
+      if (s) return s;
+    }
+    const company = [job.company, job.industry].join(" ");
+    const hay = [job.company, job.industry, job.title, job.postingText].join(" ");
+    const byWeight = sectors.slice().sort((a, b) => (Number(b.weight) || 0) - (Number(a.weight) || 0));
+    return byWeight.find((s) => arr(s.examples).some((e) => has(company, e)))
+      || byWeight.find((s) => arr(s.keywords).some((k) => has(hay, k)))
+      || fallback;
+  }
+
+  function cultureOf(job, spec) {
+    const c = (spec && spec.culture) || {};
+    let good, red;
+    if (job.cultureSignals) {
+      good = arr(job.cultureSignals.good);
+      red = arr(job.cultureSignals.red);
+    } else {
+      const text = job.postingText || "";
+      good = arr(c.good_signals).filter((s) => has(text, s));
+      red = arr(c.red_flags).filter((s) => has(text, s));
+    }
+    const points = (good.length ? CULTURE_GOOD : 0) + Math.max(CULTURE_FLOOR, CULTURE_RED * red.length);
+    return { points, good, red };
+  }
+
+  function valuesHit(job, spec) {
+    const hay = [job.businessModel, job.industry, job.company].join(" ");
+    return arr(spec && spec.values_penalty).find((v) => has(hay, v)) || null;
+  }
+
+  /** Hard gates. Returns {ok, reasons}. A failing job is never added, whatever it would score. */
+  function matchJob(job, spec) {
+    spec = spec || {};
+    const reasons = [];
+    const role = spec.role || {}, work = spec.work || {}, comp = spec.comp || {}, hx = spec.hard_exclude || {};
+    const title = job.title || "";
+    const inc = arr(role.title_include), exc = arr(role.title_exclude);
+    if (inc.length && !inc.some((t) => has(title, t))) reasons.push("title not on the include list");
+    const ex = exc.find((t) => has(title, t));
+    if (ex) reasons.push("title excluded: " + ex);
+    const co = arr(hx.companies).find((c) => lc(c).trim() && lc(job.company).trim() === lc(c).trim());
+    if (co) reasons.push("company on hard_exclude: " + co);
+    const bm = arr(hx.business_models).find((b) => has([job.businessModel, job.industry].join(" "), b));
+    if (bm) reasons.push("business model excluded: " + bm);
+    const loc = lc(job.location);
+    const near = arr(work.hybrid_ok_near).some((p) => has(loc, String(p).split(",")[0]));
+    if (/hybrid|on-?site|in[- ]office/.test(loc) && !near) reasons.push("not remote: " + job.location);
+    const range = parseComp(job.comp);
+    if (range && comp.base_floor_usd) {
+      const sector = sectorFor(job, spec);
+      const floor = Number(sector.weight) >= 3 && comp.priority_sector_floor_usd ? comp.priority_sector_floor_usd : comp.base_floor_usd;
+      if (range.max < floor) reasons.push("comp tops out below the floor");
+    }
+    return { ok: reasons.length === 0, reasons };
+  }
+
+  /** Score breakdown for one job. Missing comp or culture data simply adds nothing. */
+  function scoreJob(job, spec) {
+    spec = spec || {};
+    const sector = sectorFor(job, spec);
+    const weight = Math.max(0, Math.min(3, Number(sector.weight) || 0));
+    const fitKey = lc(job.fit);
+    const culture = cultureOf(job, spec);
+    const range = parseComp(job.comp);
+    const target = spec.comp && spec.comp.stretch_target_usd;
+    const values = valuesHit(job, spec);
+    const parts = {
+      sector: weight * SECTOR_POINTS_PER_WEIGHT,
+      fit: FIT_POINTS[fitKey] || 0,
+      culture: culture.points,
+      comp: range && target && range.max >= target ? COMP_BONUS : 0,
+      values: values ? VALUES_PENALTY : 0,
+    };
+    const raw = parts.sector + parts.fit + parts.culture + parts.comp + parts.values;
+    return { score: clamp(raw), raw, parts, sector, culture, valuesHit: values };
+  }
+
+  /** "45 sector + 35 fit + 10 comp" — the parts that moved the score. */
+  function explain(result) {
+    const p = result.parts, out = [];
+    const add = (n, label) => { if (n) out.push((out.length ? (n < 0 ? "− " : "+ ") : n < 0 ? "−" : "") + Math.abs(n) + " " + label); };
+    add(p.sector, "sector"); add(p.fit, "fit"); add(p.culture, "culture"); add(p.comp, "comp"); add(p.values, "values");
+    return out.join(" ") || "0";
+  }
+
+  /** The morning digest: matching jobs at or above min_score_to_add, best first,
+   *  at most digest_max_items, with per_sector_cap limits. Capped extras are counted, not dropped. */
+  function buildDigest(jobs, spec) {
+    spec = spec || {};
+    const sc = spec.scoring || {};
+    const min = Number(sc.min_score_to_add ?? 0);
+    const max = Number(sc.digest_max_items ?? Infinity);
+    const caps = sc.per_sector_cap || {};
+    const scored = arr(jobs)
+      .map((job) => ({ job, match: matchJob(job, spec), result: scoreJob(job, spec) }))
+      .filter((x) => x.match.ok && x.result.score >= min)
+      .sort((a, b) => b.result.score - a.result.score || String(a.job.company).localeCompare(String(b.job.company)));
+    const items = [], extras = {}, perSector = {};
+    for (const x of scored) {
+      const id = x.result.sector.id;
+      const cap = caps[id];
+      if (cap != null && (perSector[id] || 0) >= Number(cap)) { extras[id] = (extras[id] || 0) + 1; continue; }
+      if (items.length >= max) { extras._overflow = (extras._overflow || 0) + 1; continue; }
+      perSector[id] = (perSector[id] || 0) + 1;
+      items.push(x);
+    }
+    return { items, extras, considered: arr(jobs).length, passed: scored.length };
+  }
+
+  return { parseComp, sectorFor, matchJob, scoreJob, explain, buildDigest, FIT_POINTS };
+});
