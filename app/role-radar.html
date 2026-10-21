@@ -57,6 +57,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .row .info{min-width:0}
 .row .info small{display:block;color:var(--muted)}
 .grp{font:600 .76rem var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:14px 0 0}
+.health{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:8px;margin:0 0 14px}
+.health.low{border-color:var(--warn);background:var(--warn-soft)}
+.health .sum{margin:0;font-size:.9rem}.health .sum b{font-family:var(--f-mono);font-weight:500}
+.health .chips{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-size:.8rem;color:var(--muted)}
+.hchip{font:500 .78rem var(--f-body);padding:2px 9px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
+.hchip.bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}.hchip.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.hdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--line)}
+.hdot.green{background:var(--good)}.hdot.amber{background:var(--warn)}.hdot.red{background:var(--bad)}
 form.add,form.filters{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:10px}
 .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 label{display:grid;gap:4px;font-size:.82rem;color:var(--muted)}
@@ -426,13 +434,46 @@ function renderJobs(){
   return {html:head+body,shown:list.length,total:base.length};
 }
 
+// Board health: written by the scan (meta/scan.coverage, plus lastOk / failStreak / readMode on each company).
+// Every field is optional; older docs simply show a grey dot.
+function boardHealthOf(c){
+  const streak=Number(c.failStreak)||0, ok=daysSince(c.lastOk);
+  const bits=[]; if(c.lastOk) bits.push("last good read "+fmtDate(c.lastOk)); else bits.push("never read");
+  if(c.readMode==="partial") bits.push("partial read"); if(streak) bits.push(streak+" failed run"+(streak>1?"s":"")); if(c.lastError) bits.push(String(c.lastError).slice(0,140));
+  let level="grey";
+  if(c.status==="not_found"||streak>=3) level="red";
+  else if(c.readMode==="partial"||streak>0) level="amber";
+  else if(ok!==null) level=ok<=3?"green":"amber";
+  else if(c.lastChecked) level="amber";
+  return {level,text:bits.join(" · ")};
+}
+function boardHealth(){
+  const cv=scan&&scan.coverage;
+  if(!cv||typeof cv!=="object") return companies.length?`<div class="health"><p class="sum hint" style="margin:0">Board health shows here after the next scan run.</p></div>`:"";
+  const n=v=>Number(v)||0, arrOf=a=>Array.isArray(a)?a:[];
+  const pr=n(cv.priorityRead), pt=n(cv.priorityTotal), low=pt>0&&pr/pt<0.9;
+  const when=scan.lastRun?new Date(scan.lastRun).toLocaleString(undefined,{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
+  const mode=cv.mode==="webfetch"?"web reader":cv.mode==="skipped"?"skipped":cv.mode==="full"?"full":(cv.mode||"");
+  const failed=arrOf(cv.failedList).map(f=>typeof f==="string"?{name:f}:f||{}).filter(f=>f.name);
+  const moved=arrOf(cv.moved).filter(m=>m&&m.name), partial=arrOf(cv.partialList).filter(Boolean);
+  const src=cv.sources&&typeof cv.sources==="object"?Object.entries(cv.sources):[];
+  const srcLabel={ziprecruiter:"ZipRecruiter",gmail:"Gmail",himalayas:"Himalayas",climatebase:"Climatebase"};
+  return `<div class="health${low?" low":""}" role="status">
+    <p class="sum">Boards: <b>${n(cv.read)}/${n(cv.attempted)}</b> read${pt?` (solar/climate <b>${pr}/${pt}</b>)`:""}${n(cv.partial)?` · ${n(cv.partial)} partial`:""}${when?` · last run <span class="mono">${esc(when)}</span>`:""}${mode?` · mode ${esc(mode)}`:""}</p>
+    ${low?`<p class="sum" style="color:var(--warn)">Priority boards under 90% read. Some solar and climate roles may be missing from this run.</p>`:""}
+    ${failed.length?`<div class="chips">Failed${failed.map(f=>`<span class="hchip bad" title="${esc(f.error||"")}">${esc(f.name)}</span>`).join("")}</div>`:""}
+    ${partial.length?`<div class="chips">Partial${partial.map(x=>`<span class="hchip warn">${esc(x)}</span>`).join("")}</div>`:""}
+    ${moved.length?`<div class="chips">Moved${moved.map(m=>`<span class="hchip" title="Board moved; the scan repointed it">${esc(m.name)}: ${esc(m.from||"?")} → ${esc(m.to||"?")}</span>`).join("")}</div>`:""}
+    ${src.length?`<div class="chips">Sources${src.map(([k,v])=>`<span class="hchip${v==="failed"?" bad":v==="skipped"?" warn":""}">${esc(srcLabel[k]||k)} ${esc(v)}</span>`).join("")}</div>`:""}
+  </div>`;
+}
 function renderWatch(){
   const groups={active:[],unverified:[],not_found:[],vetoed:[]};
   companies.forEach(c=>(groups[c.status]||groups.unverified).push(c));
   Object.values(groups).forEach(g=>g.sort((a,b)=>String(a.name).localeCompare(String(b.name))));
   const names={active:"Watching",unverified:"Not checked yet",not_found:"Board not found (may use Workday or another system)",vetoed:"Never show"};
-  const row=c=>`<div class="row"><div class="info"><span class="nm">${esc(c.name)}</span><small>${esc(c.industry||"")} · <span class="mono">${esc(c.ats)}/${esc(c.slug)}</span>${c.via?` · added by ${esc(c.via)}`:""}</small></div>
-    <button class="btn" data-co="${esc(c._id)}" data-veto="${c.status==="vetoed"?"0":"1"}">${c.status==="vetoed"?"Restore":"Never show"}</button></div>`;
+  const row=c=>{const h=c.status==="vetoed"?null:boardHealthOf(c); return `<div class="row"><div class="info"><span class="nm">${h?`<span class="hdot ${h.level}" role="img" aria-label="Board health: ${esc(h.level)}" title="${esc(h.text)}"></span>`:""}${esc(c.name)}</span><small>${esc(c.industry||"")} · <span class="mono">${esc(c.ats)}/${esc(c.slug)}</span>${c.via?` · added by ${esc(c.via)}`:""}${h&&h.level!=="grey"?` · ${esc(h.text)}`:""}${c.reviewNote?` · ${esc(c.reviewNote)}`:""}</small></div>
+    <button class="btn" data-co="${esc(c._id)}" data-veto="${c.status==="vetoed"?"0":"1"}">${c.status==="vetoed"?"Restore":"Never show"}</button></div>`;};
   const add=`<form class="add" id="addCo"><strong style="font-family:var(--f-display);font-weight:500">Add a company</strong>
     <div class="fields">
       <label for="coName">Name<input id="coName" required placeholder="Stripe"></label>
@@ -442,8 +483,8 @@ function renderWatch(){
     </div>
     <small style="color:var(--muted)">The slug is the company part of the board URL, as in job-boards.greenhouse.io/<b>stripe</b>.</small>
     <button class="primary" type="submit">Add to watchlist</button></form>`;
-  if(!companies.length) return add+`<div class="empty"><strong>Watchlist is empty</strong><span>Add a company above, or wait for the weekly discovery pass to add some.</span></div>`;
-  return add+Object.entries(groups).filter(([,g])=>g.length).map(([k,g])=>`<p class="grp">${names[k]} · ${g.length}</p>${g.map(row).join("")}`).join("");
+  if(!companies.length) return boardHealth()+add+`<div class="empty"><strong>Watchlist is empty</strong><span>Add a company above, or wait for the weekly discovery pass to add some.</span></div>`;
+  return boardHealth()+add+Object.entries(groups).filter(([,g])=>g.length).map(([k,g])=>`<p class="grp">${names[k]} · ${g.length}</p>${g.map(row).join("")}`).join("");
 }
 
 function renderFilters(){
@@ -817,7 +858,7 @@ render();
   db.doc("meta/config").onSnapshot(s=>{setConfig(s.exists?s.data():null); softRender();},()=>{});
   db.collection("recruiters").onSnapshot(s=>{recruiters=s.docs.map(d=>({...d.data(),_id:d.id})); if(tab==="people") softRender(); else renderTabs();},()=>{});
   db.doc("meta/criteria").onSnapshot(s=>{criteria=s.exists?s.data():null; specData=criteria&&criteria.spec?parseSpec(criteria.spec).data||null:null; if(tab==="criteria"&&critDraft!==null) return; softRender();},()=>{});
-  db.doc("meta/scan").onSnapshot(s=>{scan=s.exists?s.data():null; renderScan();},()=>{});
+  db.doc("meta/scan").onSnapshot(s=>{scan=s.exists?s.data():null; renderScan(); if(tab==="watch"&&!document.activeElement?.closest("form")) render();},()=>{});
 })();
 </script>
 
