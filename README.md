@@ -62,7 +62,9 @@ The Criteria tab previews tomorrow's digest while you edit. In the screenshot be
 - **Read-only by default.** The scan never applies, never sends email and never contacts anyone. Gmail access is read-only, and every status it changes can be changed back from the page.
 - **Flags, not filters, for gray areas.** Culture red flags and overlaps with my own side projects lower a score or add a flag. They never hide a role.
 - **Built for reuse.** Per-person settings (lanes, follow-up timing, intake prompt) live in config, the scan prompt is a template, and the demo runs on fictional data, so someone else can run their own copy.
-- **Privacy first.** This repo is public, so it holds only demo data. A pre-commit check blocks emails, phone numbers, private links and a private list of names. Recruiter details stay in the private app.
+- **Privacy first.** This repo is public, so it holds only demo data. A pre-commit check blocks emails, phone numbers, private links and a private list of names. In the app, recruiter names, notes and email links are hidden by default (initials and company only) until the viewer chooses to show them, and the page remembers that choice.
+
+![Recruiters with details hidden: initials and company only](docs/screenshots/recruiters-hidden.png)
 
 ## Run the demo
 

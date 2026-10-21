@@ -125,6 +125,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 .dig{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .dig li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:baseline}
 .dig .sub2{grid-column:2;color:var(--muted);font-size:.8rem}
+.privbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 12px}.privbar .hint{margin:0;max-width:65ch}
 .cnote{font:500 .84rem var(--f-body);color:var(--warn);background:var(--warn-soft);border-radius:7px;padding:5px 9px;margin:0;max-width:65ch}
 </style>
 
@@ -168,6 +169,10 @@ function setConfig(c){config={...DEF_CONFIG,...(c||{})}; LANES=config.lanes; SKI
 const ATS=["greenhouse","ashby","lever"];
 const DEF_VIEW={q:"",status:"",lane:"",fit:"",source:"",tag:"",found:"",conflict:"",sort:"fit"};
 let recruiters=[], editRec=null;
+// Privacy: recruiter details are hidden on screen until this viewer chooses to show them.
+let recPrivate=true;
+try{recPrivate=localStorage.getItem("rr-rec-private")!=="0";}catch(_){}
+const initials=n=>String(n||"").replace(/\([^)]*\)/g,"").trim().split(/\s+/).filter(Boolean).map(w=>w[0].toUpperCase()+".").join(" ")||"—";
 let criteria=null, critDraft=null, critErr="", specData=null;
 const SC=window.RoleRadarScoring||null;
 let tab="inbox", jobs=[], companies=[], filters=null, scan=null, db=null, view={...DEF_VIEW}, openMore=new Set(), skipOpen=null;
@@ -450,7 +455,12 @@ comp    = +10 if the range reaches ${money(c.stretch_target_usd)}</p></div>`;
 function recCard(r){
   const id=esc(r._id), due=r.nextStepDue, late=due&&due<=today();
   const hasNext=r.nextStep&&!/^none\b/i.test(r.nextStep);
-  const edit=editRec===r._id;
+  const edit=!recPrivate&&editRec===r._id;
+  if(recPrivate) return `<article class="job rec">
+    <div class="top"><div style="min-width:0"><div class="co">${esc(r.company)}</div><div class="who">${esc(initials(r.name))}</div></div>
+      <div class="actions">${r.type?`<span class="chip lane">${esc(r.type)}</span>`:""}</div></div>
+    ${hasNext||due?`<div class="next" style="${late?"color:var(--warn);background:var(--warn-soft);border-radius:7px;padding:5px 9px":"color:var(--muted)"}"><b>Next step</b>${due?` · <span class="mono">${late?"due ":""}${fmtDate(due)}</span>`:""}</div>`:""}
+  </article>`;
   return `<article class="job rec">
     <div class="top"><div style="min-width:0"><div class="co">${esc(r.company)}${r.title?` · ${esc(r.title)}`:""}</div><div class="who">${esc(r.name)}</div></div>
       <div class="actions">${r.type?`<span class="chip lane">${esc(r.type)}</span>`:""}${r.outcome?`<span class="chip st">${esc(r.outcome)}</span>`:""}</div></div>
@@ -481,8 +491,8 @@ function renderPeople(){
       <label for="ar-r">Role discussed<input id="ar-r"></label>
       <label for="ar-d">Next step due<input id="ar-d" type="date"></label>
     </div><label for="ar-x">Next step<input id="ar-x"></label><button class="primary" type="submit">Add recruiter</button></form></details>`;
-  const note=`<p class="cnote">To do: move this list to private storage before you share Role Radar with anyone. Anyone you share the page with can see these names.</p>`;
-  return note+add+(list.length?`<div class="list">${list.map(recCard).join("")}</div>`:`<div class="empty"><strong>No recruiters yet</strong><span>Add one above.</span></div>`);
+  const note=`<div class="privbar"><p class="hint">${recPrivate?"Details hidden: initials and company only.":"Showing names, notes and email links."} This only changes the screen; anyone with access to the page can still read the saved data.</p><button class="btn" type="button" id="recPrivacy" aria-pressed="${recPrivate}">${recPrivate?"Show details":"Hide details"}</button></div>`;
+  return note+(recPrivate?"":add)+(list.length?`<div class="list">${list.map(recCard).join("")}</div>`:`<div class="empty"><strong>No recruiters yet</strong><span>Add one above.</span></div>`);
 }
 function renderCriteria(){
   const text=critDraft??(criteria&&criteria.spec)??"";
@@ -571,6 +581,7 @@ document.addEventListener("click",async e=>{
   if(e.target.id==="applyClose"){ const d=$("#applyDlg"); try{d.close();}catch(_){d.removeAttribute("open");} return; }
   const rd=e.target.closest("[data-recdone]");
   if(rd&&db){ try{await db.doc("recruiters/"+rd.dataset.recdone).update({lastContact:today(),nextStep:"",nextStepDue:""}); toast("Marked done");}catch(_){toast("Couldn't save that.");} return; }
+  if(e.target.id==="recPrivacy"){ recPrivate=!recPrivate; editRec=null; try{localStorage.setItem("rr-rec-private",recPrivate?"1":"0")}catch(_){} render(); return; }
   const re=e.target.closest("[data-recedit]");
   if(re){ editRec=editRec===re.dataset.recedit?null:re.dataset.recedit; render(); return; }
   if(e.target.id==="critReset"){ critDraft=null; critErr=""; render(); return; }

@@ -1,6 +1,7 @@
 // Browser tests: the real page on demo data, in headless Chromium.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { buildDemo } from "../scripts/build-demo.mjs";
 import { openDemo as open } from "../scripts/browser.mjs";
@@ -89,5 +90,35 @@ test("the search box stays inside the filter bar", async () => {
   const { page } = await openDemo();
   const [bar, box] = await Promise.all([page.locator("#fbar").boundingBox(), page.locator("#q").boundingBox()]);
   assert.ok(box.x + box.width <= bar.x + bar.width, `search ends at ${box.x + box.width}, bar at ${bar.x + bar.width}`);
+  await page.close();
+});
+
+test("recruiter details are hidden until the viewer shows them", async () => {
+  const seed = JSON.parse(readFileSync(new URL("../demo/seed.json", import.meta.url), "utf8"));
+  const recs = Object.values(seed.recruiters);
+  const { page, errors } = await openDemo();
+  // Rendered markup and text only: the demo build also embeds the seed in a script tag.
+  const shown = () => page.evaluate(() => document.querySelector("#app, main, body").innerText + document.querySelector("#view").innerHTML);
+  await page.click("#tab-people");
+  let html = await shown();
+  for (const r of recs) {
+    assert.ok(!html.includes(r.name), `name visible: ${r.name}`);
+    if (r.lastNote) assert.ok(!html.includes(r.lastNote), "note visible");
+  }
+  assert.equal(await page.locator("#view a[href*='mail']").count(), 0);
+  assert.ok(await page.locator("#view").getByText(recs[0].company).first().isVisible());
+
+  await page.click("#recPrivacy");
+  html = await shown();
+  for (const r of recs) assert.ok(html.includes(r.name), `name missing: ${r.name}`);
+
+  // The choice is remembered for this viewer.
+  await page.reload();
+  await page.waitForSelector(".job");
+  await page.click("#tab-people");
+  assert.ok((await shown()).includes(recs[0].name));
+  await page.click("#recPrivacy");
+  assert.ok(!(await shown()).includes(recs[0].name));
+  assert.deepEqual(errors, []);
   await page.close();
 });
