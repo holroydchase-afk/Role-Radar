@@ -19,7 +19,7 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 ## Portfolio / public presence
 _Updated 2026-10-22._
 - **Portfolio page:** https://chaseholroyd.com/role-radar.html (source: `tools/build.py` in the portfolio repo).
-- **Public demo (Chase approved 2026-10-22, first deploy 2026-10-22):** this repo builds and hosts its own demo with GitHub Pages at https://chaseholroyd.com/role-radar/ (`.github/workflows/pages.yml`, main only; `npm run build:pages` writes `_site/index.html`). It is the real page on `demo/seed.json` and `demo/mock-claude.js`, rebuilt on every push to main, so it never drifts. First Pages run after PR #17 passed (build and deploy). The build session could not open the site itself (its network blocks the domain), so Chase confirms the URL in a browser. Until the portfolio repoint lands, "Try the demo" still opens the old snapshot at https://chaseholroyd.com/demo/role-radar/.
+- **Public demo (Chase approved 2026-10-22, first deploy 2026-10-22):** this repo builds and hosts its own demo with GitHub Pages at https://chaseholroyd.com/role-radar/ (`.github/workflows/pages.yml`, main only; `npm run build:pages` writes `_site/index.html`). It is the real page on `demo/seed.json` and `demo/mock-claude.js`, rebuilt on every push to main, so it never drifts. First Pages run after PR #17 deployed to `/Role-Radar/` (the repo name was capitalized and Pages paths are case-sensitive); Chase renamed the repo to `role-radar` on 2026-10-22 and the workflow was re-run. The build session cannot open the site itself (its network blocks the domain). Until the portfolio repoint lands, "Try the demo" still opens the old snapshot at https://chaseholroyd.com/demo/role-radar/.
 - **Two views:** the default is radar only (scan, 0-100 scores with reasons, pipeline, criteria, watchlist). Resume intake (Apply, resume links, intake settings) and the Recruiters tab show only with `?full` (https://chaseholroyd.com/role-radar/?full), because recruiters judge AI-written resumes. The page reads `window.__RR_PUBLIC__`, which only the public build sets; Chase's live app never sets it and is unchanged. Tests cover both views.
 - **Demo data:** entirely made up (companies, people, jobs, comp floor), held in memory only. Never real applications or recruiters.
 - **Portfolio repoint (pending):** the portfolio thread is not in this project, so the intake (repoint "Try the demo" to `/role-radar/`, delete `demo/role-radar/` and its `make_demos.py` EDITS) went to Chase to pass along. Once it lands, add a dated line here.
@@ -72,10 +72,10 @@ _Updated 2026-10-22._
 
 
 ## In progress
-- Public demo: merged (PR #17) and deployed. Waiting on Chase to confirm the live URL and to pass the repoint intake to the portfolio project.
+- Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed. Waiting on a browser check of the live URL and on the portfolio repoint.
 
 ## Exact next step
-- Chase opens https://chaseholroyd.com/role-radar/ and `?full`. If only `/Role-Radar/` works, rename the repository to `role-radar` (Settings > General) and re-run the pages workflow. Then the portfolio repoint (see Portfolio / public presence).
+- Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm, then the portfolio repoint (see Portfolio / public presence).
 - Gmail import: Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
 
 ## How to work here
