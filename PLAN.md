@@ -41,11 +41,15 @@ IDs follow the studio standard (`docs/planning-ids.md` in the studio-agents repo
   - Pure, tested module `src/gmail-import.js`: skips sent mail, no-reply senders, job boards and applicant tracking systems; company from the email domain; agency vs in-house vs referral; last contact from the newest email (long threads read in full); marks people already in the list.
   - Demo: a fake Gmail connector over fictional threads, so the flow runs in tests and screenshots.
 
+- [x] **M2.3: Gmail status backfill** (done, draft PR) (`claude/project-thread-0029ai`)
+  - Pipeline tab: *Check Gmail for status updates* finds application confirmations, interview invites, rejections and offers from the companies in the pipeline and suggests status changes for review. Nothing is saved until ticked.
+  - Pure, tested functions in `src/gmail-import.js`: signal from subject and snippet, role matched by company (title breaks ties), forward-only moves (or Rejected), the email's date as the status date, old emails from an earlier application ignored.
+  - Live app only; the public demo stays radar only.
+
 ## Later
 
 Unnumbered until scheduled into a milestone.
 
-- Status updates from Gmail in the onboarding pass (backfill applications confirmed or declined). The daily scan already does this going forward.
 - Chat with Role Radar.
 - "Reuse this resume": find other saved roles a tailored resume already fits.
 - Open-source kit so other job seekers can run their own copy.

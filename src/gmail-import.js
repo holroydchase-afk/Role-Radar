@@ -10,6 +10,8 @@
  *     and personal mail is typed "referral"; the viewer can change either.
  *   - Outcomes and next steps are never filled in; the viewer adds them.
  *
+ * Also suggests status changes for roles in the pipeline from application emails (see statusUpdates).
+ *
  * Classic script: sets window.RoleRadarGmail in the browser, module.exports in Node. */
 (function (root, factory) {
   const api = factory();
@@ -159,5 +161,139 @@
     return doc;
   }
 
-  return { DEFAULT_QUERY, parseAddress, companyFromEmail, isAutomated, typeFor, dateOf, threadsFrom, needsFullThread, candidates, recruiterDoc, slug };
+  // ---- Status backfill: application emails -> suggested status changes on roles in the pipeline ----
+  // Same rules: dates come from the emails, nothing is saved until the viewer ticks it, and a role
+  // only moves forward (or to Rejected). Emails older than the role's first date in the tracker are
+  // ignored (less a week's grace), so a rejection from an earlier application at the same company can't close a new one.
+
+  const PIPE = ["saved", "applying", "applied", "screen", "interviewing", "offer"];
+  const RANK = Object.fromEntries(PIPE.map((s, i) => [s, i]));
+  // Strongest first: a rejection that mentions an interview is still a rejection.
+  const SIGNALS = [
+    ["offer", /\b(pleased|excited|happy|delighted) to (extend|offer)\b|\boffer letter\b|\bverbal offer\b/i],
+    ["rejected", /\bunfortunately\b|\bnot (to )?(be )?mov(e|ing) forward\b|\b(decided|chosen) to (pursue|move forward with|proceed with) other\b|\bother candidates\b|\bposition has been filled\b|\bno longer (being )?consider|\bwill not be (moving|proceeding)\b|\bnot (been )?selected\b|\bregret to inform\b/i],
+    ["interview", /\binterview(s|ing)?\b|\bphone screen\b|\bschedule (a|some) (time|call|chat)\b|\b(your|share your|send your) availability\b/i],
+    ["applied", /\bthanks? (you )?for (applying|your application)\b|\b(received|receiving) your application\b|\bapplication (received|submitted|confirmation|was submitted)\b|\byour application (to|for|at)\b/i],
+  ];
+  const STATUS_TERMS = '("thank you for applying" OR "thanks for applying" OR "your application" OR "received your application" OR unfortunately OR "other candidates" OR interview OR "offer letter")';
+  const SUFFIX = /\b(inc|llc|ltd|corp|corporation|co|company|group|holdings|technologies|technology|labs|hq)\b\.?/g;
+
+  const norm = (s) => str(s).toLowerCase().replace(/&/g, " and ").replace(SUFFIX, " ").replace(/[^a-z0-9]+/g, " ").trim();
+  const compact = (s) => norm(s).replace(/ /g, "");
+  // Roles added by hand are often added a few days after applying, so allow a week before the first date.
+  const GRACE_DAYS = 7;
+  function minusDays(day, n) {
+    if (!day) return "";
+    const d = new Date(day + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().slice(0, 10);
+  }
+  const ymd = (s) => { const v = str(s); return /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : dateOf({ date: v }); };
+
+  /** What an email says, or "" when it says nothing about the application. */
+  function signalOf(text) {
+    for (const [sig, re] of SIGNALS) if (re.test(text)) return sig;
+    return "";
+  }
+
+  /** The status a signal moves a role to, or "" when it wouldn't move it forward. */
+  function nextStatus(current, signal) {
+    const cur = RANK[current];
+    if (cur === undefined) return "";
+    if (signal === "rejected") return "rejected";
+    if (signal === "offer") return current === "offer" ? "" : "offer";
+    if (signal === "interview") {
+      if (cur < RANK.screen) return "screen";
+      return current === "screen" ? "interviewing" : "";
+    }
+    if (signal === "applied") return cur < RANK.applied ? "applied" : "";
+    return "";
+  }
+
+  /** Roles a status email could be about: the pipeline only. */
+  function pipelineJobs(jobs) { return arr(jobs).filter((j) => j && j._id && j.company && PIPE.includes(j.status)); }
+
+  /** One Gmail search for status emails that mention a company in the pipeline. */
+  function statusQuery(jobs, { max = 25 } = {}) {
+    const names = [...new Set(pipelineJobs(jobs).map((j) => norm(j.company)).filter(Boolean))].slice(0, max);
+    if (!names.length) return "";
+    return `${STATUS_TERMS} {${names.map((n) => `"${n}"`).join(" ")}} newer_than:1y -in:sent -category:promotions -category:social`;
+  }
+
+  // A role matches when its company's name is in the sender, subject or snippet, or the sender's
+  // domain is the company's name. The first word alone counts only if no other pipeline company shares it.
+  function companyMatcher(jobs) {
+    const first = (j) => norm(j.company).split(" ")[0] || "";
+    const counts = {};
+    jobs.forEach((j) => { const f = first(j); counts[f] = (counts[f] || 0) + 1; });
+    return (j, { text, domain }) => {
+      const full = norm(j.company);
+      if (!full) return false;
+      const words = " " + norm(text) + " ";
+      if (words.includes(" " + full + " ")) return true;
+      const dom = compact(domain.split(".").slice(0, -1).join(" "));
+      if (dom && (dom === compact(j.company) || dom.endsWith(compact(j.company)))) return true;
+      const f = first(j);
+      const uniqueNames = new Set(jobs.filter((x) => first(x) === f).map((x) => norm(x.company)));
+      return f.length >= 5 && uniqueNames.size === 1 && (words.includes(" " + f + " ") || dom === f);
+    };
+  }
+
+  // Several roles at one company: the one whose title shares the most words with the email.
+  function pickRole(roles, text) {
+    if (roles.length === 1) return roles[0];
+    const words = new Set(norm(text).split(" ").filter((w) => w.length > 3));
+    const scored = roles.map((j) => ({ j, n: norm(j.title).split(" ").filter((w) => w.length > 3 && !/^(senior|staff|principal|product|manager|lead)$/.test(w) && words.has(w)).length }))
+      .sort((a, b) => b.n - a.n);
+    return scored[0].n > (scored[1] ? scored[1].n : 0) ? scored[0].j : null;
+  }
+
+  /**
+   * Suggested status changes, newest email first, at most one per role:
+   * {key, jobId, company, title, from, to, signal, date, subject, viewUrl}
+   */
+  function statusUpdates(threads, jobs) {
+    const pool = pipelineJobs(jobs);
+    const matches = companyMatcher(pool);
+    const best = new Map();
+    for (const t of arr(threads)) {
+      for (const m of messagesOf(t)) {
+        if (isSent(m)) continue;
+        const subject = cleanSubject(m.subject || t.subject);
+        const snippet = str(m.snippet || t.snippet).slice(0, 400);
+        const signal = signalOf(subject + " \n " + snippet);
+        const date = dateOf(m);
+        if (!signal || !date) continue;
+        const from = parseAddress(m.sender ?? m.from);
+        const text = [from.name, subject, snippet].join(" ");
+        const roles = pool.filter((j) => matches(j, { text, domain: domainOf(from.email) }));
+        if (!roles.length) continue;
+        const j = pickRole(roles, text);
+        if (!j) continue;
+        const since = minusDays([j.appliedAt, j.firstSeen, j.statusAt].map(ymd).filter(Boolean).sort()[0], GRACE_DAYS);
+        if (since && date < since) continue;
+        const prev = best.get(j._id);
+        if (prev && prev.date > date) continue;
+        best.set(j._id, { j, signal, date, subject, viewUrl: str(m.viewUrl) || str(t.viewUrl) });
+      }
+    }
+    const out = [];
+    for (const { j, signal, date, subject, viewUrl } of best.values()) {
+      const to = nextStatus(j.status, signal);
+      if (!to) continue;
+      out.push({ key: j._id, jobId: j._id, company: str(j.company), title: str(j.title), from: j.status, to, signal, date, subject, viewUrl });
+    }
+    return out.sort((a, b) => b.date.localeCompare(a.date) || a.company.localeCompare(b.company));
+  }
+
+  /** The update written to jobs/<jobId> for a picked suggestion. The email's date is the status date. */
+  function statusPatch(u, job = {}) {
+    const p = { status: u.to, statusAt: u.date, statusEmail: { subject: u.subject, date: u.date, signal: u.signal } };
+    if (/^https:\/\//.test(u.viewUrl || "")) p.statusEmail.url = u.viewUrl;
+    if (u.to === "applied" && !job.appliedAt) p.appliedAt = u.date;
+    return p;
+  }
+
+  return { DEFAULT_QUERY, parseAddress, companyFromEmail, isAutomated, typeFor, dateOf, threadsFrom, needsFullThread, candidates, recruiterDoc, slug,
+    signalOf, nextStatus, statusQuery, statusUpdates, statusPatch };
 });

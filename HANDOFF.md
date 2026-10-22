@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-22 (power hour: PRs #16 and #20-#25 merged)
+Updated: 2026-10-22 (RR-M2.3 Gmail status backfill, draft PR)
 
 ## Planning IDs (Oct 21, 2026)
 The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs.
@@ -15,6 +15,7 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 | (milestone) | RR-M1 | Portfolio-ready v1 |
 | culture-values-ratings (PR #11) | RR-M2.1 | Culture and values ratings |
 | Gmail onboarding | RR-M2.2 | First-run Gmail onboarding |
+| Status updates from Gmail (Later list) | RR-M2.3 | Gmail status backfill |
 
 ## Portfolio / public presence
 _Updated 2026-10-22._
@@ -31,6 +32,7 @@ _Updated 2026-10-22._
 - **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in the portfolio repo (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
 
 ## Done
+- 2026-10-22 RR-M2.3 Gmail status backfill (`claude/project-thread-0029ai`, draft PR): Pipeline tab gets *Check Gmail for status updates* (live app only, not the public demo). One read-only `search_threads` call for application emails naming the pipeline companies (long threads read in full with `batch_get_threads`, same tools the page already declares). `src/gmail-import.js` gains `statusUpdates`/`statusQuery`/`statusPatch`: reads subject and snippet as offer > rejected > interview > applied, matches the role by company (sender name, subject, snippet or domain; title breaks ties between two roles at one company, otherwise nothing is suggested), keeps the newest email per role, only moves a role forward or to Rejected, ignores emails dated more than a week before the role's first date in the tracker. Review list with checkboxes; *Update N roles* writes `status`, `statusAt` (the email's date), `statusEmail` {subject, date, signal, url}, and `appliedAt` + `followUpDue` only for confirmations. 7 unit tests, 2 browser tests, 102 passing. No new supporting file, so republishing the live page = same files as before.
 - 2026-10-22 recruiter-ready round 4: last in-repo P2s (one category chip on public cards, "Recruiters N due", plain-word Criteria summary, centered filter button). Nothing at P2 or above is left in this repo; what's left is the portfolio intake and Chase's https check. 92 tests.
 - 2026-10-22 recruiter-ready round 3: P2 polish (plain source names, folded filters on the public demo, one font in sentences, landmarks and headings with zero axe violations, js-yaml inlined in the public build, README links the live demo), README screenshots regenerated. 88 tests.
 - 2026-10-22 recruiter-ready round 2: demo "Sample posting" instead of example.com links, "Strong fit" chip wording, header numbers match the Watchlist, light-theme contrast at 4.5:1+, 44px touch targets on phones (RR-P1-2 to P1-6). 83 tests.
@@ -85,6 +87,7 @@ _Updated 2026-10-22._
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
 ## Exact next step
+- RR-M2.3: Chase reviews and merges the draft PR, then republish the live page (`app/role-radar.html` + `scoring.js` + `gmail-import.js`, same capabilities) and Chase taps Pipeline › *Check Gmail for status updates* once. Tune the phrases in `SIGNALS` (`src/gmail-import.js`) from anything it gets wrong.
 - PR #18: rebase onto main (conflicts in HANDOFF.md, app/role-radar.html, demo/mock-claude.js, demo/seed.json), re-run tests, merge once Chase says ok, then republish the live page with `posting.js`.
 - Recruiter-ready: merged. Confirm https://chaseholroyd.com/role-radar/ shows the intro and back link on a phone. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) are in `recruiter-ready-intake.md` for Chase to paste into Product Studio.
 - Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm, then the portfolio repoint (see Portfolio / public presence).
@@ -98,6 +101,7 @@ _Updated 2026-10-22._
 - The live page is `app/role-radar.html` published with `src/scoring.js` as a supporting file named `scoring.js`.
 
 ## Decisions to review
+- Gmail status check (RR-M2.3): reads only subject + snippet (no email bodies), so a rejection whose first lines are generic may be missed; that keeps it to the read-only tools the page already has. Interview invites move Applied/Saved to Screen and Screen to Interviewing; nothing moves backward. Sender names are not shown on the Pipeline (it has no privacy toggle), only company, role, date and subject. A week's grace before the role's first tracked date allows for roles added by hand after applying.
 - Public demo has no "Code on GitHub" link: the repo URL contains a term on the private denylist, so the pre-commit privacy check blocks it. If you're fine with the GitHub handle appearing in page source, allow it in the denylist and add the link; the portfolio page can link the repo meanwhile.
 - Agents sync skips `focus-coach` and `orchestrator`: they are about Chase's personal routine and would read oddly to a recruiter browsing this public repo. Re-run `scripts/sync.sh <repo> focus-coach orchestrator` from studio-agents if you want them here.
 - The Gmail search result shape was taken from the connector's own documentation, not a live call (reading real mail from the build session was blocked as personal data). The parser accepts the documented camelCase fields and a few likely variants; first real use will confirm it.
