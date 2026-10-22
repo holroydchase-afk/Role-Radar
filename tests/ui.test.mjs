@@ -50,10 +50,10 @@ test("digest preview re-ranks live as the criteria are edited", async () => {
   const { page } = await openDemo();
   await page.click("#tab-criteria");
   const first = () => page.locator("#digestPreview li").first().innerText();
-  assert.match(await first(), /Sunfield Energy/);
-  // Make fintech the top priority and watch it move up.
+  assert.match(await first(), /Gridlark.*\n.*dream role/, "a dream-role anchor tops the digest");
   const text = await page.locator("#critText").inputValue();
-  const edited = text.replace(/(- id: fintech\n(?:.*\n)*?\s+weight: )1/, "$13");
+  // Make fintech the top priority, with no dream-role bonus, and watch it move up.
+  const edited = text.replace(/(- id: fintech\n(?:.*\n)*?\s+weight: )1/, "$13").replace(/bonus: 15/, "bonus: 0");
   assert.notEqual(edited, text);
   await page.locator("#critText").fill(edited);
   await page.waitForFunction(() => /Ledgerly/.test(document.querySelector("#digestPreview li")?.textContent || ""));

@@ -296,7 +296,7 @@ function scoreLine(j){
   if(!SC||!specData) return "";
   const r=SC.scoreJob(j,specData);
   const differs=typeof j.score==="number"&&j.score!==r.score;
-  return `<div class="why-score" title="Score from your criteria">${esc(SC.explain(r))} = ${r.score}${differs?` · scan said ${esc(j.score)} (it also reads the posting)`:""}</div>`;
+  return `<div class="why-score" title="Score from your criteria">${esc(SC.explain(r))} = ${r.score}${r.dream?` · dream role: ${esc(r.dream.why)}${r.dream.check?` (check: ${esc(r.dream.check)})`:""}`:""}${differs?` · scan said ${esc(j.score)} (it also reads the posting)`:""}</div>`;
 }
 // Values and Culture badges: same rules as the scan and intake (criteria.yaml values_fit, culture_fit).
 const RATE_LABEL={great:"Great",good:"Good",neutral:"Neutral",maybe:"Maybe",no:"No",unrated:"Unrated"};

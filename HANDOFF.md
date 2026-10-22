@@ -77,6 +77,7 @@ _Updated 2026-10-22._
   - Demo: `demo/mock-claude.js` fakes the Gmail connector from `seed.gmail` (fictional threads on reserved `.example` domains, which the privacy check now allows). 3 browser tests. New screenshot `gmail-import.png`.
   - Live page republished with `gmail-import.js` and the Gmail connector capability (read-only tools only).
 - 69 tests passing after merging main (board health).
+- 2026-10-22 (`dream-anchors`): dream-role calibration anchors. `criteria.yaml` gets `dream_roles` (bonus, `like` anchors with company/title/why/check, `role_keywords`, `in_sectors`); `scoreJob` adds `parts.dream` (+15 default) for an anchor company or an anchor-like title in a listed sector; cards show the reason and any check; the scan prompt scores it and marks digest lines "★ dream role". Demo anchors are fictional. 70 tests passing.
 
 
 ## In progress
@@ -111,6 +112,7 @@ _Updated 2026-10-22._
 - **Shared studio agents (branch `studio-agents`):** adds six generic agents to `.claude/agents/` (staff-pm, qa-tdd, engineer, privacy-security, ux-reviewer, positioning). Each one reads this repo's `CLAUDE.md` and `HANDOFF.md` for its rules. They don't change any code. Merge or close.
 
 - Fit badges are separate from the 0–100 score on purpose: the score ranks the digest, the badges explain a role. Folding culture into the score twice (signals and checks) would double-count.
+- Dream-role matching reads only the title and team, not the posting text, so "payments" in a boilerplate paragraph doesn't trigger it. An anchor company matches on any title that passes the gates.
 - Values uses "neutral" (not "maybe") for weight-1 sectors, since an allowed-but-lower sector isn't a values concern.
 
 ## Blockers

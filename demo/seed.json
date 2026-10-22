@@ -38,7 +38,7 @@
       "firstSeen": "@t-0",
       "comp": "$185K–$220K",
       "fit": "maybe",
-      "score": 75,
+      "score": 90,
       "sector": "Solar, storage & distributed energy",
       "fitNote": "Strong energy domain match; staff scope asks for prior platform ownership across three teams.",
       "lane": "Geospatial / clean energy",
@@ -199,7 +199,7 @@
       "source": "manual",
       "firstSeen": "@t-5",
       "fit": "strong",
-      "score": 80,
+      "score": 95,
       "sector": "Solar, storage & distributed energy",
       "lane": "Geospatial / clean energy",
       "tags": [
