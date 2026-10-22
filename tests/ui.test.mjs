@@ -170,7 +170,7 @@ test("Values and Culture filters narrow the list", async () => {
 test("the Criteria tab explains the fit ratings", async () => {
   const { page } = await openDemo();
   await page.click("#tab-criteria");
-  const card = page.locator("div.ccard", { has: page.locator("h3", { hasText: "Fit ratings" }) });
+  const card = page.locator("div.ccard", { has: page.locator("h2", { hasText: "Fit ratings" }) });
   assert.match(await card.innerText(), /\+2\s+calm pace/);
   assert.match(await card.innerText(), /−1\s+launch crunch risk/);
   assert.match(await page.locator("div.ccard", { hasText: "At a glance" }).innerText(), /Home state\s+CO → UT/);
@@ -401,6 +401,7 @@ test("header numbers agree with the Watchlist strip and the New tab (RR-P1-4)", 
   await page.click("#tab-watch");
   assert.match(await page.locator("#view").innerText(), new RegExp(`\\d+/${boards} read`));
   assert.doesNotMatch(line, /demo data/i, "the badge already says demo");
+  assert.equal(await page.locator("#scanLine .mono").count(), 0, "one font in the scan line (RR-P2-2)");
   await page.close();
 });
 
@@ -427,5 +428,56 @@ test("phone controls are at least 44px tall (RR-P1-6)", async () => {
       .filter(([, h]) => h < 44));
     assert.deepEqual(small, [], id);
   }
+  await page.close();
+});
+
+test("public demo works with the CDN blocked: js-yaml is inlined (RR-P2-9)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  assert.doesNotMatch(html, /cdnjs\.cloudflare\.com\/ajax\/libs\/js-yaml/);
+  assert.match(html, /js-yaml 4\.1\.0 .*@license MIT/);
+  const { page, errors } = await openDemo({ html, blockYaml: true });
+  await page.click("#tab-criteria");
+  assert.ok((await page.locator("#digestPreview li").count()) > 0);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("cards name sources in plain words (RR-P2-3)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-all");
+  const text = await page.locator("#view").innerText();
+  assert.match(text, /Greenhouse/);
+  assert.match(text, /ZipRecruiter/);
+  assert.doesNotMatch(text, /\b(greenhouse|ziprecruiter|himalayas)\b/);
+  await page.close();
+});
+
+test("no date repeats as '<status> since' on the same card (RR-P2-7)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-pipeline");
+  for (const d of await page.locator(".dates").allInnerTexts()) {
+    const m = /Applied\s+(\w+ \d+).*Applied since\s+(\w+ \d+)/s.exec(d);
+    assert.ok(!m || m[1] !== m[2], d);
+  }
+  await page.close();
+});
+
+test("public demo on a laptop folds filters so the first role shows (RR-P2-4)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html, width: 1280, height: 800 });
+  assert.ok(!(await page.locator("#fbar .fields").isVisible()));
+  const first = await page.locator(".job").first().boundingBox();
+  assert.ok(first.y < 800, `first role at ${first.y}`);
+  await page.click("#ftoggle");
+  assert.ok(await page.locator("#fbar .fields").isVisible());
+  await page.close();
+});
+
+test("page has a main landmark and valid headings (RR-P2-5)", async () => {
+  const { page } = await openDemo();
+  assert.equal(await page.locator("main").count(), 1);
+  await page.click("#tab-criteria");
+  assert.equal(await page.locator(".ccard h3").count(), 0);
+  assert.equal(await page.locator(".pips:not([role=img])").count(), 0);
   await page.close();
 });

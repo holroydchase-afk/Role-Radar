@@ -2,6 +2,8 @@
 
 **A job search that runs itself every weekday morning.** Role Radar scans job boards, scores each new role against criteria written as code, and keeps every application, follow-up and recruiter in one place. I built it for my own search for a senior product role, and I use it every day.
 
+**[Try the live demo](https://chaseholroyd.com/role-radar/)** (sample data, no login) · [More of my work](https://chaseholroyd.com/)
+
 ![New roles, each with a score and the reason for it](docs/screenshots/new-roles.png)
 
 *All screenshots use fictional demo data.*
@@ -110,7 +112,7 @@ The demo runs the real page against an in-memory database ([`demo/mock-claude.js
 
 ---
 
-Built by Chase Holroyd, a senior product manager working in energy, fintech and AI, with Claude as the build partner.
+Built by Chase Holroyd, a staff product manager in pricing, payments and point-of-sale lending, with Claude as the build partner. More of my work is at [chaseholroyd.com](https://chaseholroyd.com/).
 
 ## License
 
