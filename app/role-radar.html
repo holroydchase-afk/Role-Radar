@@ -180,9 +180,12 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 <script src="scoring.js"></script>
 <script src="gmail-import.js"></script>
 <script>
+// The public demo (chaseholroyd.com/role-radar/) is radar only: scan, score, pipeline. Resume intake, intake
+// settings and the Recruiters tab show only with ?full. The demo build sets __RR_PUBLIC__; the live app never does.
+const TOOLS=!window.__RR_PUBLIC__;
 const TABS=[
   {id:"inbox",label:"New"},{id:"pipeline",label:"Pipeline"},{id:"action",label:"Needs action"},
-  {id:"all",label:"All roles"},{id:"people",label:"Recruiters"},{id:"criteria",label:"Criteria"},{id:"watch",label:"Watchlist"},{id:"filters",label:"Scan rules"}];
+  {id:"all",label:"All roles"},...(TOOLS?[{id:"people",label:"Recruiters"}]:[]),{id:"criteria",label:"Criteria"},{id:"watch",label:"Watchlist"},{id:"filters",label:"Scan rules"}];
 const STATUSES=[["new","New"],["viewed","Viewed"],["saved","Saved"],["applying","Applying"],["applied","Applied"],["screen","Screen"],["interviewing","Interviewing"],["offer","Offer"],["skipped","Skipped"],["rejected","Rejected"],["closed","Closed"]];
 const STATUS_LABEL=Object.fromEntries(STATUSES);
 const INBOX=["new","viewed"], PIPE=["saved","applying","applied","screen","interviewing","offer"], DONE=["skipped","rejected","closed"];
@@ -240,7 +243,7 @@ function actionReason(j){
     if(j.followUpDue&&j.followUpDue<=today()) return "Follow-up due "+fmtDate(j.followUpDue);
     const d=daysSince(j.appliedAt); if(d!==null&&d>=config.staleAppliedDays) return "No reply in "+Math.floor(d)+" days";
   }
-  if(s==="applying"){const d=daysSince(j.statusAt); if(d===null||d>=2) return "Resume ready, not submitted";}
+  if(s==="applying"){const d=daysSince(j.statusAt); if(d===null||d>=2) return TOOLS?"Resume ready, not submitted":"Ready, not submitted";}
   if(s==="saved"){const d=daysSince(j.statusAt); if(d!==null&&d>=config.staleSavedDays) return "Saved "+Math.floor(d)+" days ago. Apply or skip";}
   if((s==="screen"||s==="interviewing")&&!j.nextStep) return "Add the next step";
   return null;
@@ -330,8 +333,8 @@ function jobCard(j){
     ${j.emailNote?`<p class="note" style="color:var(--muted)">Inbox: ${esc(j.emailNote)}</p>`:""}
     ${j.skipReason&&s==="skipped"?`<p class="note" style="color:var(--muted)">Skipped: ${esc(j.skipReason)}</p>`:""}
     <div class="apply-row">
-      <button class="apply" data-apply="${id}">${resumeUrl?"Re-run intake":"Apply"}</button>
-      ${resumeUrl?`<a class="resume" href="${esc(resumeUrl)}" target="_blank" rel="noopener">${esc(j.resumeName||"Tailored resume")} ↗</a>`:(j.resumeName?`<span class="hint">Resume: ${esc(j.resumeName)}</span>`:`<span class="hint">Copies an intake prompt for a new chat</span>`)}
+      ${TOOLS?`<button class="apply" data-apply="${id}">${resumeUrl?"Re-run intake":"Apply"}</button>`:""}
+      ${!TOOLS?`<span class="hint">Every application is my own call, made by hand.</span>`:resumeUrl?`<a class="resume" href="${esc(resumeUrl)}" target="_blank" rel="noopener">${esc(j.resumeName||"Tailored resume")} ↗</a>`:(j.resumeName?`<span class="hint">Resume: ${esc(j.resumeName)}</span>`:`<span class="hint">Copies an intake prompt for a new chat</span>`)}
     </div>
     <div class="ctl">
       <label class="sr" for="st-${id}" style="display:flex;gap:6px;align-items:center">Status
@@ -427,7 +430,7 @@ function renderJobs(){
   if(!list.length){
     const msg=base.length?["No roles match these filters","Clear a filter to see more."]:{inbox:["Nothing new right now","The morning scan adds matching roles here. Open one and it's marked viewed; save or skip it to clear it out."],
       pipeline:["Nothing in the pipeline","Save a role, or tap Apply, and it moves here. Add roles found elsewhere above."],
-      action:["Nothing needs you right now","Follow-ups due, stale applications and unsent resumes show up here."],
+      action:["Nothing needs you right now",(TOOLS?"Follow-ups due, stale applications and unsent resumes show up here.":"Follow-ups due and stale applications show up here.")],
       all:["No roles yet","After the first scan runs, every match it finds is listed here."]}[tab];
     body=`<div class="empty"><strong>${msg[0]}</strong><span>${msg[1]}</span></div>`;
   } else body=`<div class="list">${list.map(jobCard).join("")}</div>`;
@@ -503,8 +506,8 @@ function renderFilters(){
       <label for="cStale">Flag no reply after (days)<input id="cStale" class="mono" inputmode="numeric" value="${esc(config.staleAppliedDays)}"></label>
       <label for="cSaved">Flag saved roles after (days)<input id="cSaved" class="mono" inputmode="numeric" value="${esc(config.staleSavedDays)}"></label>
     </div>
-    <label for="cCmd">Intake command<input id="cCmd" class="mono" value="${esc(config.intakeCommand)}"></label>
-    <label for="cInstr">Intake instructions (added to every Apply prompt)<textarea id="cInstr">${esc(config.intakeInstructions)}</textarea></label>
+    ${TOOLS?`<label for="cCmd">Intake command<input id="cCmd" class="mono" value="${esc(config.intakeCommand)}"></label>
+    <label for="cInstr">Intake instructions (added to every Apply prompt)<textarea id="cInstr">${esc(config.intakeInstructions)}</textarea></label>`:""}
     <button class="primary" type="submit">Save settings</button></form>`;
 }
 
@@ -548,7 +551,7 @@ function fitCard(d){
     <div class="legend"><small>Values by sector weight</small>${[3,2,1,0].map(w=>`<span>${badge(vw[w]||"no")} weight ${w}</span>`).join("")}</div>
     <div class="legend"><small>Culture by total points</small><span>${badge("great")} ${esc(b.great)}+</span><span>${badge("good")} ${esc(b.good)}+</span><span>${badge("maybe")} ${esc(b.maybe)}+</span><span>${badge("no")} below ${esc(b.maybe)}</span></div>
     ${checks.length?`<div class="checks">${checks.map(k=>{const n=Number(k.points)||0;return `<div><span class="pt ${n>0?"pos":n<0?"neg":""}">${n>0?"+":n<0?"−":""}${Math.abs(n)}</span><span>${esc(k.short||k.id)}${k.means?` <span class="m">· ${esc(k.means)}</span>`:""}</span></div>`;}).join("")}</div>`:""}
-    <p class="hint" style="margin:0">Hard excludes and <span class="mono">values_penalty</span> always rate Values "No". Intake research can set either badge directly.</p></div>`;
+    <p class="hint" style="margin:0">Hard excludes and <span class="mono">values_penalty</span> always rate Values "No". ${TOOLS?"Intake research":"Research on a role"} can set either badge directly.</p></div>`;
 }
 function recCard(r){
   const id=esc(r._id), due=r.nextStepDue, late=due&&due<=today();
@@ -824,7 +827,7 @@ document.addEventListener("submit",async e=>{
   if(e.target.id==="cfgForm"){
     const list=id=>$(id).value.split(",").map(s=>s.trim()).filter(Boolean);
     const num=(id,d)=>{const n=Number(String($(id).value).replace(/[^0-9]/g,""));return n>0?n:d;};
-    const body={...config,lanes:list("#cLanes"),skipReasons:list("#cSkip"),followUpBusinessDays:num("#cFu",5),staleAppliedDays:num("#cStale",14),staleSavedDays:num("#cSaved",7),intakeCommand:$("#cCmd").value.trim()||"/job-intake",intakeInstructions:$("#cInstr").value.trim()};
+    const body={...config,lanes:list("#cLanes"),skipReasons:list("#cSkip"),followUpBusinessDays:num("#cFu",5),staleAppliedDays:num("#cStale",14),staleSavedDays:num("#cSaved",7),...(TOOLS?{intakeCommand:$("#cCmd").value.trim()||"/job-intake",intakeInstructions:$("#cInstr").value.trim()}:{})};
     try{await db.doc("meta/config").set(body); toast("Settings saved");}catch(err){toast("Couldn't save the settings.");}
     return;
   }

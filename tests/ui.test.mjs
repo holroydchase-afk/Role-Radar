@@ -149,7 +149,7 @@ test("cards show Values and Culture badges with a reason", async () => {
   assert.match(await card("Sunfield Energy").innerText(), /Values\s+Great[\s\S]*Culture\s+Great/i);
   assert.match(await card("Ledgerly").innerText(), /Values\s+Neutral[\s\S]*Culture\s+Good[\s\S]*but launch crunch risk/i);
   assert.match(await card("Pebblepay").innerText(), /Culture\s+No/i);
-  assert.match(await card("Orbitline").innerText(), /rated up at intake/);
+  assert.match(await card("Orbitline").innerText(), /rated up after research/);
   assert.match(await card("Gridlark").innerText(), /Unrated[\s\S]*Not checked yet/i);
   assert.deepEqual(errors, []);
   await page.close();
@@ -253,5 +253,48 @@ test("the Watchlist shows board health from the last scan", async () => {
   assert.match(await dot("Copperleaf Insurance"), /grey/);
   assert.equal(await page.locator(".row", { hasText: "QuickCash" }).locator(".hdot").count(), 0);
   assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("public demo: radar only, no resume or recruiter tools anywhere", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page, errors } = await openDemo({ html });
+  assert.equal(await page.locator("#tab-people").count(), 0, "no Recruiters tab");
+  for (const id of ["inbox", "pipeline", "action", "all", "criteria", "watch", "filters"]) {
+    await page.click(`#tab-${id}`);
+    const text = await page.locator("#view").innerText();
+    assert.doesNotMatch(text, /resume|intake/i, `${id} mentions resume tooling`);
+    assert.equal(await page.locator("#view .apply").count(), 0, `${id} has an Apply button`);
+  }
+  await page.click("#tab-all");
+  assert.match(await page.locator("#view").innerText(), /Every application is my own call, made by hand/);
+  assert.match(await page.locator(".why-score").first().innerText(), /sector/);
+  await page.click("#tab-filters");
+  assert.equal(await page.locator("#cCmd, #cInstr").count(), 0);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("public demo with ?full shows the resume and recruiter tools", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page, errors } = await openDemo({ html, query: "?full" });
+  assert.equal(await page.locator("#tab-people").count(), 1);
+  await page.click("#tab-all");
+  assert.ok((await page.locator("#view .apply").count()) > 0);
+  await page.click("#tab-filters");
+  assert.equal(await page.locator("#cCmd, #cInstr").count(), 2);
+  await page.click("#tab-people");
+  assert.match(await page.locator("#view").innerText(), /Show details/);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("a remembered Recruiters tab falls back to New in the public demo", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html, query: "?full" });
+  await page.click("#tab-people");
+  await page.goto(page.url().split("?")[0]);
+  await page.waitForSelector("#tab-inbox");
+  assert.equal(await page.locator("#tab-inbox").getAttribute("aria-selected"), "true");
   await page.close();
 });

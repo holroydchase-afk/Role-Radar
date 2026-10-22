@@ -29,7 +29,7 @@ function fontsCss() {
 }
 
 /** Opens the demo in a new page. Returns {page, errors}. */
-export async function openDemo(browser, { html = buildDemo(), blockYaml = false, width = 900, height = 1200, colorScheme = "light", file = "dist/browser-demo.html", ready = ".job" } = {}) {
+export async function openDemo(browser, { html = buildDemo(), blockYaml = false, width = 900, height = 1200, colorScheme = "light", file = "dist/browser-demo.html", ready = ".job", query = "" } = {}) {
   const out = join(root, file);
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, html);
@@ -40,7 +40,7 @@ export async function openDemo(browser, { html = buildDemo(), blockYaml = false,
   await page.route("https://cdnjs.cloudflare.com/**", (route) =>
     blockYaml ? route.abort() : route.fulfill({ contentType: "text/javascript", body: yamlJs() }));
   await page.route("https://fonts.googleapis.com/**", (route) => route.fulfill({ contentType: "text/css", body: fontsCss() }));
-  await page.goto("file://" + out);
+  await page.goto("file://" + out + query);
   await page.waitForSelector(ready);
   await page.evaluate(() => document.fonts.ready);
   return { page, errors };

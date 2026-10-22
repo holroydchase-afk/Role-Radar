@@ -74,6 +74,10 @@ On first run, *Import from Gmail* reads your inbox through Claude's Gmail connec
 
 ## Run the demo
 
+**Try it in your browser:** [chaseholroyd.com/role-radar](https://chaseholroyd.com/role-radar/). All data is made up. The public demo shows the radar (scan, scores, pipeline); add [`?full`](https://chaseholroyd.com/role-radar/?full) to see the resume intake and recruiter tools too.
+
+Or run it locally:
+
 ```sh
 npm install
 npm run build:demo        # writes dist/demo.html; open it in a browser

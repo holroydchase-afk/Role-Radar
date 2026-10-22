@@ -17,14 +17,15 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 | Gmail onboarding | RR-M2.2 | First-run Gmail onboarding |
 
 ## Portfolio / public presence
-_Updated 2026-10-21._
-- **Portfolio page:** https://chaseholroyd.com/role-radar.html (source: `tools/build.py` in `holroydchase-afk.github.io`).
-- **Live demo:** https://chaseholroyd.com/demo/role-radar/. It's a snapshot of the Role Radar page with `scoring.js`, kept in the portfolio repo (`demo/role-radar/`, `tools/demo-src/`), not built from this repo. The portfolio's HANDOFF.md records the snapshot version and how to resync.
-- **Demo data:** entirely made up (companies, people, jobs, comp floor), saved only in the visitor's browser. Never real applications or recruiters.
-- **Drift to know about:** the demo is a snapshot, so it drifts when the live page changes. Resync it once M2.1 (culture and values ratings) ships.
-- **Studio-wide status** (portfolio, domain, every demo, what's waiting on Chase): https://github.com/holroydchase-afk/pm-tools/blob/main/STUDIO-STATUS.md
+_Updated 2026-10-22._
+- **Portfolio page:** https://chaseholroyd.com/role-radar.html (source: `tools/build.py` in the portfolio repo).
+- **Public demo (moving here, Chase approved 2026-10-22):** this repo now builds and hosts its own demo with GitHub Pages at https://chaseholroyd.com/role-radar/ (`.github/workflows/pages.yml`, main only; `npm run build:pages` writes `_site/index.html`). It is the real page on `demo/seed.json` and `demo/mock-claude.js`, rebuilt on every push to main, so it never drifts. Until the first deploy, the old snapshot at https://chaseholroyd.com/demo/role-radar/ (portfolio repo) is still what "Try the demo" opens.
+- **Two views:** the default is radar only (scan, 0-100 scores with reasons, pipeline, criteria, watchlist). Resume intake (Apply, resume links, intake settings) and the Recruiters tab show only with `?full` (https://chaseholroyd.com/role-radar/?full), because recruiters judge AI-written resumes. The page reads `window.__RR_PUBLIC__`, which only the public build sets; Chase's live app never sets it and is unchanged. Tests cover both views.
+- **Demo data:** entirely made up (companies, people, jobs, comp floor), held in memory only. Never real applications or recruiters.
+- **After the first deploy:** send the portfolio thread an intake to repoint "Try the demo" to `/role-radar/` and delete `demo/role-radar/` and its `make_demos.py` EDITS there.
+- **Studio-wide status** (portfolio, domain, every demo, what's waiting on Chase): `STUDIO-STATUS.md` in the pm-tools repo
 - 2026-10-21: the portfolio home page lists Role Radar first, tagged "Live demo".
-- **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in `holroydchase-afk.github.io` (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
+- **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in the portfolio repo (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
 
 ## Done
 - 2026-10-21: studio session rules installed: `.claude/settings.json` SessionStart hook prints this file into every Claude Code session, `.github/workflows/handoff-check.yml` fails a PR that changes files without updating this file, and CLAUDE.md has a "Session rules" section.
@@ -71,10 +72,11 @@ _Updated 2026-10-21._
 
 
 ## In progress
-- Nothing. Gmail onboarding is ready for review.
+- Public demo on `public-demo` (draft PR): Pages workflow, radar-only default with `?full`, tests for both views. Waiting on Chase's one-time Pages setting (Settings > Pages > Source: GitHub Actions) and the merge.
 
 ## Exact next step
-- Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
+- When the PR is merged and the Pages run is green, open https://chaseholroyd.com/role-radar/ and `?full`, then send the portfolio thread the repoint intake (see Portfolio / public presence). If the site shows at `/Role-Radar/` instead of `/role-radar/`, rename the repository to `role-radar`.
+- Gmail import: Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
 
 ## How to work here
 - `npm install`, then `npm test`, `npm run build:demo` (open `dist/demo.html`).

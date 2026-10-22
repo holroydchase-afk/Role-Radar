@@ -7,3 +7,4 @@ dist/
 profile.local.json
 .private-denylist
 *.local.txt
+_site/
