@@ -88,7 +88,7 @@ dialog .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-
 /* Added: filter bar, status select, lanes, tags, dates line, details editor, action reasons */
 .fbar{margin:0 0 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:10px}
 .fbar .fields{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
-#ftoggle{display:none}
+#ftoggle{display:none;align-items:center}
 @media (max-width:600px){#ftoggle{display:inline-flex}.fbar:not(.open) .fields{display:none}}
 .showcase-mode #ftoggle{display:inline-flex}.showcase-mode .fbar:not(.open) .fields{display:none}
 /* Touch: every control at least 44px tall. */
@@ -120,7 +120,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 .main{display:grid;gap:18px}
 .ccard h2{font-family:var(--f-display);font-weight:500;font-size:1.05rem;margin:0}
 .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
-.kv div{display:grid;gap:2px}.kv small{color:var(--muted);font-size:.78rem}.kv b{font-family:var(--f-mono);font-weight:500;font-size:.95rem}
+.kv div{display:grid;gap:2px}.kv small{color:var(--muted);font-size:.78rem}.kv b{font-weight:600;font-size:.95rem}
 .sec{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .sec:last-child{border-bottom:0}
 .sec .lbl{font-weight:500;min-width:0}.sec .ex{grid-column:1/-1;color:var(--muted);font-size:.8rem}
@@ -272,7 +272,7 @@ function counts(){
 }
 function renderTabs(){
   const c=counts();
-  $("#tabs").innerHTML=TABS.map(t=>`<button role="tab" id="tab-${t.id}" aria-selected="${t.id===tab}" data-tab="${t.id}">${t.label}${c[t.id]!==""?` <span class="n">${c[t.id]}</span>`:""}</button>`).join("");
+  $("#tabs").innerHTML=TABS.map(t=>`<button role="tab" id="tab-${t.id}" aria-selected="${t.id===tab}" data-tab="${t.id}">${t.label}${c[t.id]!==""?` <span class="n">${c[t.id]}${t.id==="people"?" due":""}</span>`:""}</button>`).join("");
 }
 function renderScan(){
   if(!scan){ $("#scanLine").textContent="Remote Senior and Staff PM roles from company boards, ZipRecruiter, Himalayas and job alerts, checked every weekday morning. No scan has run yet."; return;}
@@ -320,7 +320,8 @@ function jobCard(j){
   const sample=isSampleUrl(j.url), url=sample?"":safeUrl(j.url);
   const fitChip=(typeof j.score==="number"?`<span class="score${j.score>=70?" hi":""}" title="Criteria score">${esc(j.score)}</span>`:"")+(fit?`<span class="chip fit-${esc(fit)}">${esc(fit)} fit</span>`:"");
   const stChip=s!=="new"?`<span class="chip st st-${esc(s)}">${esc(STATUS_LABEL[s]||s)}</span>`:"";
-  const laneChip=j.lane?`<span class="chip lane">${esc(j.lane)}</span>`:"";
+  // The public demo shows one category per card (the sector); the lane is Chase's own grouping.
+  const laneChip=j.lane&&!(window.__RR_SHOWCASE__&&j.sector)?`<span class="chip lane">${esc(j.lane)}</span>`:"";
   const tags=tagsOf(j);
   const cf=conflictOf(j);
   const cfChip=cf?`<span class="chip conflict" title="Overlaps a product you're building">Conflict</span>`:"";
@@ -533,6 +534,9 @@ function parseSpec(t){
   catch(e){ return {err:String(e.message||e).split("\n")[0]}; }
 }
 const money=n=>typeof n==="number"?"$"+Math.round(n/1000)+"K":esc(n??"—");
+const sentence=t=>String(t).replace(/^\w/,c=>c.toUpperCase());
+// "fully_remote_us" -> "Fully remote, US"
+const workTxt=v=>v?sentence(String(v).replace(/_/g," ").replace(/\s+us$/i,", US")):"—";
 const listTxt=a=>Array.isArray(a)?a.map(x=>esc(x)).join(", "):esc(a??"—");
 function critSummary(d){
   if(!d) return "";
@@ -541,8 +545,8 @@ function critSummary(d){
   const hx=d.hard_exclude||{}, xs=[...(hx.companies||[]),...(hx.business_models||[])];
   const r=d.role||{}, w=d.work||{}, c=d.comp||{}, sc=d.scoring||{};
   return `<div class="ccard"><h2>At a glance</h2><div class="kv">
-      <div><small>Level</small><b>${listTxt(r.levels)}</b></div>
-      <div><small>Work</small><b>${esc(String(w.remote||"").replace(/_/g," "))}</b></div>
+      <div><small>Level</small><b>${sentence(listTxt(r.levels))}</b></div>
+      <div><small>Work</small><b>${esc(workTxt(w.remote))}</b></div>
       ${w.home_state?`<div><small>Home state</small><b>${esc(w.home_state)}${w.planned_move&&w.planned_move.state?` → ${esc(w.planned_move.state)}${w.planned_move.when?` (${esc(w.planned_move.when)})`:""}`:""}</b></div>`:""}
       <div><small>Base floor</small><b>${money(c.base_floor_usd)}</b></div>
       <div><small>Priority-sector floor</small><b>${money(c.priority_sector_floor_usd)}</b></div>

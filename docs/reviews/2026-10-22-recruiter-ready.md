@@ -65,9 +65,9 @@ P0 blocks showing it, P1 hurts the impression, P2 polish. Owner "here" = this re
 | RR-P2-8 | P2 | here | README | Signs off as "a senior product manager" while the portfolio and headline say Staff PM; no link to chaseholroyd.com at the top | Match the headline; add the portfolio link next to the demo link | fixed (round 3) |
 | RR-P2-9 | P2 | here | Criteria (public demo) | js-yaml comes from cdnjs at runtime; if blocked, the Criteria preview degrades | Inline js-yaml (MIT) in the public build only | fixed (round 3) |
 | RR-P2-10 | P2 | intake | Portfolio Role Radar page | "4 sources" while the README and demo list five (boards, ZipRecruiter, Himalayas, Climatebase, email alerts); footer says "Charlotte, NC" | "5 sources"; location wording is Chase's call (Decisions to review) | intake |
-| RR-P2-11 | P2 | here | Every card | Two category chips per card (lane and sector), e.g. "Geospatial / clean energy" on a solar role, read as two answers to one question | Public demo: show the sector chip only; the lane stays in "Lane, tags, referral, notes" | open |
-| RR-P2-12 | P2 | here | Recruiters tab (`?full`) | Tab says "Recruiters 2" while five people are listed (the count is next steps due) | Count everyone, as the other tabs do | open |
-| RR-P2-13 | P2 | here | Criteria "At a glance" | Values in lower-case monospace ("fully remote us", "senior, staff, principal, lead") read like code | Body font, sentence case ("Fully remote, US") | open |
+| RR-P2-11 | P2 | here | Every card | Two category chips per card (lane and sector), e.g. "Geospatial / clean energy" on a solar role, read as two answers to one question | Public demo: show the sector chip only; the lane stays in "Lane, tags, referral, notes" | fixed (round 4) |
+| RR-P2-12 | P2 | here | Recruiters tab (`?full`) | Tab says "Recruiters 2" while five people are listed (the count is next steps due) | Keep the count (it is next steps due, by design and tested) but say so: "Recruiters 2 due" | fixed (round 4) |
+| RR-P2-13 | P2 | here | Criteria "At a glance" | Values in lower-case monospace ("fully remote us", "senior, staff, principal, lead") read like code | Body font, sentence case ("Fully remote, US") | fixed (round 4) |
 
 ## Acceptance criteria (qa-tdd)
 - **RR-P0-1:** the public build shows a link to `https://chaseholroyd.com/role-radar.html` and the GitHub repo inside the first viewport at 390x844 and 1280x800; the lede text is visible; the live app build (no `__RR_PUBLIC__`) has neither.
@@ -109,3 +109,10 @@ P0 blocks showing it, P1 hurts the impression, P2 polish. Owner "here" = this re
 - Each new test failed on the round 2 code and passes now. Suites: 88/88 x3.
 - New this round: RR-P2-11, RR-P2-12, RR-P2-13.
 - Left: P0 2 (outside this repo), P1 1 (intake), P2 4 (3 here, 1 intake).
+
+### Round 4 (2026-10-22, 04:25-04:40 UTC), branch `claude/project-thread-tioah4-6`
+- Re-checked rounds 1-3 on new shots (phone and laptop, light and dark, public and `?full`): holding; axe still zero violations.
+- Fixed RR-P2-11 (public cards show the sector chip only), RR-P2-12 (tab reads "Recruiters 2 due"; the count stays next steps due, as the edge tests pin), RR-P2-13 ("Fully remote, US", "Senior, staff, principal, lead" in the body font).
+- Found and fixed in the re-check: "Filters and sort" label sat at the top of its taller 44px button; now centered (test added).
+- Each new test failed on the round 3 code. Suites: 92/92 x3. README screenshots regenerated.
+- **Left in this repo at P2 or above: none.** Left outside: RR-P0-2 and RR-P1-7, RR-P2-10 (portfolio intake), RR-P0-3 (Chase checks https on a phone).

@@ -31,6 +31,7 @@ _Updated 2026-10-22._
 - **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in the portfolio repo (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
 
 ## Done
+- 2026-10-22 recruiter-ready round 4: last in-repo P2s (one category chip on public cards, "Recruiters N due", plain-word Criteria summary, centered filter button). Nothing at P2 or above is left in this repo; what's left is the portfolio intake and Chase's https check. 92 tests.
 - 2026-10-22 recruiter-ready round 3: P2 polish (plain source names, folded filters on the public demo, one font in sentences, landmarks and headings with zero axe violations, js-yaml inlined in the public build, README links the live demo), README screenshots regenerated. 88 tests.
 - 2026-10-22 recruiter-ready round 2: demo "Sample posting" instead of example.com links, "Strong fit" chip wording, header numbers match the Watchlist, light-theme contrast at 4.5:1+, 44px touch targets on phones (RR-P1-2 to P1-6). 83 tests.
 - 2026-10-22 recruiter-ready round 1: public demo gets a way back to chaseholroyd.com, a GitHub link and a one-line intro (RR-P0-1, RR-P2-1); adding a role, company or recruiter shows it right away (RR-P1-1). 78 tests.
@@ -79,11 +80,11 @@ _Updated 2026-10-22._
 
 
 ## In progress
-- Recruiter-ready sprint v2 (Chase, 2026-10-22): agents synced (PR #20); review and triage done in `docs/reviews/2026-10-22-recruiter-ready.md` (3 P0, 7 P1, 10 P2; `npm run review:shots` re-shoots every screen). Then UX + QA review, triage into `docs/reviews/2026-10-22-recruiter-ready.md`, then a fix loop of small stacked draft PRs on `claude/project-thread-tioah4-*`.
+- Recruiter-ready sprint v2 (Chase, 2026-10-22), awaiting review: agents synced (PR #20); review and triage done in `docs/reviews/2026-10-22-recruiter-ready.md` (3 P0, 7 P1, 10 P2; `npm run review:shots` re-shoots every screen). Then UX + QA review, triage into `docs/reviews/2026-10-22-recruiter-ready.md`, then a fix loop of small stacked draft PRs on `claude/project-thread-tioah4-*`.
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed. Waiting on a browser check of the live URL and on the portfolio repoint.
 
 ## Exact next step
-- Recruiter-ready fix loop: take the top `open` row in `docs/reviews/2026-10-22-recruiter-ready.md` (P0, then P1, then P2), failing test first, one stacked draft PR per fix or tight batch on `claude/project-thread-tioah4-<n>`; re-run `npm run review:shots` and `npm test` x3; update the review doc's Rounds and this file.
+- Recruiter-ready: nothing open in this repo. Chase reviews the stacked draft PRs #20-#25 (merge bottom up: #20 first). After merge and the Pages deploy, re-run `npm run review:shots` against the build and confirm https://chaseholroyd.com/role-radar/ shows the intro and back link. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) go to Product Studio as an intake.
 - Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm, then the portfolio repoint (see Portfolio / public presence).
 - Gmail import: Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
 
