@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-22 (recruiter-ready sprint v2)
+Updated: 2026-10-22 (power hour: PRs #16 and #20-#25 merged)
 
 ## Planning IDs (Oct 21, 2026)
 The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs.
@@ -81,11 +81,12 @@ _Updated 2026-10-22._
 
 
 ## In progress
-- Recruiter-ready sprint v2 (Chase, 2026-10-22), awaiting review: agents synced (PR #20); review and triage done in `docs/reviews/2026-10-22-recruiter-ready.md` (3 P0, 7 P1, 10 P2; `npm run review:shots` re-shoots every screen). Then UX + QA review, triage into `docs/reviews/2026-10-22-recruiter-ready.md`, then a fix loop of small stacked draft PRs on `claude/project-thread-tioah4-*`.
-- Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed. Waiting on a browser check of the live URL and on the portfolio repoint.
+- Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. Open: PR #18 (job description preview) conflicts with main after those merges and needs a rebase before it can merge.
+- Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
 ## Exact next step
-- Recruiter-ready: nothing open in this repo. Chase reviews the stacked draft PRs #20-#25 (merge bottom up: #20 first). After merge and the Pages deploy, re-run `npm run review:shots` against the build and confirm https://chaseholroyd.com/role-radar/ shows the intro and back link. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) go to Product Studio as an intake.
+- PR #18: rebase onto main (conflicts in HANDOFF.md, app/role-radar.html, demo/mock-claude.js, demo/seed.json), re-run tests, merge once Chase says ok, then republish the live page with `posting.js`.
+- Recruiter-ready: merged. Confirm https://chaseholroyd.com/role-radar/ shows the intro and back link on a phone. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) are in `recruiter-ready-intake.md` for Chase to paste into Product Studio.
 - Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm, then the portfolio repoint (see Portfolio / public presence).
 - Gmail import: Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
 
