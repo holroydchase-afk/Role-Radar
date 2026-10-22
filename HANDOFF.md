@@ -18,6 +18,7 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 
 ## Portfolio / public presence
 _Updated 2026-10-22._
+- 2026-10-22 recruiter-ready review: the portfolio's "Try the demo" still opens the old `/demo/role-radar/` snapshot (P0, intake to Product Studio); https on chaseholroyd.com looked like it served a `*.github.io` certificate from this session (unconfirmed, Chase to check on a phone).
 - **Portfolio page:** https://chaseholroyd.com/role-radar.html (source: `tools/build.py` in the portfolio repo).
 - **Public demo (Chase approved 2026-10-22, first deploy 2026-10-22):** this repo builds and hosts its own demo with GitHub Pages at https://chaseholroyd.com/role-radar/ (`.github/workflows/pages.yml`, main only; `npm run build:pages` writes `_site/index.html`). It is the real page on `demo/seed.json` and `demo/mock-claude.js`, rebuilt on every push to main, so it never drifts. First Pages run after PR #17 deployed to `/Role-Radar/` (the repo name was capitalized and Pages paths are case-sensitive); Chase renamed the repo to `role-radar` on 2026-10-22 and the workflow was re-run. The build session cannot open the site itself (its network blocks the domain). Until the portfolio repoint lands, "Try the demo" still opens the old snapshot at https://chaseholroyd.com/demo/role-radar/.
 - **Two views:** the default is radar only (scan, 0-100 scores with reasons, pipeline, criteria, watchlist). Resume intake (Apply, resume links, intake settings) and the Recruiters tab show only with `?full` (https://chaseholroyd.com/role-radar/?full), because recruiters judge AI-written resumes. The page reads `window.__RR_PUBLIC__`, which only the public build sets; Chase's live app never sets it and is unchanged. Tests cover both views.
@@ -73,10 +74,11 @@ _Updated 2026-10-22._
 
 
 ## In progress
-- Recruiter-ready sprint v2 (Chase, 2026-10-22): agents synced (this PR), then UX + QA review, triage into `docs/reviews/2026-10-22-recruiter-ready.md`, then a fix loop of small stacked draft PRs on `claude/project-thread-tioah4-*`.
+- Recruiter-ready sprint v2 (Chase, 2026-10-22): agents synced (PR #20); review and triage done in `docs/reviews/2026-10-22-recruiter-ready.md` (3 P0, 7 P1, 10 P2; `npm run review:shots` re-shoots every screen). Then UX + QA review, triage into `docs/reviews/2026-10-22-recruiter-ready.md`, then a fix loop of small stacked draft PRs on `claude/project-thread-tioah4-*`.
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed. Waiting on a browser check of the live URL and on the portfolio repoint.
 
 ## Exact next step
+- Recruiter-ready fix loop: take the top `open` row in `docs/reviews/2026-10-22-recruiter-ready.md` (P0, then P1, then P2), failing test first, one stacked draft PR per fix or tight batch on `claude/project-thread-tioah4-<n>`; re-run `npm run review:shots` and `npm test` x3; update the review doc's Rounds and this file.
 - Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm, then the portfolio repoint (see Portfolio / public presence).
 - Gmail import: Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
 
