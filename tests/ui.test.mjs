@@ -481,3 +481,40 @@ test("page has a main landmark and valid headings (RR-P2-5)", async () => {
   assert.equal(await page.locator(".pips:not([role=img])").count(), 0);
   await page.close();
 });
+
+test("public demo cards show one category chip, the sector (RR-P2-11)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html });
+  await page.click("#tab-all");
+  const first = page.locator(".job").first();
+  const chips = await first.locator(".chip.lane").allTextContents();
+  assert.deepEqual(chips.map((c) => c.toLowerCase()), ["solar, storage & distributed energy"]);
+  await page.close();
+});
+
+test("Recruiters tab says its number is next steps due (RR-P2-12)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-people");
+  const due = await page.locator("#view .rec .next", { hasText: "due" }).count();
+  assert.equal(await page.locator("#tab-people .n").innerText(), `${due} due`);
+  await page.close();
+});
+
+test("Criteria 'At a glance' reads as plain words (RR-P2-13)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-criteria");
+  const kv = page.locator(".kv b");
+  const font = await kv.first().evaluate((el) => getComputedStyle(el).fontFamily);
+  assert.doesNotMatch(font, /Plex Mono/);
+  const text = (await kv.allInnerTexts()).join(" | ");
+  assert.match(text, /Fully remote, US/);
+  assert.match(text, /^Senior, staff/);
+  await page.close();
+});
+
+test("'Filters and sort' text is centered in its button", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html, width: 390, height: 844 });
+  assert.equal(await page.locator("#ftoggle").evaluate((el) => getComputedStyle(el).alignItems), "center");
+  await page.close();
+});
