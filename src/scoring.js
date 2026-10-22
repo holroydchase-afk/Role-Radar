@@ -6,6 +6,7 @@
  *         + culture (+10 any good signal, −10 per red flag, floor −20)
  *         + comp (+10 if the range reaches stretch_target_usd)
  *         − values (15 if the business is on values_penalty)
+ *         + dream (dream_roles.bonus, default 15, for a role like one of the dream_roles anchors)
  *   clamped to 0–100.
  *
  * Two badges sit beside the score and never change it (criteria.yaml values_fit and culture_fit):
@@ -21,7 +22,7 @@
   const FIT_POINTS = { strong: 35, maybe: 20, stretch: 5 };
   const SECTOR_POINTS_PER_WEIGHT = 15;
   const CULTURE_GOOD = 10, CULTURE_RED = -10, CULTURE_FLOOR = -20;
-  const COMP_BONUS = 10, VALUES_PENALTY = -15;
+  const COMP_BONUS = 10, VALUES_PENALTY = -15, DREAM_BONUS = 15;
 
   const lc = (s) => String(s == null ? "" : s).toLowerCase();
   const arr = (a) => (Array.isArray(a) ? a : a == null || a === "" ? [] : [a]);
@@ -85,6 +86,17 @@
     return { points, good, red };
   }
 
+  /** Dream-role match: an anchor's company, or an anchor-like title (role_keywords) in one of in_sectors. */
+  function dreamOf(job, spec, sector) {
+    const d = (spec && spec.dream_roles) || {};
+    const like = arr(d.like).filter((a) => a && lc(a.company).trim());
+    const anchor = like.find((a) => lc(job.company).trim() === lc(a.company).trim());
+    if (anchor) return { why: "like " + anchor.company + (anchor.title ? " " + anchor.title : ""), check: anchor.check || null };
+    const inSector = arr(d.in_sectors).some((id) => lc(id) === lc(sector && sector.id));
+    const kw = inSector && arr(d.role_keywords).find((k) => has([job.title, job.team].join(" "), k));
+    return kw ? { why: kw + " role in " + (sector.label || sector.id), check: null } : null;
+  }
+
   function valuesHit(job, spec) {
     const hay = [job.businessModel, job.industry, job.company].join(" ");
     return arr(spec && spec.values_penalty).find((v) => has(hay, v)) || null;
@@ -126,15 +138,17 @@
     const range = parseComp(job.comp);
     const target = spec.comp && spec.comp.stretch_target_usd;
     const values = valuesHit(job, spec);
+    const dream = dreamOf(job, spec, sector);
     const parts = {
       sector: weight * SECTOR_POINTS_PER_WEIGHT,
       fit: FIT_POINTS[fitKey] || 0,
       culture: culture.points,
       comp: range && target && range.max >= target ? COMP_BONUS : 0,
       values: values ? VALUES_PENALTY : 0,
+      dream: dream ? Number(spec.dream_roles.bonus ?? DREAM_BONUS) || 0 : 0,
     };
-    const raw = parts.sector + parts.fit + parts.culture + parts.comp + parts.values;
-    return { score: clamp(raw), raw, parts, sector, culture, valuesHit: values };
+    const raw = parts.sector + parts.fit + parts.culture + parts.comp + parts.values + parts.dream;
+    return { score: clamp(raw), raw, parts, sector, culture, valuesHit: values, dream };
   }
 
   const VALUES_BY_WEIGHT = { 3: "great", 2: "good", 1: "neutral", 0: "no" };
@@ -194,7 +208,7 @@
   function explain(result) {
     const p = result.parts, out = [];
     const add = (n, label) => { if (n) out.push((out.length ? (n < 0 ? "− " : "+ ") : n < 0 ? "−" : "") + Math.abs(n) + " " + label); };
-    add(p.sector, "sector"); add(p.fit, "fit"); add(p.culture, "culture"); add(p.comp, "comp"); add(p.values, "values");
+    add(p.sector, "sector"); add(p.fit, "fit"); add(p.culture, "culture"); add(p.comp, "comp"); add(p.values, "values"); add(p.dream, "dream role");
     return out.join(" ") || "0";
   }
 

@@ -113,6 +113,20 @@ test("explain lists the parts that moved the score", () => {
   assert.equal(S.explain(S.scoreJob(job({ fit: "maybe", postingText: "fast-paced" }), spec)), "15 sector + 20 fit − 10 culture");
 });
 
+test("dream_roles: anchor companies and anchor-like titles in listed sectors get the bonus", () => {
+  const d = { ...spec, dream_roles: { bonus: 15, like: [{ company: "Acme Solar", title: "Sr PM", check: "only if it ships" }], role_keywords: ["processing"], in_sectors: ["solar_energy"] } };
+  const anchor = S.scoreJob(job({ company: "Acme Solar", sector: "solar_energy", fit: "strong" }), d);
+  assert.equal(anchor.parts.dream, 15);
+  assert.equal(anchor.dream.check, "only if it ships");
+  assert.equal(S.scoreJob(job({ company: "Other Co", title: "Senior Product Manager, Processing", sector: "solar_energy" }), d).parts.dream, 15);
+  // Same title outside in_sectors, or a matching word only in the posting text, gets nothing.
+  assert.equal(S.scoreJob(job({ company: "Other Co", title: "Senior Product Manager, Processing", sector: "fintech" }), d).parts.dream, 0);
+  assert.equal(S.scoreJob(job({ company: "Other Co", sector: "solar_energy", postingText: "payment processing" }), d).parts.dream, 0);
+  assert.match(S.explain(anchor), /\+ 15 dream role$/);
+  // No dream_roles section, or junk in it, changes nothing.
+  assert.equal(S.scoreJob(job({ company: "Acme Solar" }), { ...spec, dream_roles: { like: [null, {}, "x"], in_sectors: "solar_energy" } }).parts.dream, 0);
+});
+
 test("every demo job's stored score matches the scoring rules", () => {
   for (const [id, j] of Object.entries(seed.jobs)) assert.equal(j.score, S.scoreJob(j, spec).score, id);
 });
