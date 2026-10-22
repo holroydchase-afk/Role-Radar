@@ -49,11 +49,11 @@ P0 blocks showing it, P1 hurts the impression, P2 polish. Owner "here" = this re
 | RR-P0-2 | P0 | intake | Portfolio Role Radar page | "Try the demo" opens the old snapshot `/demo/role-radar/` (57 KB, older features) instead of the live build at `/role-radar/`. Two demos tell two stories. | Repoint the button to `/role-radar/`, then delete `demo/role-radar/` and its `make_demos.py` edits | intake |
 | RR-P0-3 | P0 (if confirmed) | Chase / intake | Whole domain | https://chaseholroyd.com appears to serve a `*.github.io` certificate, so browsers would show a security warning; http is served without a redirect. Unverified in a real browser. | Chase opens https://chaseholroyd.com on the phone. If it warns: portfolio repo Settings > Pages > wait for the certificate, then tick "Enforce HTTPS" | waiting on Chase |
 | RR-P1-1 | P1 | here | Pipeline "Add a role", Watchlist "Add a company", Recruiters "Add a recruiter" | Toast says "Added" but the new item doesn't appear until you switch tabs: the list re-render is skipped while focus is still in the form. | Re-render after a successful add | fixed (round 1) |
-| RR-P1-2 | P1 | here | Every role card | "Open posting" goes to example.com placeholders (12 links) | Demo only: the button reads "Sample posting" and shows "This is a made-up role, so there's no real posting." | open |
-| RR-P1-3 | P1 | here | Every role card | The fit chip ("STRONG", "MAYBE", "STRETCH") sits next to the score, so 60 STRONG next to 75 MAYBE reads as a contradiction | Label it "Strong fit" / "Maybe fit" / "Stretch fit" | open |
-| RR-P1-4 | P1 | here | Header vs Watchlist vs New | Header says "42 boards · 5 new matches"; Watchlist says 7/9 boards read; New shows 6. Numbers disagree on one page. | Seed `meta/scan`: 9 boards checked, 6 new matches, so all three agree. Test pins it. | open |
-| RR-P1-5 | P1 | here | Demo badge, score and fit chips (light) | Contrast below 4.5:1: demo badge 4.02:1, green score/fit chips 4.44:1 (WCAG 1.4.3) | Darken `--warn` and `--good` in the light theme to at least 4.5:1 on their soft backgrounds | open |
-| RR-P1-6 | P1 | here | Phone, all tabs | Tap targets under 44px: tabs 32px, Save/Skip/Open posting 28px, "Filters and sort" 28px, inputs 34px | Below 600px (and on coarse pointers) buttons, tabs, selects and inputs get min-height 44px | open |
+| RR-P1-2 | P1 | here | Every role card | "Open posting" goes to example.com placeholders (12 links) | Demo only: the button reads "Sample posting" and shows "This is a made-up role, so there's no real posting." | fixed (round 2) |
+| RR-P1-3 | P1 | here | Every role card | The fit chip ("STRONG", "MAYBE", "STRETCH") sits next to the score, so 60 STRONG next to 75 MAYBE reads as a contradiction | Label it "Strong fit" / "Maybe fit" / "Stretch fit" | fixed (round 2) |
+| RR-P1-4 | P1 | here | Header vs Watchlist vs New | Header says "42 boards · 5 new matches"; Watchlist says 7/9 boards read; New shows 6. Numbers disagree on one page. | Seed `meta/scan`: 9 boards checked, 6 new matches, so all three agree. Test pins it. | fixed (round 2) |
+| RR-P1-5 | P1 | here | Demo badge, score and fit chips (light) | Contrast below 4.5:1: demo badge 4.02:1, green score/fit chips 4.44:1 (WCAG 1.4.3) | Darken `--warn` and `--good` in the light theme to at least 4.5:1 on their soft backgrounds | fixed (round 2) |
+| RR-P1-6 | P1 | here | Phone, all tabs | Tap targets under 44px: tabs 32px, Save/Skip/Open posting 28px, "Filters and sort" 28px, inputs 34px | Below 600px (and on coarse pointers) buttons, tabs, selects and inputs get min-height 44px | fixed (round 2) |
 | RR-P1-7 | P1 | intake | Portfolio Role Radar page | "Changes you make stay in your browser" but the demo resets on reload | "Try anything: the demo resets when you reload." | intake |
 | RR-P2-1 | P2 | here | Every card (public) | "Every application is my own call, made by hand." repeats on all 12 cards | Say it once in the intro lede; drop it from cards | fixed (round 1) |
 | RR-P2-2 | P2 | here | Header scan line | Monospace date in a sans sentence looks like a glitch; "demo data" said twice (badge and scan line) | Same font for the date; drop the scan-line "demo data" note in the demo seed | open |
@@ -88,3 +88,13 @@ P0 blocks showing it, P1 hurts the impression, P2 polish. Owner "here" = this re
 - A "Code on GitHub" link was dropped: the repo URL contains a term on the private denylist, so the privacy check blocks it. The portfolio page links GitHub instead (Decisions to review).
 - Suites: 78/78 x3. No console errors, no sideways scroll on the re-shoot. New issues: none.
 - Left: P0 2 (both outside this repo), P1 6 (4 here), P2 9 (7 here).
+
+### Round 2 (2026-10-22, 03:50-04:05 UTC), branch `claude/project-thread-tioah4-4`
+- Re-checked round 1 on the new shots: intro and back link hold at 390 and 1280, light and dark.
+- Fixed RR-P1-2: demo roles show "Sample posting" (a button with a short note) instead of dead example.com links; titles are plain text. No example.com links anywhere on the re-shoot.
+- Fixed RR-P1-3: chips read "Strong fit", "Maybe fit", "Stretch fit".
+- Fixed RR-P1-4: header says 9 boards and 6 new matches, matching the Watchlist strip (7/9 read) and the New tab; the second "demo data" in the scan line is gone (half of RR-P2-2).
+- Fixed RR-P1-5: light `--good` #176b41 and `--warn` #875c08; axe reports no contrast violations in light or dark.
+- Fixed RR-P1-6: under 600px or on touch screens, buttons, tabs, selects, inputs and disclosure rows are at least 44px tall (measured on every list tab).
+- Suites: 83/83 x3. No console errors, no sideways scroll. New issues: none.
+- Left: P0 2 (outside this repo), P1 1 (intake), P2 9 (7 here).

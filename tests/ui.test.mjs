@@ -370,3 +370,62 @@ test("a recruiter added on ?full shows up right away (RR-P1-1)", async () => {
   await page.waitForFunction(() => /Quill Fernsby/i.test(document.querySelector("#view").innerText), null, { timeout: 2000 });
   await page.close();
 });
+
+test("demo roles have no example.com links; 'Sample posting' explains itself (RR-P1-2)", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-all");
+  assert.equal(await page.locator('a[href*="example.com"]').count(), 0);
+  const btn = page.locator("#view button", { hasText: "Sample posting" }).first();
+  await btn.click();
+  assert.match(await page.locator("#toast").innerText(), /made-up role/);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("fit chips say 'fit' so they don't read as a grade (RR-P1-3)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-all");
+  const chips = await page.locator("#view .chip[class*=fit-]").allTextContents();
+  assert.ok(chips.length >= 10);
+  for (const c of chips) assert.match(c, /^(strong|maybe|stretch) fit$/i);
+  await page.close();
+});
+
+test("header numbers agree with the Watchlist strip and the New tab (RR-P1-4)", async () => {
+  const { page } = await openDemo();
+  const line = await page.locator("#scanLine").innerText();
+  const [, boards, fresh] = /(\d+) boards · (\d+) new/.exec(line) || [];
+  assert.ok(boards, line);
+  const newCount = await page.locator("#tab-inbox .n").innerText();
+  assert.equal(fresh, newCount.trim(), "new matches = New tab");
+  await page.click("#tab-watch");
+  assert.match(await page.locator("#view").innerText(), new RegExp(`\\d+/${boards} read`));
+  assert.doesNotMatch(line, /demo data/i, "the badge already says demo");
+  await page.close();
+});
+
+test("light theme chips meet 4.5:1 contrast (RR-P1-5)", async () => {
+  const { page } = await openDemo();
+  const ratio = await page.evaluate(() => {
+    const lum = (c) => { const v = c.match(/\d+/g).slice(0, 3).map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+    const r = (el) => { const s = getComputedStyle(el); const a = lum(s.color), b = lum(s.backgroundColor); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
+    return { demo: r(document.querySelector("#demoNote")), fit: r(document.querySelector(".fit-strong")), score: r(document.querySelector(".score.hi")) };
+  });
+  for (const [k, v] of Object.entries(ratio)) assert.ok(v >= 4.5, `${k} ${v.toFixed(2)}`);
+  await page.close();
+});
+
+test("phone controls are at least 44px tall (RR-P1-6)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html, width: 390, height: 844 });
+  for (const id of ["inbox", "pipeline", "watch", "filters"]) {
+    await page.click(`#tab-${id}`);
+    if (id === "pipeline") await page.locator("#addRole summary").click();
+    const small = await page.evaluate(() => [...document.querySelectorAll("button, a.btn, select, input:not([type=checkbox]):not([type=radio]), [role=tab], .showcase a, summary")]
+      .filter((el) => el.offsetParent !== null)
+      .map((el) => [el.id || el.textContent.trim().slice(0, 20), Math.round(el.getBoundingClientRect().height)])
+      .filter(([, h]) => h < 44));
+    assert.deepEqual(small, [], id);
+  }
+  await page.close();
+});

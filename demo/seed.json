@@ -480,9 +480,9 @@
     },
     "scan": {
       "lastRun": "@t-0",
-      "boardsChecked": 42,
-      "newMatches": 5,
-      "note": "demo data",
+      "boardsChecked": 9,
+      "newMatches": 6,
+      "note": "",
       "coverage": {
         "mode": "full",
         "attempted": 9,
