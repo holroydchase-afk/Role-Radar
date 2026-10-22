@@ -13,7 +13,7 @@ export function buildDemo({ seed: seedOverride, publicDemo = false } = {}) {
   const seed = seedOverride || JSON.parse(read("demo/seed.json"), (k, v) =>
     typeof v === "string" && v.startsWith("@file:") ? read(v.slice(6)) : v);
   const seedJson = JSON.stringify(seed).replace(/</g, "\\u003c");
-  const flag = publicDemo ? `<script>window.__RR_PUBLIC__=!new URLSearchParams(location.search).has("full");</script>\n` : "";
+  const flag = publicDemo ? `<script>window.__RR_PUBLIC__=!new URLSearchParams(location.search).has("full");window.__RR_SHOWCASE__=true;</script>\n` : "";
   const inject = flag + `<script>window.__RR_SEED__=${seedJson};</script>\n<script>${read("demo/mock-claude.js")}</script>\n`;
   const marker = '<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/';
   if (!page.includes(marker)) throw new Error("Could not find the js-yaml script tag to inject before.");

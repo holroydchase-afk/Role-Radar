@@ -154,12 +154,16 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 .dig li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:baseline}
 .dig .sub2{grid-column:2;color:var(--muted);font-size:.8rem}
 .privbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 12px}.privbar .hint{margin:0;max-width:65ch}
+.showcase[hidden]{display:none}.showcase{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.9rem}.showcase a{color:var(--accent);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;min-height:44px}.showcase a:hover{text-decoration:underline}
+.lede{margin:0;max-width:62ch;font-size:1rem}
 .cnote{font:500 .84rem var(--f-body);color:var(--warn);background:var(--warn-soft);border-radius:7px;padding:5px 9px;margin:0;max-width:65ch}
 </style>
 
 <div class="wrap">
+  <nav class="showcase" id="showcase" aria-label="About this demo" hidden><a href="https://chaseholroyd.com/role-radar.html">← Chase Holroyd</a><a href="https://chaseholroyd.com/">More of my work</a></nav>
   <header>
     <h1>Role Radar</h1>
+    <p class="lede" id="lede" hidden>A job-search radar I built for my own search. It reads job boards every weekday and scores each role 0–100 against criteria I edit, with the math on every card. Applying stays my own call.</p>
     <span class="demo" id="demoNote" hidden>Demo data: fictional companies and people</span>
     <p class="sub" id="scanLine">Remote Senior and Staff PM roles from company boards, ZipRecruiter, Himalayas and job alerts, checked every weekday morning.</p>
   </header>
@@ -334,7 +338,7 @@ function jobCard(j){
     ${j.skipReason&&s==="skipped"?`<p class="note" style="color:var(--muted)">Skipped: ${esc(j.skipReason)}</p>`:""}
     <div class="apply-row">
       ${TOOLS?`<button class="apply" data-apply="${id}">${resumeUrl?"Re-run intake":"Apply"}</button>`:""}
-      ${!TOOLS?`<span class="hint">Every application is my own call, made by hand.</span>`:resumeUrl?`<a class="resume" href="${esc(resumeUrl)}" target="_blank" rel="noopener">${esc(j.resumeName||"Tailored resume")} ↗</a>`:(j.resumeName?`<span class="hint">Resume: ${esc(j.resumeName)}</span>`:`<span class="hint">Copies an intake prompt for a new chat</span>`)}
+      ${!TOOLS?"":resumeUrl?`<a class="resume" href="${esc(resumeUrl)}" target="_blank" rel="noopener">${esc(j.resumeName||"Tailored resume")} ↗</a>`:(j.resumeName?`<span class="hint">Resume: ${esc(j.resumeName)}</span>`:`<span class="hint">Copies an intake prompt for a new chat</span>`)}
     </div>
     <div class="ctl">
       <label class="sr" for="st-${id}" style="display:flex;gap:6px;align-items:center">Status
@@ -806,7 +810,7 @@ document.addEventListener("submit",async e=>{
     const n=$("#ar-n").value.trim(), c=$("#ar-c").value.trim(); if(!n||!c) return;
     const slug=x=>x.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
     const doc={name:n,company:c,type:$("#ar-t").value,roles:$("#ar-r").value.trim(),nextStep:$("#ar-x").value.trim(),nextStepDue:$("#ar-d").value,lastContact:today(),source:"manual",createdAt:new Date().toISOString(),mailSearch:"https://mail.google.com/mail/u/0/#search/"+encodeURIComponent(c)};
-    try{await db.doc("recruiters/"+slug(n+" "+c)).set(doc); e.target.reset(); toast("Recruiter added");}catch(_){toast("Couldn't add that.");}
+    try{await db.doc("recruiters/"+slug(n+" "+c)).set(doc); e.target.reset(); document.activeElement?.blur?.(); toast("Recruiter added"); render();}catch(_){toast("Couldn't add that.");}
     return;
   }
   if(e.target.id==="addJob"){
@@ -815,13 +819,13 @@ document.addEventListener("submit",async e=>{
     const id="manual-"+slug(co)+"-"+slug(ti), now=new Date().toISOString(), status=$("#aj-st").value;
     const doc={company:co,title:ti,url:$("#aj-url").value.trim(),lane:$("#aj-ln").value,source:"manual",firstSeen:now,status,statusAt:now,viewedAt:now};
     if(status==="applied"){doc.appliedAt=now; doc.followUpDue=addBusinessDays(now,config.followUpBusinessDays);}
-    try{await db.doc("jobs/"+id).set(doc); toast("Added to the pipeline"); e.target.reset(); document.activeElement?.blur?.();}catch(err){toast("Couldn't add that role.");}
+    try{await db.doc("jobs/"+id).set(doc); toast("Added to the pipeline"); e.target.reset(); document.activeElement?.blur?.(); render();}catch(err){toast("Couldn't add that role.");}
     return;
   }
   if(e.target.id==="addCo"){
     const ats=$("#coAts").value, slug=$("#coSlug").value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,"");
     if(!slug) return;
-    try{await db.doc("companies/"+ats+"-"+slug).set({name:$("#coName").value.trim(),ats,slug,industry:$("#coInd").value.trim(),status:"unverified",via:"you"}); toast("Added. The next scan will check it."); e.target.reset();}
+    try{await db.doc("companies/"+ats+"-"+slug).set({name:$("#coName").value.trim(),ats,slug,industry:$("#coInd").value.trim(),status:"unverified",via:"you"}); toast("Added. The next scan will check it."); e.target.reset(); document.activeElement?.blur?.(); render();}
     catch(err){toast("Couldn't add that company.");}
   }
   if(e.target.id==="cfgForm"){
@@ -849,6 +853,7 @@ document.addEventListener("keydown",e=>{
 });
 
 if(window.__RR_DEMO__) $("#demoNote").hidden=false;
+if(window.__RR_SHOWCASE__){ $("#showcase").hidden=false; $("#lede").hidden=false; }
 render();
 (async()=>{
   Promise.resolve(window.claude?.use?.("mcp")).then(m=>{mcp=m||null; mcpState=m?"ready":"none";},()=>{mcpState="none";}).then(()=>{ if(tab==="people") render(); });
