@@ -7,7 +7,7 @@
 :root{
   --bg:#eef1ef; --surface:#fbfcfb; --ink:#17201d; --muted:#5b6862; --line:#d3dad6;
   --accent:#1f5f8b; --accent-soft:#dde9f2;
-  --good:#1d7a4c; --good-soft:#dcefe4; --warn:#9a6a0b; --warn-soft:#f6ecd4; --bad:#9b3b30; --bad-soft:#f5e0dc;
+  --good:#176b41; --good-soft:#dcefe4; --warn:#875c08; --warn-soft:#f6ecd4; --bad:#9b3b30; --bad-soft:#f5e0dc;
   --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --f-body:"Instrument Sans", system-ui, -apple-system, sans-serif;
   --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
@@ -90,6 +90,8 @@ dialog .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-
 .fbar .fields{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
 #ftoggle{display:none}
 @media (max-width:600px){#ftoggle{display:inline-flex}.fbar:not(.open) .fields{display:none}}
+/* Touch: every control at least 44px tall. */
+@media (max-width:600px), (pointer:coarse){nav button,.btn,button,select,input:not([type=checkbox]):not([type=radio]){min-height:44px}a.btn{display:inline-flex;align-items:center}summary{padding-block:14px}}
 .fbar .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
 .linkbtn{font:500 .82rem var(--f-body);background:none;border:0;color:var(--accent);cursor:pointer;padding:0}
 .dates{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:.8rem;color:var(--muted)}
@@ -304,9 +306,12 @@ function fitRows(j){
   return `<div class="fitr" aria-label="Fit ratings">${row("Values",f.values)}${row("Culture",f.culture)}</div>`;
 }
 function rateMatch(want,got){ if(!want) return true; if(want==="good+") return got==="great"||got==="good"; return got===want; }
+function isSampleUrl(u){ if(!window.__RR_DEMO__||!u) return false; try{ return /(^|\.)example\.(com|org|net)$/.test(new URL(u).hostname); }catch(_){ return false; } }
 function jobCard(j){
-  const id=esc(j._id), s=st(j), fit=(j.fit||"").toLowerCase(), url=safeUrl(j.url), resumeUrl=safeUrl(j.resumeUrl);
-  const fitChip=(typeof j.score==="number"?`<span class="score${j.score>=70?" hi":""}" title="Criteria score">${esc(j.score)}</span>`:"")+(fit?`<span class="chip fit-${esc(fit)}">${esc(fit)}</span>`:"");
+  const id=esc(j._id), s=st(j), fit=(j.fit||"").toLowerCase(), resumeUrl=safeUrl(j.resumeUrl);
+  // Demo roles are made up: their example.com links would be dead ends, so they become a "Sample posting" note.
+  const sample=isSampleUrl(j.url), url=sample?"":safeUrl(j.url);
+  const fitChip=(typeof j.score==="number"?`<span class="score${j.score>=70?" hi":""}" title="Criteria score">${esc(j.score)}</span>`:"")+(fit?`<span class="chip fit-${esc(fit)}">${esc(fit)} fit</span>`:"");
   const stChip=s!=="new"?`<span class="chip st st-${esc(s)}">${esc(STATUS_LABEL[s]||s)}</span>`:"";
   const laneChip=j.lane?`<span class="chip lane">${esc(j.lane)}</span>`:"";
   const tags=tagsOf(j);
@@ -346,7 +351,7 @@ function jobCard(j){
       ${INBOX.includes(s)?`<button class="btn" type="button" data-quick="saved" data-job="${id}">Save</button>`:""}
       ${s==="applying"?`<button class="btn" type="button" data-quick="applied" data-job="${id}">I submitted it</button>`:""}
       ${!DONE.includes(s)?`<button class="btn" type="button" data-quick="skipped" data-job="${id}">Skip</button>`:""}
-      ${url?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none" data-view="${id}">Open posting</a>`:""}
+      ${url?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none" data-view="${id}">Open posting</a>`:sample?`<button class="btn" type="button" data-sample="${id}">Sample posting</button>`:""}
     </div>
     ${skipRow}
     <details class="more" data-more="${id}"${openMore.has(j._id)?" open":""}>
@@ -733,6 +738,8 @@ async function copyText(s){
   try{ const ta=$("#applyText"); ta.focus(); ta.select(); return document.execCommand("copy"); }catch(_){ return false; }
 }
 document.addEventListener("click",async e=>{
+  const sp=e.target.closest("[data-sample]");
+  if(sp){ markViewed(jobs.find(x=>x._id===sp.dataset.sample)); toast("This is a made-up role, so there's no real posting."); return; }
   const vw=e.target.closest("[data-view]");
   if(vw){ markViewed(jobs.find(x=>x._id===vw.dataset.view)); return; }
   const a=e.target.closest("[data-apply]");
