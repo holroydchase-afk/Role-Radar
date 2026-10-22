@@ -16,6 +16,16 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 | culture-values-ratings (PR #11) | RR-M2.1 | Culture and values ratings |
 | Gmail onboarding | RR-M2.2 | First-run Gmail onboarding |
 
+## Portfolio / public presence
+_Updated 2026-10-21._
+- **Portfolio page:** https://chaseholroyd.com/role-radar.html (source: `tools/build.py` in `holroydchase-afk.github.io`).
+- **Live demo:** https://chaseholroyd.com/demo/role-radar/. It's a snapshot of the Role Radar page with `scoring.js`, kept in the portfolio repo (`demo/role-radar/`, `tools/demo-src/`), not built from this repo. The portfolio's HANDOFF.md records the snapshot version and how to resync.
+- **Demo data:** entirely made up (companies, people, jobs, comp floor), saved only in the visitor's browser. Never real applications or recruiters.
+- **Drift to know about:** the demo is a snapshot, so it drifts when the live page changes. Resync it once M2.1 (culture and values ratings) ships.
+- **Studio-wide status** (portfolio, domain, every demo, what's waiting on Chase): https://github.com/holroydchase-afk/pm-tools/blob/main/STUDIO-STATUS.md
+- 2026-10-21: the portfolio home page lists Role Radar first, tagged "Live demo".
+- **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in `holroydchase-afk.github.io` (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
+
 ## Done
 - 2026-10-21: studio session rules installed: `.claude/settings.json` SessionStart hook prints this file into every Claude Code session, `.github/workflows/handoff-check.yml` fails a PR that changes files without updating this file, and CLAUDE.md has a "Session rules" section.
 - M1.1 (was M1) on `m1-plan-and-source` (PR #1): scrubbed page source, example criteria, scan prompt template and renderer, demo seed data, in-memory db mock, demo build, personal-data check plus pre-commit hook, PLAN.md.
