@@ -18,6 +18,7 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 
 ## Portfolio / public presence
 _Updated 2026-10-22._
+- 2026-10-22: the public demo now links back to https://chaseholroyd.com/role-radar.html and the portfolio home, with a one-line intro (public build only).
 - 2026-10-22 recruiter-ready review: the portfolio's "Try the demo" still opens the old `/demo/role-radar/` snapshot (P0, intake to Product Studio); https on chaseholroyd.com looked like it served a `*.github.io` certificate from this session (unconfirmed, Chase to check on a phone).
 - **Portfolio page:** https://chaseholroyd.com/role-radar.html (source: `tools/build.py` in the portfolio repo).
 - **Public demo (moving here, Chase approved 2026-10-22):** this repo now builds and hosts its own demo with GitHub Pages at https://chaseholroyd.com/role-radar/ (`.github/workflows/pages.yml`, main only; `npm run build:pages` writes `_site/index.html`). It is the real page on `demo/seed.json` and `demo/mock-claude.js`, rebuilt on every push to main, so it never drifts. Until the first deploy, the old snapshot at https://chaseholroyd.com/demo/role-radar/ (portfolio repo) is still what "Try the demo" opens.
@@ -29,6 +30,7 @@ _Updated 2026-10-22._
 - **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in the portfolio repo (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
 
 ## Done
+- 2026-10-22 recruiter-ready round 1: public demo gets a way back to chaseholroyd.com, a GitHub link and a one-line intro (RR-P0-1, RR-P2-1); adding a role, company or recruiter shows it right away (RR-P1-1). 78 tests.
 - 2026-10-22: synced studio agents from studio-agents PR #6 branch (`claude/project-thread-wvkxmq`, commit 7637b2a): ux-reviewer gains the visual pass, heuristic sweep and "showcase review" mode; positioning reads HANDOFF.md. The studio-only focus-coach and orchestrator agents are left out on purpose (they coach Chase's own schedule, not this product).
 - 2026-10-21: studio session rules installed: `.claude/settings.json` SessionStart hook prints this file into every Claude Code session, `.github/workflows/handoff-check.yml` fails a PR that changes files without updating this file, and CLAUDE.md has a "Session rules" section.
 - M1.1 (was M1) on `m1-plan-and-source` (PR #1): scrubbed page source, example criteria, scan prompt template and renderer, demo seed data, in-memory db mock, demo build, personal-data check plus pre-commit hook, PLAN.md.
@@ -90,6 +92,7 @@ _Updated 2026-10-22._
 - The live page is `app/role-radar.html` published with `src/scoring.js` as a supporting file named `scoring.js`.
 
 ## Decisions to review
+- Public demo has no "Code on GitHub" link: the repo URL contains a term on the private denylist, so the pre-commit privacy check blocks it. If you're fine with the GitHub handle appearing in page source, allow it in the denylist and add the link; the portfolio page can link the repo meanwhile.
 - Agents sync skips `focus-coach` and `orchestrator`: they are about Chase's personal routine and would read oddly to a recruiter browsing this public repo. Re-run `scripts/sync.sh <repo> focus-coach orchestrator` from studio-agents if you want them here.
 - The Gmail search result shape was taken from the connector's own documentation, not a live call (reading real mail from the build session was blocked as personal data). The parser accepts the documented camelCase fields and a few likely variants; first real use will confirm it.
 - Gmail import is hidden while recruiter details are hidden, like *Add a recruiter*, since its list shows names.

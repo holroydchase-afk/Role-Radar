@@ -45,17 +45,17 @@ P0 blocks showing it, P1 hurts the impression, P2 polish. Owner "here" = this re
 
 | ID | Pri | Owner | Screen | Problem | Fix | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| RR-P0-1 | P0 | here | Every tab, first screen | No intro and no way back: a recruiter isn't told what Role Radar is, who built it, or how to get back to chaseholroyd.com. (Showcase: first screen, honest demo) | Public build only: a top bar "← Chase Holroyd" (links https://chaseholroyd.com/role-radar.html) and "Code on GitHub", plus a one-line lede: "A job-search radar I built for my own search. It scans job boards every weekday and scores each role 0-100 against criteria I edit. Everything here is made-up sample data." | open |
+| RR-P0-1 | P0 | here | Every tab, first screen | No intro and no way back: a recruiter isn't told what Role Radar is, who built it, or how to get back to chaseholroyd.com. (Showcase: first screen, honest demo) | Public build only: a top bar "← Chase Holroyd" (links https://chaseholroyd.com/role-radar.html) and "Code on GitHub", plus a one-line lede: "A job-search radar I built for my own search. It scans job boards every weekday and scores each role 0-100 against criteria I edit. Everything here is made-up sample data." | fixed (round 1) |
 | RR-P0-2 | P0 | intake | Portfolio Role Radar page | "Try the demo" opens the old snapshot `/demo/role-radar/` (57 KB, older features) instead of the live build at `/role-radar/`. Two demos tell two stories. | Repoint the button to `/role-radar/`, then delete `demo/role-radar/` and its `make_demos.py` edits | intake |
 | RR-P0-3 | P0 (if confirmed) | Chase / intake | Whole domain | https://chaseholroyd.com appears to serve a `*.github.io` certificate, so browsers would show a security warning; http is served without a redirect. Unverified in a real browser. | Chase opens https://chaseholroyd.com on the phone. If it warns: portfolio repo Settings > Pages > wait for the certificate, then tick "Enforce HTTPS" | waiting on Chase |
-| RR-P1-1 | P1 | here | Pipeline "Add a role", Watchlist "Add a company", Recruiters "Add a recruiter" | Toast says "Added" but the new item doesn't appear until you switch tabs: the list re-render is skipped while focus is still in the form. | Re-render after a successful add | open |
+| RR-P1-1 | P1 | here | Pipeline "Add a role", Watchlist "Add a company", Recruiters "Add a recruiter" | Toast says "Added" but the new item doesn't appear until you switch tabs: the list re-render is skipped while focus is still in the form. | Re-render after a successful add | fixed (round 1) |
 | RR-P1-2 | P1 | here | Every role card | "Open posting" goes to example.com placeholders (12 links) | Demo only: the button reads "Sample posting" and shows "This is a made-up role, so there's no real posting." | open |
 | RR-P1-3 | P1 | here | Every role card | The fit chip ("STRONG", "MAYBE", "STRETCH") sits next to the score, so 60 STRONG next to 75 MAYBE reads as a contradiction | Label it "Strong fit" / "Maybe fit" / "Stretch fit" | open |
 | RR-P1-4 | P1 | here | Header vs Watchlist vs New | Header says "42 boards · 5 new matches"; Watchlist says 7/9 boards read; New shows 6. Numbers disagree on one page. | Seed `meta/scan`: 9 boards checked, 6 new matches, so all three agree. Test pins it. | open |
 | RR-P1-5 | P1 | here | Demo badge, score and fit chips (light) | Contrast below 4.5:1: demo badge 4.02:1, green score/fit chips 4.44:1 (WCAG 1.4.3) | Darken `--warn` and `--good` in the light theme to at least 4.5:1 on their soft backgrounds | open |
 | RR-P1-6 | P1 | here | Phone, all tabs | Tap targets under 44px: tabs 32px, Save/Skip/Open posting 28px, "Filters and sort" 28px, inputs 34px | Below 600px (and on coarse pointers) buttons, tabs, selects and inputs get min-height 44px | open |
 | RR-P1-7 | P1 | intake | Portfolio Role Radar page | "Changes you make stay in your browser" but the demo resets on reload | "Try anything: the demo resets when you reload." | intake |
-| RR-P2-1 | P2 | here | Every card (public) | "Every application is my own call, made by hand." repeats on all 12 cards | Say it once in the intro lede; drop it from cards | open |
+| RR-P2-1 | P2 | here | Every card (public) | "Every application is my own call, made by hand." repeats on all 12 cards | Say it once in the intro lede; drop it from cards | fixed (round 1) |
 | RR-P2-2 | P2 | here | Header scan line | Monospace date in a sans sentence looks like a glitch; "demo data" said twice (badge and scan line) | Same font for the date; drop the scan-line "demo data" note in the demo seed | open |
 | RR-P2-3 | P2 | here | Every card | Raw source names in lower case ("greenhouse", "ziprecruiter", "alert") read as debug output | Show "Greenhouse", "ZipRecruiter", "Job alert", "Added by hand" | open |
 | RR-P2-4 | P2 | here | Laptop, list tabs | First laptop screen is 10 filter dropdowns before the first role | Public demo: fold filters behind "Filters and sort" at every width | open |
@@ -80,3 +80,11 @@ P0 blocks showing it, P1 hurts the impression, P2 polish. Owner "here" = this re
 
 ### Round 0 (2026-10-22, 03:30-04:00 UTC)
 - Review done, list above. Fixed: none yet. Left: P0 3 (1 here, 2 outside), P1 7 (5 here), P2 10 (8 here).
+
+### Round 1 (2026-10-22, 03:40-03:50 UTC), branch `claude/project-thread-tioah4-3`
+- Fixed RR-P0-1: public build shows "← Chase Holroyd" (portfolio page) and "More of my work" (chaseholroyd.com) plus a one-line lede in the first screen at 390 and 1280, light and dark (re-shot and checked). The live app has neither.
+- Fixed RR-P2-1: "Applying stays my own call" is said once in the lede; the line is gone from the cards.
+- Fixed RR-P1-1: adding a role, company or recruiter now shows it right away (3 tests failed before the fix, pass after).
+- A "Code on GitHub" link was dropped: the repo URL contains a term on the private denylist, so the privacy check blocks it. The portfolio page links GitHub instead (Decisions to review).
+- Suites: 78/78 x3. No console errors, no sideways scroll on the re-shoot. New issues: none.
+- Left: P0 2 (both outside this repo), P1 6 (4 here), P2 9 (7 here).

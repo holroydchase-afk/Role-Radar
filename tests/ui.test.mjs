@@ -267,7 +267,7 @@ test("public demo: radar only, no resume or recruiter tools anywhere", async () 
     assert.equal(await page.locator("#view .apply").count(), 0, `${id} has an Apply button`);
   }
   await page.click("#tab-all");
-  assert.match(await page.locator("#view").innerText(), /Every application is my own call, made by hand/);
+  assert.match(await page.locator("#lede").innerText(), /my own call/);
   assert.match(await page.locator(".why-score").first().innerText(), /sector/);
   await page.click("#tab-filters");
   assert.equal(await page.locator("#cCmd, #cInstr").count(), 0);
@@ -296,5 +296,77 @@ test("a remembered Recruiters tab falls back to New in the public demo", async (
   await page.goto(page.url().split("?")[0]);
   await page.waitForSelector("#tab-inbox");
   assert.equal(await page.locator("#tab-inbox").getAttribute("aria-selected"), "true");
+  await page.close();
+});
+
+test("public demo says what it is and links back to the portfolio in the first screen (RR-P0-1)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  for (const [width, height] of [[390, 844], [1280, 800]]) {
+    for (const query of ["", "?full"]) {
+      const { page, errors } = await openDemo({ html, width, height, query });
+      const back = page.locator('a[href="https://chaseholroyd.com/role-radar.html"]');
+      assert.equal(await back.count(), 1, `back link ${width} ${query}`);
+      const box = await back.boundingBox();
+      assert.ok(box && box.y + box.height <= height, `back link in first screen at ${width}`);
+      assert.equal(await page.locator('#showcase a[href="https://chaseholroyd.com/"]').count(), 1);
+      const lede = page.locator("#lede");
+      assert.ok(await lede.isVisible());
+      assert.match(await lede.innerText(), /job-search radar I built/);
+      const lb = await lede.boundingBox();
+      assert.ok(lb.y + lb.height <= height, `lede in first screen at ${width}`);
+      assert.deepEqual(errors, []);
+      await page.close();
+    }
+  }
+});
+
+test("the app outside the public demo has no showcase bar", async () => {
+  const { page } = await openDemo();
+  assert.ok(!(await page.locator("#showcase").isVisible()));
+  assert.ok(!(await page.locator("#lede").isVisible()));
+  await page.close();
+});
+
+test("public demo says 'my own call' once, not on every card (RR-P2-1)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html });
+  await page.click("#tab-all");
+  assert.doesNotMatch(await page.locator("#view").innerText(), /my own call/);
+  assert.match(await page.locator("#lede").innerText(), /my own call/);
+  await page.close();
+});
+
+test("a role added on Pipeline shows up right away (RR-P1-1)", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-pipeline");
+  await page.locator("#addRole summary").click();
+  await page.fill("#aj-co", "Quillfern Labs");
+  await page.fill("#aj-ti", "Senior PM, Test Role");
+  await page.locator("#addJob button[type=submit]").click();
+  await page.waitForFunction(() => /Quillfern Labs/i.test(document.querySelector("#view").innerText), null, { timeout: 2000 });
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("a company added to the watchlist shows up right away (RR-P1-1)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-watch");
+  await page.fill("#coName", "Quillfern Labs");
+  await page.fill("#coSlug", "quillfern");
+  await page.locator("#addCo button[type=submit]").click();
+  await page.waitForFunction(() => /Quillfern Labs/i.test(document.querySelector("#view").innerText), null, { timeout: 2000 });
+  await page.close();
+});
+
+test("a recruiter added on ?full shows up right away (RR-P1-1)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-people");
+  await page.click("#recPrivacy");
+  const form = page.locator("#addRec");
+  if (!(await form.isVisible())) await page.locator("details:has(#addRec) summary").click();
+  await page.fill("#ar-n", "Quill Fernsby (demo)");
+  await page.fill("#ar-c", "Quillfern Labs");
+  await form.locator("button[type=submit]").click();
+  await page.waitForFunction(() => /Quill Fernsby/i.test(document.querySelector("#view").innerText), null, { timeout: 2000 });
   await page.close();
 });
