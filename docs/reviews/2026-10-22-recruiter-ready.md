@@ -56,15 +56,18 @@ P0 blocks showing it, P1 hurts the impression, P2 polish. Owner "here" = this re
 | RR-P1-6 | P1 | here | Phone, all tabs | Tap targets under 44px: tabs 32px, Save/Skip/Open posting 28px, "Filters and sort" 28px, inputs 34px | Below 600px (and on coarse pointers) buttons, tabs, selects and inputs get min-height 44px | fixed (round 2) |
 | RR-P1-7 | P1 | intake | Portfolio Role Radar page | "Changes you make stay in your browser" but the demo resets on reload | "Try anything: the demo resets when you reload." | intake |
 | RR-P2-1 | P2 | here | Every card (public) | "Every application is my own call, made by hand." repeats on all 12 cards | Say it once in the intro lede; drop it from cards | fixed (round 1) |
-| RR-P2-2 | P2 | here | Header scan line | Monospace date in a sans sentence looks like a glitch; "demo data" said twice (badge and scan line) | Same font for the date; drop the scan-line "demo data" note in the demo seed | open |
-| RR-P2-3 | P2 | here | Every card | Raw source names in lower case ("greenhouse", "ziprecruiter", "alert") read as debug output | Show "Greenhouse", "ZipRecruiter", "Job alert", "Added by hand" | open |
-| RR-P2-4 | P2 | here | Laptop, list tabs | First laptop screen is 10 filter dropdowns before the first role | Public demo: fold filters behind "Filters and sort" at every width | open |
-| RR-P2-5 | P2 | here | All tabs | No `<main>` landmark; sector-weight pips use `aria-label` on a plain span (ARIA 1.2 prohibited); Criteria card headings skip from h1 to h3 | Wrap the view in `<main>`, give pips `role="img"`, use h2 | open |
-| RR-P2-6 | P2 | here | Scan rules | "now live on the Criteria tab" is changelog wording | "Titles, location, comp, sectors and excludes are set on the Criteria tab." | open |
-| RR-P2-7 | P2 | here | Pipeline cards | "Applied Oct 13 · … · Applied since Oct 13" repeats the same date | Skip "<status> since" when it equals the date already shown | open |
-| RR-P2-8 | P2 | here | README | Signs off as "a senior product manager" while the portfolio and headline say Staff PM; no link to chaseholroyd.com at the top | Match the headline; add the portfolio link next to the demo link | open |
-| RR-P2-9 | P2 | here | Criteria (public demo) | js-yaml comes from cdnjs at runtime; if blocked, the Criteria preview degrades | Inline js-yaml (MIT) in the public build only | open |
+| RR-P2-2 | P2 | here | Header scan line | Monospace date in a sans sentence looks like a glitch; "demo data" said twice (badge and scan line) | Same font for the date; drop the scan-line "demo data" note in the demo seed | fixed (round 3) |
+| RR-P2-3 | P2 | here | Every card | Raw source names in lower case ("greenhouse", "ziprecruiter", "alert") read as debug output | Show "Greenhouse", "ZipRecruiter", "Job alert", "Added by hand" | fixed (round 3) |
+| RR-P2-4 | P2 | here | Laptop, list tabs | First laptop screen is 10 filter dropdowns before the first role | Public demo: fold filters behind "Filters and sort" at every width | fixed (round 3) |
+| RR-P2-5 | P2 | here | All tabs | No `<main>` landmark; sector-weight pips use `aria-label` on a plain span (ARIA 1.2 prohibited); Criteria card headings skip from h1 to h3 | Wrap the view in `<main>`, give pips `role="img"`, use h2 | fixed (round 3) |
+| RR-P2-6 | P2 | here | Scan rules | "now live on the Criteria tab" is changelog wording | "Titles, location, comp, sectors and excludes are set on the Criteria tab." | fixed (round 3) |
+| RR-P2-7 | P2 | here | Pipeline cards | "Applied Oct 13 · … · Applied since Oct 13" repeats the same date | Skip "<status> since" when it equals the date already shown | fixed (round 3) |
+| RR-P2-8 | P2 | here | README | Signs off as "a senior product manager" while the portfolio and headline say Staff PM; no link to chaseholroyd.com at the top | Match the headline; add the portfolio link next to the demo link | fixed (round 3) |
+| RR-P2-9 | P2 | here | Criteria (public demo) | js-yaml comes from cdnjs at runtime; if blocked, the Criteria preview degrades | Inline js-yaml (MIT) in the public build only | fixed (round 3) |
 | RR-P2-10 | P2 | intake | Portfolio Role Radar page | "4 sources" while the README and demo list five (boards, ZipRecruiter, Himalayas, Climatebase, email alerts); footer says "Charlotte, NC" | "5 sources"; location wording is Chase's call (Decisions to review) | intake |
+| RR-P2-11 | P2 | here | Every card | Two category chips per card (lane and sector), e.g. "Geospatial / clean energy" on a solar role, read as two answers to one question | Public demo: show the sector chip only; the lane stays in "Lane, tags, referral, notes" | open |
+| RR-P2-12 | P2 | here | Recruiters tab (`?full`) | Tab says "Recruiters 2" while five people are listed (the count is next steps due) | Count everyone, as the other tabs do | open |
+| RR-P2-13 | P2 | here | Criteria "At a glance" | Values in lower-case monospace ("fully remote us", "senior, staff, principal, lead") read like code | Body font, sentence case ("Fully remote, US") | open |
 
 ## Acceptance criteria (qa-tdd)
 - **RR-P0-1:** the public build shows a link to `https://chaseholroyd.com/role-radar.html` and the GitHub repo inside the first viewport at 390x844 and 1280x800; the lede text is visible; the live app build (no `__RR_PUBLIC__`) has neither.
@@ -98,3 +101,11 @@ P0 blocks showing it, P1 hurts the impression, P2 polish. Owner "here" = this re
 - Fixed RR-P1-6: under 600px or on touch screens, buttons, tabs, selects, inputs and disclosure rows are at least 44px tall (measured on every list tab).
 - Suites: 83/83 x3. No console errors, no sideways scroll. New issues: none.
 - Left: P0 2 (outside this repo), P1 1 (intake), P2 9 (7 here).
+
+### Round 3 (2026-10-22, 04:05-04:25 UTC), branch `claude/project-thread-tioah4-5`
+- Re-checked rounds 1-2 on the new shots (phone and laptop, light and dark): holding.
+- Fixed RR-P2-2 (one font in the scan line, criteria and watchlist sentences), RR-P2-3 (Greenhouse, ZipRecruiter, Job alert, Added by hand), RR-P2-4 (public demo folds filters at every width; first role in the first laptop screen), RR-P2-5 (`<main>` landmark, tablist outside a nav, `role="img"` on weight pips, Criteria cards use h2; axe now reports zero violations on every tab, light and dark, public and `?full`), RR-P2-6, RR-P2-7, RR-P2-8 (README links the live demo and portfolio, matches the Staff PM headline) and RR-P2-9 (js-yaml inlined in the public build; Criteria works with the CDN blocked).
+- README screenshots regenerated so they match the page (fit chips, 9 boards, sample postings).
+- Each new test failed on the round 2 code and passes now. Suites: 88/88 x3.
+- New this round: RR-P2-11, RR-P2-12, RR-P2-13.
+- Left: P0 2 (outside this repo), P1 1 (intake), P2 4 (3 here, 1 intake).

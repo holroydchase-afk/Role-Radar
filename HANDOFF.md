@@ -18,6 +18,7 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 
 ## Portfolio / public presence
 _Updated 2026-10-22._
+- 2026-10-22: README screenshots regenerated ("Strong fit" chips, 9 boards, "Sample posting"); if the portfolio reuses any of them, refresh there too.
 - 2026-10-22: the public demo now links back to https://chaseholroyd.com/role-radar.html and the portfolio home, with a one-line intro (public build only).
 - 2026-10-22 recruiter-ready review: the portfolio's "Try the demo" still opens the old `/demo/role-radar/` snapshot (P0, intake to Product Studio); https on chaseholroyd.com looked like it served a `*.github.io` certificate from this session (unconfirmed, Chase to check on a phone).
 - **Portfolio page:** https://chaseholroyd.com/role-radar.html (source: `tools/build.py` in the portfolio repo).
@@ -30,6 +31,7 @@ _Updated 2026-10-22._
 - **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in the portfolio repo (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
 
 ## Done
+- 2026-10-22 recruiter-ready round 3: P2 polish (plain source names, folded filters on the public demo, one font in sentences, landmarks and headings with zero axe violations, js-yaml inlined in the public build, README links the live demo), README screenshots regenerated. 88 tests.
 - 2026-10-22 recruiter-ready round 2: demo "Sample posting" instead of example.com links, "Strong fit" chip wording, header numbers match the Watchlist, light-theme contrast at 4.5:1+, 44px touch targets on phones (RR-P1-2 to P1-6). 83 tests.
 - 2026-10-22 recruiter-ready round 1: public demo gets a way back to chaseholroyd.com, a GitHub link and a one-line intro (RR-P0-1, RR-P2-1); adding a role, company or recruiter shows it right away (RR-P1-1). 78 tests.
 - 2026-10-22: synced studio agents from studio-agents PR #6 branch (`claude/project-thread-wvkxmq`, commit 7637b2a): ux-reviewer gains the visual pass, heuristic sweep and "showcase review" mode; positioning reads HANDOFF.md. The studio-only focus-coach and orchestrator agents are left out on purpose (they coach Chase's own schedule, not this product).
