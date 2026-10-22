@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-21 (culture and values ratings)
+Updated: 2026-10-22 (job description preview panel)
 
 ## Done
 - M1 on `m1-plan-and-source` (PR #1): scrubbed page source, example criteria, scan prompt template and renderer, demo seed data, in-memory db mock, demo build, personal-data check plus pre-commit hook, PLAN.md.
@@ -35,10 +35,17 @@ Updated: 2026-10-21 (culture and values ratings)
   - Scan prompt template: the scan stores posting-level `cultureChecks` and notes roles closed to `planned_move.state`. Also fixed three pronoun-replacement typos ("ttheir").
   - 8 unit tests (including two calibration cases) and 3 browser tests; 55 passing.
 
+- Description preview panel on `claude/project-thread-odpoc3` (branched from main, Chase asked 2026-10-21):
+  - `src/posting.js`: finds a role's public board API (from the posting link, or the `<ats>-<jobId>` doc id plus `companyId` / the watchlist company), fetches Greenhouse, Ashby or Lever, and sanitizes the HTML (no scripts, styles, images, forms, handlers; http(s) links only).
+  - Page: clicking a title or *Preview* opens a right-hand panel (full-screen sheet under 960px) with the description word for word. Other sources get an *Open posting* link; a 404 says the posting may be closed; a failed request falls back to the link. Escape or Close returns focus to the card. Nothing is stored.
+  - Demo: `seed.json` has fictional `postings`; `mock-claude.js` answers the demo boards in each API's real shape and lets other requests through.
+  - 8 unit tests, 5 browser tests (desktop, phone sheet, sanitizing, unreachable board, other sources); 68 passing. New screenshots `preview.png`, `phone-preview.png` (`npm run screenshots -- preview phone-preview`).
+
 ## In progress
 - Nothing.
 
 ## Exact next step
+- Chase reviews the description panel draft PR. After approval: republish the live private page with `posting.js` as a new supporting file (same database and capabilities), then open one Greenhouse role to confirm the live page may call the board APIs (see Decisions). The portfolio demo copy (chaseholroyd.com) needs the same update afterwards.
 - Chase reviews the culture-values-ratings draft PR. Earlier: Chase reviews PRs #1 to #5 in order and merges them (merging is his call). After that, pick from PLAN.md "Later": the strongest next step for sharing is moving recruiters to separate private storage, so the page itself can be shared safely.
 
 ## How to work here
@@ -46,7 +53,7 @@ Updated: 2026-10-21 (culture and values ratings)
 - Run `npm run hooks` once so the pre-commit privacy check runs.
 - For the full check, point `PRIVATE_DENYLIST` at the private denylist kept outside this repo.
 - Browser tests use Playwright with the preinstalled Chromium; js-yaml is served from `node_modules` because the CDN may be unreachable.
-- The live page is `app/role-radar.html` published with `src/scoring.js` as a supporting file named `scoring.js`.
+- The live page is `app/role-radar.html` published with `src/scoring.js` and `src/posting.js` as supporting files named `scoring.js` and `posting.js`.
 
 ## Decisions to review
 - The privacy toggle hides details on screen only. Anyone the page is shared with can still read the recruiter records through the page's database, so the real fix before sharing is moving recruiters to separate private storage. Hidden is the default for every viewer, including the owner (one click to show, remembered).
@@ -59,6 +66,9 @@ Updated: 2026-10-21 (culture and values ratings)
 
 - Fit badges are separate from the 0–100 score on purpose: the score ranks the digest, the badges explain a role. Folding culture into the score twice (signals and checks) would double-count.
 - Values uses "neutral" (not "maybe") for weight-1 sectors, since an allowed-but-lower sector isn't a values concern.
+
+- Preview fetches run in the viewer's browser, straight to the boards' public APIs (all three send `Access-Control-Allow-Origin: *`). Unverified: whether the claude.ai artifact sandbox allows those requests. If it doesn't, the panel shows "Couldn't load the description" plus the link, and the fix is to have the scan store `descriptionHtml` on board jobs (it already fetches postings that pass the gates).
+- Images in postings are dropped (tracking pixels, and they would load third-party content); the text and lists are kept.
 
 ## Blockers
 - None.

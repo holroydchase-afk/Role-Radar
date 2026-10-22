@@ -18,8 +18,11 @@ export function buildDemo({ seed: seedOverride } = {}) {
   const scoringTag = '<script src="scoring.js"></script>';
   if (!page.includes(scoringTag)) throw new Error("Could not find the scoring.js script tag.");
   const scoring = `<script>${read("src/scoring.js")}</script>`;
+  const postingTag = '<script src="posting.js"></script>';
+  if (!page.includes(postingTag)) throw new Error("Could not find the posting.js script tag.");
+  const posting = `<script>${read("src/posting.js")}</script>`;
   const head = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>\n';
-  return head + page.replace(marker, () => inject + marker).replace(scoringTag, () => scoring) + "\n</body></html>\n";
+  return head + page.replace(marker, () => inject + marker).replace(scoringTag, () => scoring).replace(postingTag, () => posting) + "\n</body></html>\n";
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

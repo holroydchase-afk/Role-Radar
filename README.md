@@ -38,6 +38,9 @@ flowchart LR
 3. **A scheduled scan agent.** Each weekday morning, a scheduled Claude run reads the criteria, checks the boards and aggregators, reads job-alert and application emails (read-only), adds new matches, moves application statuses forward from confirmations and rejections, and sends me a short digest. Its instructions are in [`scan/scan-prompt.template.md`](scan/scan-prompt.template.md).
 4. **One tracker.** New roles land in *New*. Saving or applying moves them to *Pipeline*. *Needs action* lists follow-ups that are due, applications with no reply, and resumes that are ready but not sent. *Recruiters* keeps each contact's last touchpoint and next step.
 5. **One-tap intake.** *Apply* copies a prompt for my job-intake agent, which screens the posting, asks only the gap questions that would change a bullet, and builds a tailored resume from my career master doc.
+6. **Read the posting in place.** Click a role and a panel on the right shows the posting's own description, word for word, loaded straight from the company's public Greenhouse, Ashby or Lever board. It costs no AI tokens and nothing is saved; roles from other sources get an *Open posting* link instead. On a phone it opens as a full-screen sheet. The logic lives in [`src/posting.js`](src/posting.js).
+
+![A role's description in the preview panel](docs/screenshots/preview.png)
 
 ### Tune it and watch the ranking move
 
@@ -85,6 +88,7 @@ The demo runs the real page against an in-memory database ([`demo/mock-claude.js
 | --- | --- |
 | `app/role-radar.html` | The tracker page (single file, no build step) |
 | `src/scoring.js` | Scoring and matching rules, shared by the page and the tests |
+| `src/posting.js` | Finds a role's public job-board API and reads its description for the preview panel |
 | `criteria.yaml` | Example criteria for a demo candidate |
 | `scan/` | The weekday scan prompt, as a template |
 | `demo/` | Fictional seed data and the in-memory database |

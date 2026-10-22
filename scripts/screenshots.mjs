@@ -1,5 +1,6 @@
 // Captures README screenshots from the demo build (fictional data only).
 // Usage: npm run screenshots   → docs/screenshots/*.png
+//        npm run screenshots -- preview phone-preview   (only the named shots)
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,11 +18,14 @@ const SHOTS = [
   { name: "recruiters-hidden", tab: "people", width: 1000, height: 700 },
   { name: "phone-new-roles", tab: "inbox", width: 390, height: 844 },
   { name: "dark-all-roles", tab: "all", width: 1000, height: 1100, colorScheme: "dark" },
+  { name: "preview", tab: "all", width: 1400, height: 1000, click: '.job:has-text("Sunfield Energy") h2 a', wait: "#pvBody li" },
+  { name: "phone-preview", tab: "all", width: 390, height: 844, click: '.job:has-text("Gridlark") button[data-preview]', wait: "#pvBody li" },
 ];
+const only = process.argv.slice(2);
 
 const browser = await chromium.launch();
 try {
-  for (const s of SHOTS) {
+  for (const s of SHOTS.filter((x) => !only.length || only.includes(x.name))) {
     const { page, errors } = await openDemo(browser, { width: s.width, height: s.height, colorScheme: s.colorScheme || "light", file: "dist/shot.html" });
     await page.click(`#tab-${s.tab}`);
     if (s.tweak) {
@@ -37,6 +41,7 @@ try {
       });
     }
     if (s.click) await page.click(s.click);
+    if (s.wait) await page.waitForSelector(s.wait);
     if (s.scrollTo) await page.locator(s.scrollTo).scrollIntoViewIfNeeded();
     await page.mouse.move(0, 0);
     await page.waitForTimeout(150);

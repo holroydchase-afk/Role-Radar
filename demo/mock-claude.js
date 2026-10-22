@@ -74,6 +74,40 @@
     },
   };
 
+  // Demo job boards: the preview panel's requests for the fictional companies are answered
+  // here, in each board's real response shape, from seed.postings ("<ats>/<slug>/<id>").
+  // Requests for any other board go to the real network. FOR DEMOS AND TESTS ONLY.
+  const postings = seed.postings || {};
+  const demoSlugs = new Set(Object.keys(postings).map((k) => k.split("/").slice(0, 2).join("/")));
+  const escHtml = (h) => String(h).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+  function demoBoard(url) {
+    let m = /^https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/([^/]+)\/jobs\/([^/?]+)/.exec(url);
+    if (m && demoSlugs.has("greenhouse/" + m[1])) {
+      const h = postings[`greenhouse/${m[1]}/${m[2]}`];
+      return h ? json(200, { id: Number(m[2]), content: escHtml(h) }) : json(404, { status: 404, error: "Job not found" });
+    }
+    m = /^https:\/\/api\.ashbyhq\.com\/posting-api\/job-board\/([^/?]+)/.exec(url);
+    if (m && demoSlugs.has("ashby/" + m[1])) {
+      const jobs = Object.entries(postings).filter(([k]) => k.startsWith(`ashby/${m[1]}/`)).map(([k, h]) => ({ id: k.split("/")[2], descriptionHtml: h }));
+      return json(200, { jobs });
+    }
+    m = /^https:\/\/api\.lever\.co\/v0\/postings\/([^/]+)\/([^/?]+)/.exec(url);
+    if (m && demoSlugs.has("lever/" + m[1])) {
+      const p = postings[`lever/${m[1]}/${m[2]}`];
+      return p ? json(200, typeof p === "string" ? { id: m[2], description: p, lists: [], additional: "" } : { id: m[2], ...p }) : json(404, { ok: false, error: "Document not found" });
+    }
+    return null;
+  }
+  const realFetch = window.fetch ? window.fetch.bind(window) : null;
+  window.fetch = async (input, init) => {
+    const url = typeof input === "string" ? input : input && input.url;
+    const demo = demoBoard(String(url || ""));
+    if (demo) { await new Promise((r) => setTimeout(r, 120)); return demo; }
+    if (!realFetch) throw new TypeError("fetch unavailable");
+    return realFetch(input, init);
+  };
+
   window.claude = window.claude || {};
   window.claude.use = async (cap) => (cap === "db" ? db : null);
   window.__RR_DEMO__ = true;

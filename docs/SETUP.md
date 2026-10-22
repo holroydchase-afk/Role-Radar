@@ -28,7 +28,7 @@ You can edit this later on the page's Criteria tab, which previews tomorrow's di
 
 ## 3. Publish the tracker
 
-1. Ask Claude to publish [`app/role-radar.html`](../app/role-radar.html) as a private artifact with the database capability, with [`src/scoring.js`](../src/scoring.js) as a supporting file named `scoring.js`.
+1. Ask Claude to publish [`app/role-radar.html`](../app/role-radar.html) as a private artifact with the database capability, with [`src/scoring.js`](../src/scoring.js) and [`src/posting.js`](../src/posting.js) as supporting files named `scoring.js` and `posting.js`.
 2. Open the page. Every tab starts empty.
 3. On the Criteria tab, paste your `criteria.yaml` and save.
 
