@@ -51,7 +51,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .btn{font:500 .84rem var(--f-body);border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:7px;padding:5px 10px;cursor:pointer}
 .btn:hover{border-color:var(--accent)}
 .btn.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
-.gmlist{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}.gmlist label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.gmlist input{margin-top:4px}.gmlist .hint{display:block}.gmhave{font-style:normal;font-size:.8rem;color:var(--muted)}.gmfoot{display:flex;gap:10px;flex-wrap:wrap}details.gmail>summary{font-weight:600}
+.gmlist{list-style:none;margin:8px 0;padding:0;display:grid;gap:6px}.gmlist label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}.gmlist input{margin-top:4px}.gmlist .hint{display:block}.gmhave{font-style:normal;font-size:.8rem;color:var(--muted)}.gmfoot{display:flex;gap:10px;flex-wrap:wrap}details.gmail>summary,details.gmail-status>summary{font-weight:600}
 .empty{border:1px dashed var(--line);border-radius:10px;padding:22px 18px;color:var(--muted);display:grid;gap:6px}
 .empty strong{color:var(--ink);font-family:var(--f-display);font-weight:500;font-size:1.05rem}
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);min-width:0}
@@ -246,7 +246,7 @@ const ATS=["greenhouse","ashby","lever"];
 const FIT_LABEL={strong:"strong",maybe:"partial",stretch:"stretch"};
 const DEF_VIEW={q:"",status:"",lane:"",fit:"",values:"",culture:"",source:"",tag:"",found:"",conflict:"",sort:"fit"};
 // Gmail import: the viewer's Gmail connector, read-only (search_threads, batch_get_threads).
-let mcp=null, mcpState="checking", gm={state:"idle",items:[],picked:new Set(),msg:""};
+let mcp=null, mcpState="checking", gm={state:"idle",items:[],picked:new Set(),msg:""}, gs={state:"idle",items:[],picked:new Set(),msg:""};
 const GM=window.RoleRadarGmail||null;
 let recruiters=[], editRec=null, filtersOpen=false;
 // Privacy: recruiter details are hidden on screen until this viewer chooses to show them.
@@ -488,7 +488,7 @@ function addRoleForm(){
 function renderJobs(){
   const base=jobs.filter(j=>inTab(j,tab));
   const list=sortList(applyView(base));
-  const head=filterBar()+(tab==="pipeline"?addRoleForm():"");
+  const head=filterBar()+(tab==="pipeline"?(TOOLS?gmailStatus():"")+addRoleForm():"");
   let body;
   if(!list.length){
     const msg=base.length?["No roles match these filters","Clear a filter to see more."]:{inbox:["Nothing new right now","The morning scan adds matching roles here. Open one and it's marked viewed; save or skip it to clear it out."],
@@ -703,22 +703,23 @@ function gmError(e){
   if(c==="tool_error") return "Gmail reported a problem: "+String(e.message||"").slice(0,160);
   return "Couldn't read Gmail. Try again.";
 }
+async function gmThreads(query){
+  const res=await mcp.callTool("Gmail","search_threads",{query,pageSize:50,view:"THREAD_VIEW_MINIMAL"});
+  const threads=GM.threadsFrom(res.payload);
+  // The search shows only each thread's oldest 5 messages; read longer threads in full for the newest ones.
+  const longIds=threads.filter(GM.needsFullThread).map(t=>t.id).filter(Boolean);
+  if(!longIds.length) return threads;
+  const full=new Map();
+  for(let i=0;i<longIds.length;i+=10){
+    try{ const r=await mcp.callTool("Gmail","batch_get_threads",{threadIds:longIds.slice(i,i+10),messageFormat:"MINIMAL"}); GM.threadsFrom(r.payload).forEach(t=>t&&t.id&&full.set(t.id,t)); }catch(_){}
+  }
+  return threads.map(t=>full.get(t.id)||t);
+}
 async function gmFind(){
   if(!mcp||gm.state==="loading") return;
   gm={state:"loading",items:[],picked:new Set(),msg:""}; render();
   try{
-    const q=(config&&config.gmailQuery)||GM.DEFAULT_QUERY;
-    const res=await mcp.callTool("Gmail","search_threads",{query:q,pageSize:50,view:"THREAD_VIEW_MINIMAL"});
-    let threads=GM.threadsFrom(res.payload);
-    // The search shows only each thread's oldest 5 messages; read longer threads in full for the real last date.
-    const longIds=threads.filter(GM.needsFullThread).map(t=>t.id).filter(Boolean);
-    if(longIds.length){
-      const full=new Map();
-      for(let i=0;i<longIds.length;i+=10){
-        try{ const r=await mcp.callTool("Gmail","batch_get_threads",{threadIds:longIds.slice(i,i+10),messageFormat:"MINIMAL"}); GM.threadsFrom(r.payload).forEach(t=>t&&t.id&&full.set(t.id,t)); }catch(_){}
-      }
-      threads=threads.map(t=>full.get(t.id)||t);
-    }
+    const threads=await gmThreads((config&&config.gmailQuery)||GM.DEFAULT_QUERY);
     const items=GM.candidates(threads,{existing:recruiters});
     gm={state:"done",items,picked:new Set(items.filter(c=>!c.exists).map(c=>c.key)),msg:""};
   }catch(e){ gm={state:"error",items:[],picked:new Set(),msg:gmError(e)}; }
@@ -730,6 +731,54 @@ async function gmAdd(){
   let ok=0;
   for(const c of picks){ try{ await db.doc("recruiters/"+c.key).set(GM.recruiterDoc(c,now)); ok++; c.exists=true; gm.picked.delete(c.key);}catch(_){} }
   toast(ok===picks.length?`Added ${ok} ${ok===1?"recruiter":"recruiters"}`:`Added ${ok} of ${picks.length}. Try the rest again.`);
+  render();
+}
+// Status backfill: application emails (confirmations, interview invites, rejections, offers) for roles in
+// the pipeline become suggested status changes. Nothing is saved until the viewer ticks it.
+function gmailStatus(){
+  if(!GM||!GM.statusUpdates) return "";
+  const open=openMore.has("_gstatus");
+  const pipeN=jobs.filter(j=>PIPE.includes(st(j))).length;
+  let body;
+  if(mcpState==="none") body=`<p class="hint">Checking Gmail works when this page is open in Claude with the Gmail connector added.</p>`;
+  else if(!pipeN) body=`<p class="hint">Nothing in the pipeline to check yet.</p>`;
+  else if(gs.state==="loading") body=`<p class="hint" role="status">Reading your Gmail…</p>`;
+  else if(gs.state==="done"){
+    const n=gs.picked.size;
+    body=gs.items.length?`<p class="hint">${gs.items.length} ${gs.items.length===1?"role has":"roles have"} news in Gmail. Untick anything that's wrong, then update the rest. The status date is the email's date.</p>
+      <ul class="gmlist">${gs.items.map(u=>{const url=safeUrl(u.viewUrl);return `<li><label><input type="checkbox" data-gspick="${esc(u.key)}"${gs.picked.has(u.key)?" checked":""}>
+        <span><b>${esc(u.company)}</b> · ${esc(u.title)} <span class="chip st st-${esc(u.from)}">${esc(STATUS_LABEL[u.from]||u.from)}</span> → <span class="chip st st-${esc(u.to)}">${esc(STATUS_LABEL[u.to]||u.to)}</span>
+        <span class="hint">Email <span class="mono">${fmtDate(u.date)}</span>${u.subject?` · ${esc(u.subject)}`:""}${url?` · <a href="${esc(url)}" target="_blank" rel="noopener">Open email</a>`:""}</span></span></label></li>`;}).join("")}</ul>
+      <div class="gmfoot"><button class="primary" type="button" id="gsApply"${n?"":" disabled"}>Update ${n} ${n===1?"role":"roles"}</button><button class="btn" type="button" id="gsFind">Check again</button></div>`
+      :`<p class="hint">No new confirmations, interview invites, rejections or offers for the ${pipeN} ${pipeN===1?"role":"roles"} in your pipeline.</p><button class="btn" type="button" id="gsFind">Check again</button>`;
+  }
+  else body=`${gs.state==="error"?`<p class="err" role="alert">${esc(gs.msg)}</p>`:""}<p class="hint">Role Radar searches your Gmail (read-only) for application confirmations, interview invites, rejections and offers from the companies in your pipeline, and suggests status changes. A role only moves forward or to Rejected, and nothing changes until you tick it.</p>
+    <button class="primary" type="button" id="gsFind"${mcpState==="checking"?" disabled":""}>Check Gmail for updates</button>`;
+  return `<details class="more gmail-status" data-more="_gstatus"${open?" open":""}><summary>Check Gmail for status updates</summary>${body}</details>`;
+}
+async function gsFind(){
+  if(!mcp||gs.state==="loading") return;
+  const q=GM.statusQuery(jobs);
+  if(!q) return;
+  gs={state:"loading",items:[],picked:new Set(),msg:""}; render();
+  try{
+    const items=GM.statusUpdates(await gmThreads(q),jobs);
+    gs={state:"done",items,picked:new Set(items.map(u=>u.key)),msg:""};
+  }catch(e){ gs={state:"error",items:[],picked:new Set(),msg:gmError(e)}; }
+  render();
+}
+async function gsApply(){
+  if(!db||!gs.picked.size) return;
+  const picks=gs.items.filter(u=>gs.picked.has(u.key));
+  let ok=0;
+  for(const u of picks){
+    const j=jobs.find(x=>x._id===u.jobId); if(!j) continue;
+    const p=GM.statusPatch(u,j);
+    if(!j.viewedAt) p.viewedAt=u.date;
+    if(u.to==="applied"&&!j.followUpDue) { const from=String(p.appliedAt||j.appliedAt||u.date); p.followUpDue=addBusinessDays(from.length===10?from+"T12:00:00":from,config.followUpBusinessDays); }
+    try{ await db.doc("jobs/"+u.jobId).update(p); ok++; gs.picked.delete(u.key); gs.items=gs.items.filter(x=>x!==u); }catch(_){}
+  }
+  toast(ok===picks.length?`Updated ${ok} ${ok===1?"role":"roles"}`:`Updated ${ok} of ${picks.length}. Try the rest again.`);
   render();
 }
 function renderCriteria(){
@@ -897,6 +946,10 @@ document.addEventListener("click",async e=>{
   if(rd&&db){ try{await db.doc("recruiters/"+rd.dataset.recdone).update({lastContact:today(),nextStep:"",nextStepDue:""}); toast("Marked done");}catch(_){toast("Couldn't save that.");} return; }
   if(e.target.id==="gmFind"){ gmFind(); return; }
   if(e.target.id==="gmAdd"){ gmAdd(); return; }
+  if(e.target.id==="gsFind"){ gsFind(); return; }
+  if(e.target.id==="gsApply"){ gsApply(); return; }
+  const gsp=e.target.closest("[data-gspick]");
+  if(gsp){ if(gsp.checked) gs.picked.add(gsp.dataset.gspick); else gs.picked.delete(gsp.dataset.gspick); const b=$("#gsApply"); if(b){const n=gs.picked.size; b.disabled=!n; b.textContent=`Update ${n} ${n===1?"role":"roles"}`;} return; }
   const gp=e.target.closest("[data-gmpick]");
   if(gp){ if(gp.checked) gm.picked.add(gp.dataset.gmpick); else gm.picked.delete(gp.dataset.gmpick); const b=$("#gmAdd"); if(b){const n=gm.picked.size; b.disabled=!n; b.textContent=`Add ${n} ${n===1?"recruiter":"recruiters"}`;} return; }
   if(e.target.id==="recPrivacy"){ recPrivate=!recPrivate; editRec=null; try{localStorage.setItem("rr-rec-private",recPrivate?"1":"0")}catch(_){} render(); return; }
@@ -1010,7 +1063,7 @@ if(window.__RR_DEMO__){ $("#demoNote").hidden=false; $("#demoTry").hidden=false;
 if(window.__RR_SHOWCASE__){ $("#showcase").hidden=false; $("#lede").hidden=false; document.body.classList.add("showcase-mode"); }
 render();
 (async()=>{
-  Promise.resolve(window.claude?.use?.("mcp")).then(m=>{mcp=m||null; mcpState=m?"ready":"none";},()=>{mcpState="none";}).then(()=>{ if(tab==="people") render(); });
+  Promise.resolve(window.claude?.use?.("mcp")).then(m=>{mcp=m||null; mcpState=m?"ready":"none";},()=>{mcpState="none";}).then(()=>{ if(tab==="people"||tab==="pipeline") render(); });
   try{ db=await window.claude?.use?.("db"); }catch(e){ db=null; }
   if(!db){ render(); return; }
   render();

@@ -522,7 +522,7 @@
     }
   },
   "gmail": {
-    "_about": "DEMO Gmail threads for the import preview. Fictional people; .example domains are reserved and never deliver.",
+    "_about": "DEMO Gmail threads for the recruiter import and the status check. Fictional people and companies; .example domains are reserved and never deliver.",
     "threads": [
       {
         "id": "g1",
@@ -643,6 +643,74 @@
             "sender": "Taylor Morgan <taylor.morgan@gmail.example>",
             "date": "@t-90",
             "subject": "Intro: PM role at Pebblepay",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g6",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g6",
+        "messages": [
+          {
+            "id": "g6m1",
+            "sender": "Brightwell Solar <no-reply@greenhouse-mail.example>",
+            "date": "@t-2",
+            "subject": "Update on your application",
+            "snippet": "Thank you for your interest in Brightwell Solar. Unfortunately, we have decided to move forward with other candidates for the Installer Platform role.",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g7",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g7",
+        "messages": [
+          {
+            "id": "g7m1",
+            "sender": "Pebblepay Hiring <no-reply@pebblepay.example>",
+            "date": "@t-3",
+            "subject": "Next round: Merchant Risk",
+            "snippet": "Great news! The team would like to set up a panel interview. Please share your availability for next week.",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g8",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g8",
+        "messages": [
+          {
+            "id": "g8m1",
+            "sender": "HelioHome Careers <careers@heliohome.example>",
+            "date": "@t-1",
+            "subject": "Thanks for applying to HelioHome",
+            "snippet": "We received your application for Senior Product Manager, Home Electrification.",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g9",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g9",
+        "messages": [
+          {
+            "id": "g9m1",
+            "sender": "Watermark Climate <no-reply@watermark-climate.example>",
+            "date": "@t-400",
+            "subject": "Your application to Watermark Climate",
+            "snippet": "Unfortunately, the position has been filled.",
             "labelIds": [
               "INBOX"
             ]

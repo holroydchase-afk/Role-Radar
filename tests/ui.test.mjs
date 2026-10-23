@@ -290,6 +290,51 @@ test("Gmail import explains a missing connector instead of failing silently", as
   await p2.close();
 });
 
+test("Gmail status check suggests pipeline updates and saves only the ticked ones", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-pipeline");
+  await page.locator("details.gmail-status summary").click();
+  await page.click("#gsFind");
+  await page.waitForSelector("details.gmail-status .gmlist");
+  const rows = await page.locator("details.gmail-status .gmlist li").allInnerTexts();
+  assert.equal(rows.length, 3, rows.join("\n"));
+  assert.match(rows.find((r) => /Brightwell/.test(r)), /Applied\s*→\s*Rejected/i);
+  assert.match(rows.find((r) => /Pebblepay/.test(r)), /Screen\s*→\s*Interviewing/i);
+  assert.match(rows.find((r) => /HelioHome/.test(r)), /Applying\s*→\s*Applied/i);
+  assert.ok(!rows.some((r) => /Watermark/.test(r)), "an email from before the role was tracked is ignored");
+  assert.ok(!rows.some((r) => /Ledgerly|Sunfield/.test(r)), "roles outside the pipeline are left alone");
+  // The search named the pipeline companies and used only read-only tools.
+  const calls = await page.evaluate(() => window.__RR_MCP_CALLS__);
+  assert.match(calls[0].input.query, /"pebblepay"/);
+  assert.deepEqual([...new Set(calls.map((c) => c.tool))].sort().filter((t) => t !== "batch_get_threads"), ["search_threads"]);
+  // Leave Pebblepay alone, update the other two.
+  await page.locator("details.gmail-status .gmlist li", { hasText: "Pebblepay" }).locator("input").uncheck();
+  assert.match(await page.locator("#gsApply").innerText(), /Update 2 roles/);
+  await page.click("#gsApply");
+  await page.waitForFunction(() => document.querySelectorAll("details.gmail-status .gmlist li").length === 1);
+  const jobs = await page.evaluate(async () => {
+    const db = await window.claude.use("db");
+    const get = async (id) => (await db.doc("jobs/" + id).get()).data();
+    return { bw: await get("greenhouse-1007"), hh: await get("manual-heliohome-sr-pm"), pp: await get("ashby-1008") };
+  });
+  assert.equal(jobs.bw.status, "rejected");
+  assert.match(jobs.bw.statusAt, /^\d{4}-\d{2}-\d{2}$/, "status date is the email's date");
+  assert.equal(jobs.bw.statusEmail.subject, "Update on your application");
+  assert.equal(jobs.hh.status, "applied");
+  assert.equal(jobs.hh.appliedAt, jobs.hh.statusAt);
+  assert.ok(jobs.hh.followUpDue);
+  assert.equal(jobs.pp.status, "screen", "unticked role unchanged");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("Gmail status check is not on the public demo", async () => {
+  const { page } = await openDemo({ html: buildDemo({ publicDemo: true }) });
+  await page.click("#tab-pipeline");
+  assert.equal(await page.locator("details.gmail-status").count(), 0);
+  await page.close();
+});
+
 test("Gmail import is hidden while recruiter details are hidden", async () => {
   const { page } = await openDemo();
   await page.click("#tab-people");
