@@ -381,7 +381,7 @@ test("public demo: radar only, no resume or recruiter tools anywhere", async () 
   const html = buildDemo({ publicDemo: true });
   const { page, errors } = await openDemo({ html });
   assert.equal(await page.locator("#tab-people").count(), 0, "no Recruiters tab");
-  for (const id of ["inbox", "pipeline", "action", "all", "criteria", "watch", "filters"]) {
+  for (const id of ["inbox", "pipeline", "action", "ruled", "all", "criteria", "watch", "filters"]) {
     await page.click(`#tab-${id}`);
     const text = await page.locator("#view").innerText();
     assert.doesNotMatch(text, /resume|intake/i, `${id} mentions resume tooling`);

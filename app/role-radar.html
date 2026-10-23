@@ -111,6 +111,15 @@ dialog .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-
 .ctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ctl select{padding:5px 8px;font-size:.84rem}
 .skipwhy{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.82rem;color:var(--muted)}
+.skipwhy input{flex:1 1 100%;font:inherit;font-size:.88rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 9px;min-width:0}
+/* Progress line and the Ruled out tab: eliminated roles count as progress next to applications. */
+.progress b{color:var(--ink);font-weight:600}
+.ruled{display:grid;gap:14px}
+.ruled .sum{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:grid;gap:6px}
+.ruled .sum p{margin:0}
+.ruled h3{font:600 .78rem var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:6px 0 0}
+.ruled .row h4{font-family:var(--f-display);font-weight:500;font-size:1rem;margin:0;line-height:1.3}
+.ruled .row h4 a{color:inherit}
 details.more{border-top:1px solid var(--line);padding-top:8px}
 details.more summary{cursor:pointer;font:500 .84rem var(--f-body);color:var(--muted)}
 details.more form{display:grid;gap:10px;padding-top:10px}
@@ -203,6 +212,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
     <p class="lede" id="lede" hidden>A job-search radar I built for my own search. It reads job boards every weekday and scores each role 0–100 against criteria I edit, with the math on every card. Applying stays my own call.</p>
     <span class="demo" id="demoNote" hidden>Demo data</span>
     <p class="sub" id="demoTry" hidden>Roles, recruiters and scores are made up. Try anything; it resets when you reload.</p>
+    <p class="sub progress" id="progress" role="status" hidden></p>
     <p class="sub" id="scanLine">Remote Senior and Staff PM roles from company boards, ZipRecruiter, Himalayas and job alerts, checked every weekday morning.</p>
   </header>
 
@@ -231,7 +241,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 // settings and the Recruiters tab show only with ?full. The demo build sets __RR_PUBLIC__; the live app never does.
 const TOOLS=!window.__RR_PUBLIC__;
 const TABS=[
-  {id:"inbox",label:"New"},{id:"pipeline",label:"Pipeline"},{id:"action",label:"Needs action"},
+  {id:"inbox",label:"New"},{id:"pipeline",label:"Pipeline"},{id:"action",label:"Needs action"},{id:"ruled",label:"Ruled out"},
   {id:"all",label:"All roles"},...(TOOLS?[{id:"people",label:"Recruiters"}]:[]),{id:"criteria",label:"Criteria"},{id:"watch",label:"Watchlist"},{id:"filters",label:"Scan rules"}];
 const STATUSES=[["new","New"],["viewed","Viewed"],["saved","Saved"],["applying","Applying"],["applied","Applied"],["screen","Screen"],["interviewing","Interviewing"],["offer","Offer"],["skipped","Skipped"],["rejected","Rejected"],["closed","Closed"]];
 const STATUS_LABEL=Object.fromEntries(STATUSES);
@@ -239,7 +249,7 @@ const INBOX=["new","viewed"], PIPE=["saved","applying","applied","screen","inter
 // Per-person settings live in the database (meta/config) so this page can be reused by anyone.
 // These defaults apply only until a config document exists.
 const DEF_CONFIG={owner:"",lanes:["Pricing & payments","Checkout","Ops & processing","AI platform","Geospatial / clean energy","Other"],
-  skipReasons:["Comp too low","Not remote","Wrong level","Wrong domain","Culture","Other"],followUpBusinessDays:5,staleAppliedDays:14,staleSavedDays:7,
+  skipReasons:["Comp too low","Not remote","Location","Wrong level","Wrong domain","Culture","Posting closed","Other"],followUpBusinessDays:5,staleAppliedDays:14,staleSavedDays:7,
   intakeCommand:"/job-intake",intakeWhere:"a new chat in your job-search project",
   intakeInstructions:"Ask only what you need. Then build the tailored resume and link it on this role in Role Radar (status \"applying\")."};
 let config={...DEF_CONFIG};
@@ -280,6 +290,20 @@ function toast(m,action){const t=$("#toast");t.textContent=m;
 // Keep the toast (and its Undo) up while the pointer or keyboard focus is on it.
 const toastHold=()=>clearTimeout(toast._t), toastLetGo=()=>{clearTimeout(toast._t);toast._t=setTimeout(()=>$("#toast").hidden=true,toast._ms||2200);};
 const st=j=>j.status||"new";
+// Ruled out = skipped by the owner, here or in an intake chat (source "intake"). Counted as progress next to applications.
+const ruledAt=j=>j.skippedAt||j.statusAt||"";
+const dayOf=s=>{if(!s)return"";const d=new Date(String(s).length===10?s+"T12:00:00":s);return isNaN(d)?"":d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+// Monday of this week, local time.
+const weekStart=()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return dayOf(d.toISOString());};
+function progressOf(list){
+  const t=today(), w=weekStart(), p={today:{applied:0,ruled:0},week:{applied:0,ruled:0}};
+  list.forEach(j=>{
+    const a=dayOf(j.appliedAt); if(a&&a>=w&&a<=t){p.week.applied++; if(a===t)p.today.applied++;}
+    if(st(j)==="skipped"){const r=dayOf(ruledAt(j)); if(r&&r>=w&&r<=t){p.week.ruled++; if(r===t)p.today.ruled++;}}
+  });
+  return p;
+}
+const progressText=c=>`applied <b>${c.applied}</b>, ruled out <b>${c.ruled}</b>`;
 const tagsOf=j=>Array.isArray(j.tags)?j.tags:(j.tags?String(j.tags).split(",").map(s=>s.trim()).filter(Boolean):[]);
 // Products the owner is building (meta/filters.products). Conflicts are flags only: nothing is hidden or skipped.
 const productsOf=()=>Array.isArray(filters&&filters.products)?filters.products.filter(p=>p&&p.name):[];
@@ -308,12 +332,13 @@ function inTab(j,t){
   const s=st(j);
   if(t==="inbox") return INBOX.includes(s);
   if(t==="pipeline") return PIPE.includes(s);
+  if(t==="ruled") return s==="skipped";
   if(t==="action") return !!actionReason(j);
   return true;
 }
 function counts(){
-  const c={inbox:0,pipeline:0,action:0,all:jobs.length,watch:companies.filter(x=>x.status!=="vetoed").length,filters:"",criteria:"",people:recruiters.filter(r=>r.nextStepDue&&r.nextStepDue<=today()).length||""};
-  jobs.forEach(j=>{["inbox","pipeline","action"].forEach(t=>{if(inTab(j,t))c[t]++;});});
+  const c={inbox:0,pipeline:0,action:0,ruled:0,all:jobs.length,watch:companies.filter(x=>x.status!=="vetoed").length,filters:"",criteria:"",people:recruiters.filter(r=>r.nextStepDue&&r.nextStepDue<=today()).length||""};
+  jobs.forEach(j=>{["inbox","pipeline","action","ruled"].forEach(t=>{if(inTab(j,t))c[t]++;});});
   return c;
 }
 function renderTabs(){
@@ -359,7 +384,7 @@ function fitRows(j){
   return `<div class="fitr" aria-label="Fit ratings">${row("Values",f.values)}${row("Culture",f.culture)}</div>`;
 }
 function rateMatch(want,got){ if(!want) return true; if(want==="good+") return got==="great"||got==="good"; return got===want; }
-const SRC_NAMES={greenhouse:"Greenhouse",ashby:"Ashby",lever:"Lever",ziprecruiter:"ZipRecruiter",himalayas:"Himalayas",climatebase:"Climatebase",alert:"Job alert",gmail:"Gmail",manual:"Added by hand"};
+const SRC_NAMES={greenhouse:"Greenhouse",ashby:"Ashby",lever:"Lever",ziprecruiter:"ZipRecruiter",himalayas:"Himalayas",climatebase:"Climatebase",alert:"Job alert",gmail:"Gmail",manual:"Added by hand",intake:TOOLS?"Intake chat":"Added by hand"};
 const srcName=s=>SRC_NAMES[s]||s;
 function isSampleUrl(u){ if(!window.__RR_DEMO__||!u) return false; try{ return /(^|\.)example\.(com|org|net)$/.test(new URL(u).hostname); }catch(_){ return false; } }
 function jobCard(j){
@@ -374,7 +399,8 @@ function jobCard(j){
   const cf=conflictOf(j);
   const cfChip=cf?`<span class="chip conflict" title="Overlaps a product you're building">Conflict</span>`:"";
   const why=tab==="action"?actionReason(j):null;
-  const skipRow=skipOpen===j._id?`<div class="skipwhy">Why skip?${SKIP_REASONS.map(r=>`<button class="btn" type="button" data-skipwhy="${esc(r)}" data-job="${id}">${esc(r)}</button>`).join("")}<button class="linkbtn" type="button" data-skipcancel="1">Cancel</button></div>`:"";
+  // A form, so a redraw from the database doesn't wipe a note being typed (see softRender).
+  const skipRow=skipOpen===j._id?`<form class="skipwhy" data-skipform="${id}">Why skip?${SKIP_REASONS.map(r=>`<button class="btn" type="button" data-skipwhy="${esc(r)}" data-job="${id}">${esc(r)}</button>`).join("")}<button class="linkbtn" type="button" data-skipcancel="1">Cancel</button><input name="skipNote" maxlength="200" aria-label="Note, optional" placeholder="Note, optional (e.g. Belfast only, closed Oct 6)"></form>`:"";
   return `<article class="job${preview===j._id?" sel":""}">
     <div class="top"><div style="min-width:0">
       <div class="co">${esc(j.company)}</div>
@@ -396,7 +422,7 @@ function jobCard(j){
     ${j.fitNote?`<p class="note">${esc(j.fitNote)}</p>`:""}
     ${j.nextStep?`<p class="note"><b>Next:</b> ${esc(j.nextStep)}</p>`:""}
     ${j.emailNote?`<p class="note" style="color:var(--muted)">Inbox: ${esc(j.emailNote)}</p>`:""}
-    ${j.skipReason&&s==="skipped"?`<p class="note" style="color:var(--muted)">Skipped: ${esc(j.skipReason)}</p>`:""}
+    ${s==="skipped"&&(j.skipReason||j.skipNote)?`<p class="note" style="color:var(--muted)">Ruled out${ruledAt(j)?` ${fmtDate(ruledAt(j))}`:""}: ${esc([j.skipReason,j.skipNote].filter(Boolean).join(". "))}</p>`:""}
     <div class="apply-row">
       ${TOOLS?`<button class="apply" data-apply="${id}">${resumeUrl?"Re-run intake":"Apply"}</button>`:""}
       ${!TOOLS?"":resumeUrl?`<a class="resume" href="${esc(resumeUrl)}" target="_blank" rel="noopener">${esc(j.resumeName||"Tailored resume")} ↗</a>`:(j.resumeName?`<span class="hint">Resume: ${esc(j.resumeName)}</span>`:`<span class="hint">Copies an intake prompt for a new chat</span>`)}
@@ -838,14 +864,40 @@ function digestPreview(spec){
     +`<p class="hint">${d.passed} of ${d.considered} pass the gates and minimum score.${extra.length?" "+extra.join(" · "):""}</p>`;
 }
 
+function renderProgress(){
+  const el=$("#progress"); if(!el) return;
+  if(!db){el.hidden=true;return;}
+  const p=progressOf(jobs); el.hidden=false;
+  el.innerHTML=`Today: ${progressText(p.today)} · This week: ${progressText(p.week)}`;
+}
+// Ruled out: every role the owner eliminated, newest first, grouped by day, with the reason.
+function renderRuled(){
+  const list=jobs.filter(j=>st(j)==="skipped").sort((a,b)=>String(ruledAt(b)).localeCompare(String(ruledAt(a))));
+  if(!list.length) return `<div class="empty"><strong>Nothing ruled out yet</strong><span>Skip a role and pick a reason, and it's listed and counted here.${TOOLS?" Roles screened out in an intake chat land here too.":""}</span></div>`;
+  const p=progressOf(jobs), reasons={};
+  list.forEach(j=>{const r=j.skipReason||"No reason given"; reasons[r]=(reasons[r]||0)+1;});
+  const top=Object.entries(reasons).sort((a,b)=>b[1]-a[1]);
+  const groups=[]; list.forEach(j=>{const d=dayOf(ruledAt(j)); const g=groups[groups.length-1]; if(g&&g.d===d) g.items.push(j); else groups.push({d,items:[j]});});
+  const dayLabel=d=>!d?"No date":d===today()?"Today":new Date(d+"T12:00:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  const row=j=>{const url=isSampleUrl(j.url)?"":safeUrl(j.url), id=esc(j._id), why=[j.skipReason,j.skipNote].filter(Boolean).join(". ");
+    return `<div class="row"><div class="info"><h4>${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(j.title)}</a>`:esc(j.title)}</h4><small>${esc(j.company)}${why?` · ${esc(why)}`:""}${TOOLS&&j.source==="intake"?" · screened in intake":""}</small></div>
+      <button class="btn" type="button" data-reconsider="${id}">Reconsider</button></div>`;};
+  return `<div class="ruled">
+    <div class="sum"><p>This week you applied to <b>${p.week.applied}</b> and ruled out <b>${p.week.ruled}</b>. Every role ruled out is one less to wonder about.</p>
+      <p class="hint">${list.length} ruled out in all · ${top.map(([r,n])=>`${esc(r)} ${n}`).join(" · ")}</p></div>
+    ${groups.map(g=>`<section aria-label="${esc(dayLabel(g.d))}"><h3>${esc(dayLabel(g.d))} · ${g.items.length} ruled out</h3>${g.items.map(row).join("")}</section>`).join("")}
+  </div>`;
+}
+
 function render(){
-  renderTabs(); renderScan();
+  renderTabs(); renderScan(); renderProgress();
   const v=$("#view");
   if(!db){ v.innerHTML=`<div class="empty"><strong>Sign in to see your roles</strong><span>This tracker reads its data from your Claude account, so it needs a signed-in view.</span></div>`; return;}
   if(tab==="watch"){v.innerHTML=renderWatch();return;}
   if(tab==="filters"){v.innerHTML=renderFilters();return;}
   if(tab==="criteria"){v.innerHTML=renderCriteria();return;}
   if(tab==="people"){v.innerHTML=renderPeople();return;}
+  if(tab==="ruled"){v.innerHTML=renderRuled();return;}
   const r=renderJobs(); v.innerHTML=r.html;
   const c=$("#fcount"); if(c) c.textContent=r.total?`Showing ${r.shown} of ${r.total}`:"";
 }
@@ -856,6 +908,7 @@ function patchFor(j,next){
   const now=new Date().toISOString(), p={status:next,statusAt:now};
   if(next==="viewed"&&!j.viewedAt) p.viewedAt=now;
   if(next!=="new"&&next!=="viewed"&&!j.viewedAt) p.viewedAt=now;
+  if(next==="skipped") p.skippedAt=now;
   if(next==="applied"){ if(!j.appliedAt) p.appliedAt=now; if(!j.followUpDue) p.followUpDue=addBusinessDays(j.appliedAt||now,config.followUpBusinessDays); }
   return p;
 }
@@ -988,9 +1041,11 @@ document.addEventListener("click",async e=>{
   if(e.target.id==="fclear"){ view={...DEF_VIEW,sort:view.sort}; saveView(); render(); return; }
   const t=e.target.closest("[data-tab]");
   if(t){tab=t.dataset.tab; view.status=""; saveView(); try{localStorage.setItem("rr-tab",tab)}catch(_){} render(); return;}
+  const rc=e.target.closest("[data-reconsider]");
+  if(rc){ const j=jobs.find(x=>x._id===rc.dataset.reconsider); if(j) await setStatus(j,"viewed",{skipReason:"",skipNote:"",skippedAt:""},{undo:true}); render(); return; }
   if(e.target.closest("[data-skipcancel]")){ skipOpen=null; render(); return; }
   const sw=e.target.closest("[data-skipwhy]");
-  if(sw){ const j=jobs.find(x=>x._id===sw.dataset.job); skipOpen=null; const i=[...document.querySelectorAll("#view article.job")].indexOf(sw.closest("article.job")); if(j) await setStatus(j,"skipped",{skipReason:sw.dataset.skipwhy},{undo:true}); render(); focusCardAfter(Math.max(0,i)); return; }
+  if(sw){ const j=jobs.find(x=>x._id===sw.dataset.job); skipOpen=null; const i=[...document.querySelectorAll("#view article.job")].indexOf(sw.closest("article.job")); const note=(sw.closest("form")?.elements.skipNote?.value||"").trim(); if(j) await setStatus(j,"skipped",{skipReason:sw.dataset.skipwhy,skipNote:note},{undo:true}); render(); focusCardAfter(Math.max(0,i)); return; }
   const qk=e.target.closest("[data-quick]");
   if(qk){
     const j=jobs.find(x=>x._id===qk.dataset.job); if(!j) return;
