@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-23 (night shift: hardening rounds 1-3)
+Updated: 2026-10-23 (night shift hardening done: PR #31 ready for review)
 
 ## Planning IDs (Oct 21, 2026)
 The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs.
@@ -89,11 +89,12 @@ _Updated 2026-10-22._
   - 8 unit tests, 5 browser tests (desktop, phone sheet, sanitizing, unreachable board, other sources); 68 passing. New screenshots `preview.png`, `phone-preview.png` (`npm run screenshots -- preview phone-preview`).
 
 ## In progress
-- Night shift 2026-10-23 (hardening), draft PR #31: rounds 1-3 pushed. Next: one more look at the fixed build (`npm run review:shots`) for anything new at P2+, then mark #31 ready.
+- Night shift 2026-10-23 (hardening), draft PR #31: done and marked ready. Round 3 review found nothing at P2 or above (one P2 leftover also fixed: dates and pay inside sentences now use the body font). 127 tests, green 3x.
 - Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. PR #18 (job description preview) merged 2026-10-23 after bringing main in; live page republished with `posting.js` the same day.
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
 ## Exact next step
+- Night shift PR #31: Chase reviews and merges (or says "hide the chip on the public build" instead of "Experience: partial"). After merge, republish the live private page from `app/role-radar.html` with `scoring.js`, `posting.js`, `gmail-import.js` so it gets the fixes (not done overnight: the night shift doesn't deploy). Confirm with a real user whether the 6-second Undo is long enough.
 - Live page: republished 2026-10-23 (version 22) with `scoring.js`, `gmail-import.js` and `posting.js`; it now carries every merged change through PR #18. Next: Chase opens one Greenhouse role's Preview on the live page. If the artifact sandbox blocks the board API calls, have the scan store descriptions on board jobs.
 - Recruiter-ready: merged. Confirm https://chaseholroyd.com/role-radar/ shows the intro and back link on a phone. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) are in `recruiter-ready-intake.md` for Chase to paste into Product Studio.
 - Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm, then the portfolio repoint (see Portfolio / public presence).
@@ -110,7 +111,7 @@ _Updated 2026-10-22._
 - Night shift 2026-10-23: the "fit" chip now reads "Experience: strong / partial / stretch" (stored values stay strong/maybe/stretch, so the scan is unchanged). This replaces round 2's "Strong fit" wording (RR-P1-3). Alternative: hide the chip on the public build.
 - Night shift 2026-10-23: the criteria guard blocks a save only when it drops a section (sectors, comp, role, scoring) that the saved spec has, so a first-time spec in another shape still saves.
 - Night shift 2026-10-23: the tab bar scrolls away on phones instead of becoming one sticky scrolling row (simplest, keeps every tab visible at the top).
-- Not done (P2, left): RR-UX-12's other half (comp and dates in the mono font inside sentences) and the real brand names in the demo criteria's sector examples (the demo label now says roles, recruiters and scores are made up, not the examples).
+- Left below P2: real brand names in the demo criteria's sector examples (the demo label says roles, recruiters and scores are made up, not the examples); at 320x640 the first role starts just below the first screen.
 - Public demo has no "Code on GitHub" link: the repo URL contains a term on the private denylist, so the pre-commit privacy check blocks it. If you're fine with the GitHub handle appearing in page source, allow it in the denylist and add the link; the portfolio page can link the repo meanwhile.
 - Agents sync skips `focus-coach` and `orchestrator`: they are about Chase's personal routine and would read oddly to a recruiter browsing this public repo. Re-run `scripts/sync.sh <repo> focus-coach orchestrator` from studio-agents if you want them here.
 - The Gmail search result shape was taken from the connector's own documentation, not a live call (reading real mail from the build session was blocked as personal data). The parser accepts the documented camelCase fields and a few likely variants; first real use will confirm it.

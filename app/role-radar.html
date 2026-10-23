@@ -26,6 +26,8 @@ header{display:grid;gap:6px}
 h1{font-family:var(--f-display);font-weight:700;font-size:1.9rem;letter-spacing:-.01em;margin:0;text-wrap:balance}
 .sub{color:var(--muted);font-size:.9rem;margin:0}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+/* Dates and pay inside sentences read in the body font (tabular digits keep columns tidy). */
+.next .mono,.pv-head .meta .mono,.gmlist .mono{font-family:var(--f-body)}
 #tabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:2}
 #tabs button{font:500 .88rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;display:flex;gap:6px;align-items:center}
 #tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
