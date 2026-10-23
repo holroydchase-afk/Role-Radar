@@ -15,13 +15,15 @@ mkdirSync(out, { recursive: true });
 
 const SIZES = [["phone", 390, 844], ["laptop", 1280, 800]];
 const SCHEMES = ["light", "dark"];
-const VIEWS = [["public", ""], ["full", "?full"]];
+// public and full are the GitHub Pages build; private is the owner's page (normal mode) on demo data.
+const VIEWS = [["public", "", true], ["full", "?full", true], ["private", "", false]];
 
 const browser = await chromium.launch();
 const report = [];
 try {
-  const html = buildDemo({ publicDemo: true });
-  for (const [view, query] of VIEWS) {
+  const builds = { true: buildDemo({ publicDemo: true }), false: buildDemo() };
+  for (const [view, query, isPublic] of VIEWS) {
+    const html = builds[isPublic];
     for (const [size, width, height] of SIZES) {
       for (const scheme of SCHEMES) {
         const { page, errors } = await openDemo(browser, { html, width, height, colorScheme: scheme, file: "dist/review.html", query });
@@ -48,6 +50,21 @@ try {
             return { sideways, small: [...new Set(small)], unfinished, deadLinks: [...new Set(links)] };
           });
           report.push({ name, ...facts });
+        }
+        // The overlays a person opens: the description preview, and recruiter details on the private page.
+        await page.click("#tab-inbox");
+        const preview = await page.$(".job button[data-preview]");
+        if (preview) {
+          await preview.click();
+          await page.waitForTimeout(300);
+          await page.screenshot({ path: join(out, `${view}-preview-${size}-${scheme}.png`) });
+          await page.keyboard.press("Escape");
+        }
+        if (view === "private" && await page.$("#tab-people")) {
+          await page.click("#tab-people");
+          const show = await page.$("#recPrivacy");
+          if (show) { await show.click(); await page.waitForTimeout(150); }
+          await page.screenshot({ path: join(out, `${view}-people-details-${size}-${scheme}-full.png`), fullPage: true });
         }
         report.push({ name: `${view}-${size}-${scheme} console`, errors: [...errors] });
         await page.close();

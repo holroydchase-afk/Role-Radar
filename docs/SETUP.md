@@ -28,7 +28,7 @@ You can edit this later on the page's Criteria tab, which previews tomorrow's di
 
 ## 3. Publish the tracker
 
-1. Ask Claude to publish [`app/role-radar.html`](../app/role-radar.html) as a private artifact with [`src/scoring.js`](../src/scoring.js) and [`src/gmail-import.js`](../src/gmail-import.js) as supporting files of the same names. Give it the database capability, plus the connector capability for Gmail with only the read-only tools `search_threads` and `batch_get_threads`.
+1. Ask Claude to publish [`app/role-radar.html`](../app/role-radar.html) as a private artifact with [`src/scoring.js`](../src/scoring.js) and [`src/gmail-import.js`](../src/gmail-import.js) and [`src/posting.js`](../src/posting.js) as supporting files of the same names. Give it the database capability, plus the connector capability for Gmail with only the read-only tools `search_threads` and `batch_get_threads`.
 2. Open the page. Every tab starts empty.
 3. On the Criteria tab, paste your `criteria.yaml` and save.
 4. On the Recruiters tab, open *Import from Gmail* and choose *Find recruiters in Gmail*. Claude asks once whether the page may use your Gmail connector (add the connector in claude.ai Settings first if you haven't). Untick anyone who isn't a recruiter, then add the rest. To change what it searches for, set `gmailQuery` in the tracker's `meta/config` to any Gmail search.

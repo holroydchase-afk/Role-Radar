@@ -1,5 +1,6 @@
 // Captures README screenshots from the demo build (fictional data only).
 // Usage: npm run screenshots   → docs/screenshots/*.png
+//        npm run screenshots -- preview phone-preview   (only the named shots)
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,18 +25,22 @@ const SHOTS = [
     } },
   { name: "phone-new-roles", tab: "inbox", width: 390, height: 844 },
   { name: "dark-all-roles", tab: "all", width: 1000, height: 1100, colorScheme: "dark" },
+  { name: "preview", tab: "all", width: 1400, height: 1000, click: '.job:has-text("Sunfield Energy") h2 a', wait: "#pvBody li" },
+  { name: "phone-preview", tab: "all", width: 390, height: 844, click: '.job:has-text("Gridlark") button[data-preview]', wait: "#pvBody li" },
 ];
+const only = process.argv.slice(2);
 
 const browser = await chromium.launch();
 try {
-  for (const s of SHOTS) {
+  for (const s of SHOTS.filter((x) => !only.length || only.includes(x.name))) {
     const { page, errors } = await openDemo(browser, { width: s.width, height: s.height, colorScheme: s.colorScheme || "light", file: "dist/shot.html" });
     await page.click(`#tab-${s.tab}`);
     if (s.tweak) {
       // Show the live preview reacting: bump fintech to weight 3 in the editor.
       const text = await page.locator("#critText").inputValue();
       await page.locator("#critText").fill(text.replace(/(- id: fintech\n(?:.*\n)*?\s+weight: )1/, "$13"));
-      await page.waitForFunction(() => /Ledgerly/.test(document.querySelector("#digestPreview li")?.textContent || ""));
+      // Dream-role anchors keep a solar role on top, so look for Ledgerly moving into the top three.
+      await page.waitForFunction(() => [...document.querySelectorAll("#digestPreview li")].slice(0, 3).some((li) => /Ledgerly/.test(li.textContent)));
       // Scroll the editor so the edited fintech block is in view.
       await page.locator("#critText").evaluate((el) => {
         const line = el.value.slice(0, el.value.indexOf("- id: fintech")).split("\n").length - 1;
@@ -45,6 +50,7 @@ try {
     }
     if (s.click) await page.click(s.click);
     if (s.prepare) await s.prepare(page);
+    if (s.wait) await page.waitForSelector(s.wait);
     if (s.scrollTo) await page.locator(s.scrollTo).scrollIntoViewIfNeeded();
     await page.mouse.move(0, 0);
     await page.waitForTimeout(150);

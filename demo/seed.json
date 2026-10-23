@@ -1,5 +1,5 @@
 {
-  "_about": "DEMO DATA. Every company, role, person and date here is fictional. Dates written as @d-N / @t-N mean N days before the day the demo is opened (date only / full timestamp).",
+  "_about": "DEMO DATA. Every company, role, person and date here is fictional. Dates written as @d-N / @t-N mean N days before the day the demo is opened (date only / full timestamp). \"postings\" holds fictional job descriptions that the demo serves in place of the Greenhouse, Ashby and Lever APIs, keyed <ats>/<slug>/<job id>; Watermark Climate has none, to show a closed posting.",
   "jobs": {
     "greenhouse-1001": {
       "company": "Sunfield Energy",
@@ -522,7 +522,7 @@
     }
   },
   "gmail": {
-    "_about": "DEMO Gmail threads for the import preview. Fictional people; .example domains are reserved and never deliver.",
+    "_about": "DEMO Gmail threads for the recruiter import and the status check. Fictional people and companies; .example domains are reserved and never deliver.",
     "threads": [
       {
         "id": "g1",
@@ -648,6 +648,74 @@
             ]
           }
         ]
+      },
+      {
+        "id": "g6",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g6",
+        "messages": [
+          {
+            "id": "g6m1",
+            "sender": "Brightwell Solar <no-reply@greenhouse-mail.example>",
+            "date": "@t-2",
+            "subject": "Update on your application",
+            "snippet": "Thank you for your interest in Brightwell Solar. Unfortunately, we have decided to move forward with other candidates for the Installer Platform role.",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g7",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g7",
+        "messages": [
+          {
+            "id": "g7m1",
+            "sender": "Pebblepay Hiring <no-reply@pebblepay.example>",
+            "date": "@t-3",
+            "subject": "Next round: Merchant Risk",
+            "snippet": "Great news! The team would like to set up a panel interview. Please share your availability for next week.",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g8",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g8",
+        "messages": [
+          {
+            "id": "g8m1",
+            "sender": "HelioHome Careers <careers@heliohome.example>",
+            "date": "@t-1",
+            "subject": "Thanks for applying to HelioHome",
+            "snippet": "We received your application for Senior Product Manager, Home Electrification.",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g9",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g9",
+        "messages": [
+          {
+            "id": "g9m1",
+            "sender": "Watermark Climate <no-reply@watermark-climate.example>",
+            "date": "@t-400",
+            "subject": "Your application to Watermark Climate",
+            "snippet": "Unfortunately, the position has been filled.",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
       }
     ],
     "full": {
@@ -685,6 +753,41 @@
           }
         ]
       }
+    }
+  },
+  "postings": {
+    "greenhouse/sunfield/1001": "<p><strong>About us</strong></p><p>Sunfield Energy (a fictional demo company) helps homeowners understand what solar and batteries will really save, using utility rate and interconnection data from hundreds of utilities.</p><p><strong>The role</strong></p><p>We're hiring a Senior Product Manager to own our utility data platform: the rate schedules, tariffs and interconnection rules every quote depends on.</p><h3>What you'll do</h3><ul><li>Own the roadmap for utility data ingestion, validation and coverage</li><li>Partner with data engineering to cut the time to add a new utility from weeks to days</li><li>Define quality metrics for rate accuracy and make them visible to sales and operations</li><li>Work with installers and sales teams to find where bad data costs deals</li></ul><h3>What you bring</h3><ul><li>6+ years of product management, ideally with data or platform products</li><li>Comfort with messy, rule-heavy domains like rates, pricing or tariffs</li><li>Experience shipping human-in-the-loop or automated extraction workflows</li><li>Clear writing and a habit of measuring outcomes</li></ul><p><em>Compensation: $170,000 to $205,000 base, plus equity. Remote in the US.</em></p>",
+    "greenhouse/ledgerly/1005": "<p><strong>About us</strong></p><p>Ledgerly (a fictional demo company) builds checkout and financing tools for independent retailers.</p><p><strong>The role</strong></p><p>As Senior Product Manager, Checkout, you'll own the moment a customer pays: payment methods, point-of-sale financing and the conversion funnel.</p><h3>What you'll do</h3><ul><li>Own checkout conversion end to end, from cart to confirmation</li><li>Launch pay-over-time options with lending partners</li><li>Run experiments on payment method ordering and messaging</li><li>Partner with risk and compliance on disclosures</li></ul><h3>What you bring</h3><ul><li>5+ years in product, with at least 2 in payments, checkout or lending</li><li>A record of moving conversion with experiments</li><li>Comfort working with partners, legal and compliance</li></ul><p><em>$175,000 to $210,000 base. Remote, US.</em></p>",
+    "greenhouse/brightwell/1007": "<p><strong>About us</strong></p><p>Brightwell Solar (a fictional demo company) runs a network of independent solar installers across 20 states.</p><p><strong>The role</strong></p><p>We're looking for a Senior Product Manager to lead the Installer Platform, the tools our partners use to quote, sell and schedule installs.</p><h3>What you'll do</h3><ul><li>Own the installer portal: onboarding, quoting, permits and scheduling</li><li>Talk with installers every week and turn what you hear into a clear roadmap</li><li>Ship pricing and tiering tools for different partner levels</li><li>Track partner activation and retention</li></ul><h3>What you bring</h3><ul><li>5+ years of B2B product management</li><li>Experience with channel partner or marketplace products</li><li>Energy or home services background is a plus</li></ul>",
+    "ashby/gridlark/1002": "<p><strong>Gridlark</strong> (a fictional demo company) turns home batteries and thermostats into virtual power plants that utilities can dispatch.</p><p>As <strong>Staff Product Manager, Virtual Power Plants</strong>, you will set product direction across our enrollment, dispatch and settlement teams.</p><h3>Responsibilities</h3><ul><li>Own the VPP platform strategy across three product teams</li><li>Work with utility partners to design programs homeowners actually join</li><li>Define how we measure grid impact and customer payouts</li><li>Coach senior PMs and raise the bar on product thinking</li></ul><h3>Requirements</h3><ul><li>8+ years of product management, including platform ownership across several teams</li><li>Energy, utility or IoT experience</li><li>Strong written communication</li></ul><p>Base pay $185K to $220K. Remote (US).</p>",
+    "ashby/pebblepay/1008": "<p><strong>Pebblepay</strong> (a fictional demo company) processes card payments for small online merchants.</p><p>We're hiring a <strong>Senior Product Manager, Merchant Risk</strong> to help good merchants get paid fast while keeping fraud and losses low.</p><h3>What you'll work on</h3><ul><li>Merchant onboarding and underwriting flows</li><li>Rules and models that flag risky activity, with clear review queues</li><li>Reserve and payout policies, and how we explain them to merchants</li></ul><h3>About you</h3><ul><li>5+ years in product, ideally in payments, lending or risk</li><li>Comfort with data, rules engines and trade-offs between growth and loss</li></ul><p>Compensation: $180K to $215K base. Remote, US.</p>",
+    "lever/orbitline/1004": {
+      "description": "<div><b>Orbitline</b> (a fictional demo company) sells satellite imagery and analytics to insurers, farms and governments through a developer API.</div><div><br></div><div>We're looking for a Senior Product Manager to own the Earth Observation API: how developers find, order and process imagery.</div>",
+      "lists": [
+        {
+          "text": "What you'll do",
+          "content": "<li>Own the public API roadmap and developer experience</li><li>Work with partners to launch new imagery products</li><li>Measure activation, usage and revenue per account</li>"
+        },
+        {
+          "text": "What we're looking for",
+          "content": "<li>5+ years of product management, with API or platform products</li><li>Experience working with partners and enterprise customers</li><li>Geospatial or imagery experience is a plus</li>"
+        }
+      ],
+      "additional": "<div>This is a fast-paced team. Salary range $175K to $195K. Remote in the US.</div>"
+    },
+    "lever/copperleaf/1011": {
+      "description": "<div><b>Copperleaf Insurance</b> (a fictional demo company) is rebuilding how home insurance claims get handled.</div><div>As Senior Product Manager, Claims Automation, you'll use document extraction and rules to settle simple claims in hours instead of weeks.</div>",
+      "lists": [
+        {
+          "text": "Responsibilities",
+          "content": "<li>Own the claims intake and automated review flow</li><li>Work with adjusters to design human-in-the-loop review</li><li>Track cycle time, accuracy and customer satisfaction</li>"
+        },
+        {
+          "text": "Qualifications",
+          "content": "<li>5+ years of product management</li><li>Experience with document AI or workflow automation</li><li>Insurance experience is helpful but not required</li>"
+        }
+      ],
+      "additional": "<div>Base salary $155K to $180K. Remote, US.</div>"
     }
   }
 }

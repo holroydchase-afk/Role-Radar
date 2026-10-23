@@ -5,8 +5,8 @@
 #
 #  How a role is scored (0–100, higher ranks first in the digest):
 #    sector   = weight × 15            (0–45)   ← what the company does
-#    fit      = strong 35 · maybe 20 · stretch 5 ← match to your background
-#    culture  = +10 good signals, −10 per red flag (max −20)
+#    experience (key: fit) = strong 35 · maybe ("partial" on cards) 20 · stretch 5 ← match to your background
+#    culture signals = +10 good signals, −10 per red flag (max −20)
 #    comp     = +10 if base top ≥ stretch_target
 #    dream    = +15 if the role is like one of dream_roles (see below)
 #  Roles under `scoring.min_score_to_add` are not added (hard excludes never are).

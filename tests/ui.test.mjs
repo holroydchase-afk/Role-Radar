@@ -41,7 +41,7 @@ test("cards explain their score with the criteria rules", async () => {
   await page.click("#tab-all");
   const lines = await page.locator(".why-score").allInnerTexts();
   assert.ok(lines.length >= 10);
-  assert.ok(lines.some((l) => /^45 sector \+ 35 fit \+ 10 comp = 90/.test(l)), lines.join("\n"));
+  assert.ok(lines.some((l) => /^45 sector \+ 35 experience \+ 10 comp = 90/.test(l)), lines.join("\n"));
   assert.ok(!lines.some((l) => /scan said/.test(l)), "demo scores match the rules");
   await page.close();
 });
@@ -192,6 +192,33 @@ test("the Criteria tab explains the fit ratings", async () => {
   await page.close();
 });
 
+// Preview panel: the posting's own text, loaded from the board's public API on click.
+test("clicking a role opens its description in a side panel on wide screens", async () => {
+  const { page, errors } = await openDemo({ width: 1300, height: 900 });
+  await page.click("#tab-all");
+  const card = page.locator(".job", { hasText: "Sunfield Energy" });
+  await card.locator("h2 a").click();
+  const panel = page.locator("#preview");
+  await panel.locator("#pvBody li").first().waitFor();
+  assert.match(await panel.locator("#pvTitle").innerText(), /Utility Data/);
+  assert.match(await panel.innerText(), /Own the roadmap for utility data ingestion/);
+  assert.match(await panel.innerText(), /Greenhouse's public job board/);
+  const pb = await panel.boundingBox(), cb = await card.boundingBox();
+  assert.ok(pb.x > cb.x + cb.width - 1, "panel sits to the right of the list");
+  assert.equal(Math.round(pb.y), 0);
+  assert.ok(await card.evaluate((el) => el.classList.contains("sel")));
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), 0);
+  // Ashby and Lever shapes render too.
+  await page.locator(".job", { hasText: "Gridlark" }).getByRole("button", { name: "Preview" }).click();
+  await page.waitForFunction(() => /Virtual Power Plants/.test(document.querySelector("#pvTitle")?.textContent) && /three product teams/.test(document.querySelector("#pvBody")?.textContent || ""));
+  await page.locator(".job", { hasText: "Orbitline" }).getByRole("button", { name: "Preview" }).click();
+  await page.waitForFunction(() => /What we're looking for/.test(document.querySelector("#pvBody")?.textContent || ""));
+  await page.keyboard.press("Escape");
+  assert.ok(await panel.isHidden());
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test("Gmail import: finds recruiters, skips known ones and job boards, adds only the picked", async () => {
   const { page, errors } = await openDemo();
   await page.click("#tab-people");
@@ -224,6 +251,40 @@ test("Gmail import: finds recruiters, skips known ones and job boards, adds only
   await page.close();
 });
 
+test("roles without a board feed show an Open posting link instead", async () => {
+  const { page } = await openDemo({ width: 1300 });
+  await page.click("#tab-all");
+  await page.locator(".job", { hasText: "Carbonmark" }).getByRole("button", { name: "Preview" }).click();
+  const panel = page.locator("#preview");
+  assert.match(await panel.innerText(), /No preview for this source/);
+  assert.match(await panel.innerText(), /ZipRecruiter/);
+  // Demo roles are made up, so the panel says so instead of linking to example.com (RR-P1-2).
+  assert.equal(await panel.locator('a[href*="example.com"]').count(), 0);
+  assert.match(await panel.innerText(), /made-up role/);
+  // A board that no longer lists the role says so.
+  await page.locator(".job", { hasText: "Watermark Climate" }).getByRole("button", { name: "Preview" }).click();
+  await page.waitForFunction(() => /isn't on the board anymore/.test(document.querySelector("#preview")?.textContent || ""));
+  await page.close();
+});
+
+test("on a phone the preview is a full-screen sheet that closes back to the card", async () => {
+  const { page, errors } = await openDemo({ width: 390, height: 844 });
+  await page.click("#tab-all");
+  const btn = page.locator(".job", { hasText: "Ledgerly" }).getByRole("button", { name: "Preview" });
+  await btn.click();
+  const panel = page.locator("#preview");
+  await panel.locator("#pvBody").waitFor();
+  const b = await panel.boundingBox();
+  assert.deepEqual([b.x, b.y, b.width, b.height].map(Math.round), [0, 0, 390, 844]);
+  assert.equal(await page.evaluate(() => document.activeElement.id), "pvClose");
+  assert.ok(await panel.locator("#pvBody").evaluate((el) => el.scrollWidth <= el.clientWidth));
+  await page.click("#pvClose");
+  assert.ok(await panel.isHidden());
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.preview), "greenhouse-1005");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test("Gmail import explains a missing connector instead of failing silently", async () => {
   const seed = JSON.parse(readFileSync(new URL("../demo/seed.json", import.meta.url), "utf8"), (k, v) => (typeof v === "string" && v.startsWith("@file:") ? readFileSync(new URL("../" + v.slice(6), import.meta.url), "utf8") : v));
   seed.gmail.error = "server_not_connected";
@@ -244,6 +305,51 @@ test("Gmail import explains a missing connector instead of failing silently", as
   await p2.close();
 });
 
+test("Gmail status check suggests pipeline updates and saves only the ticked ones", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-pipeline");
+  await page.locator("details.gmail-status summary").click();
+  await page.click("#gsFind");
+  await page.waitForSelector("details.gmail-status .gmlist");
+  const rows = await page.locator("details.gmail-status .gmlist li").allInnerTexts();
+  assert.equal(rows.length, 3, rows.join("\n"));
+  assert.match(rows.find((r) => /Brightwell/.test(r)), /Applied\s*→\s*Rejected/i);
+  assert.match(rows.find((r) => /Pebblepay/.test(r)), /Screen\s*→\s*Interviewing/i);
+  assert.match(rows.find((r) => /HelioHome/.test(r)), /Applying\s*→\s*Applied/i);
+  assert.ok(!rows.some((r) => /Watermark/.test(r)), "an email from before the role was tracked is ignored");
+  assert.ok(!rows.some((r) => /Ledgerly|Sunfield/.test(r)), "roles outside the pipeline are left alone");
+  // The search named the pipeline companies and used only read-only tools.
+  const calls = await page.evaluate(() => window.__RR_MCP_CALLS__);
+  assert.match(calls[0].input.query, /"pebblepay"/);
+  assert.deepEqual([...new Set(calls.map((c) => c.tool))].sort().filter((t) => t !== "batch_get_threads"), ["search_threads"]);
+  // Leave Pebblepay alone, update the other two.
+  await page.locator("details.gmail-status .gmlist li", { hasText: "Pebblepay" }).locator("input").uncheck();
+  assert.match(await page.locator("#gsApply").innerText(), /Update 2 roles/);
+  await page.click("#gsApply");
+  await page.waitForFunction(() => document.querySelectorAll("details.gmail-status .gmlist li").length === 1);
+  const jobs = await page.evaluate(async () => {
+    const db = await window.claude.use("db");
+    const get = async (id) => (await db.doc("jobs/" + id).get()).data();
+    return { bw: await get("greenhouse-1007"), hh: await get("manual-heliohome-sr-pm"), pp: await get("ashby-1008") };
+  });
+  assert.equal(jobs.bw.status, "rejected");
+  assert.match(jobs.bw.statusAt, /^\d{4}-\d{2}-\d{2}$/, "status date is the email's date");
+  assert.equal(jobs.bw.statusEmail.subject, "Update on your application");
+  assert.equal(jobs.hh.status, "applied");
+  assert.equal(jobs.hh.appliedAt, jobs.hh.statusAt);
+  assert.ok(jobs.hh.followUpDue);
+  assert.equal(jobs.pp.status, "screen", "unticked role unchanged");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("Gmail status check is not on the public demo", async () => {
+  const { page } = await openDemo({ html: buildDemo({ publicDemo: true }) });
+  await page.click("#tab-pipeline");
+  assert.equal(await page.locator("details.gmail-status").count(), 0);
+  await page.close();
+});
+
 test("Gmail import is hidden while recruiter details are hidden", async () => {
   const { page } = await openDemo();
   await page.click("#tab-people");
@@ -257,10 +363,10 @@ test("the Watchlist shows board health from the last scan", async () => {
   const strip = page.locator(".health");
   const t = await strip.innerText();
   assert.match(t, /Boards: 7\/9 read \(solar\/climate 4\/5\)/);
-  assert.match(t, /mode full/);
+  assert.match(t, /full scan/); // RR-UX-13 plain words
   assert.ok(await strip.evaluate((el) => el.classList.contains("low")), "80% priority coverage is flagged");
   assert.equal(await strip.locator(".hchip.bad").first().getAttribute("title"), "404 from board API (demo)");
-  assert.match(t, /Orbitline: greenhouse:orbitline → lever:orbitline/);
+  assert.match(t, /Orbitline moved its job board \(Greenhouse → Lever\)/);
   const dot = (co) => page.locator(".row", { hasText: co }).locator(".hdot").getAttribute("class");
   assert.match(await dot("Sunfield Energy"), /green/);
   assert.match(await dot("Gridlark"), /amber/);
@@ -397,12 +503,38 @@ test("demo roles have no example.com links; 'Sample posting' explains itself (RR
   await page.close();
 });
 
-test("fit chips say 'fit' so they don't read as a grade (RR-P1-3)", async () => {
+test("board HTML is sanitized before it is shown", async () => {
+  const seed = JSON.parse(readFileSync(new URL("../demo/seed.json", import.meta.url), "utf8"));
+  seed.jobs["greenhouse-777"] = { company: "Acme", title: "Senior Product Manager", ats: "greenhouse", source: "greenhouse", status: "new", firstSeen: "@t-1", url: "https://job-boards.greenhouse.io/acmetest/jobs/777" };
+  const evil = `<p onclick="window.__x=1">Real words <b>stay</b>.</p><script>window.__x=2<\/script><img src=x onerror="window.__x=3"><a href="javascript:window.__x=4">bad link</a><a href="https://example.com/benefits">good link</a><style>body{display:none}</style><iframe src="https://example.com"></iframe>`;
+  const esc = (h) => h.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const { page, errors } = await openDemo({ html: buildDemo({ seed }), width: 1300, ready: "#view" });
+  let asked = "";
+  await page.route("https://boards-api.greenhouse.io/**", (route) => { asked = route.request().url(); route.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify({ id: 777, content: esc(evil) }) }); });
+  await page.click("#tab-all");
+  await page.locator(".job", { hasText: "Acme" }).getByRole("button", { name: "Preview" }).click();
+  await page.locator("#pvBody b").waitFor();
+  assert.equal(asked, "https://boards-api.greenhouse.io/v1/boards/acmetest/jobs/777");
+  const body = page.locator("#pvBody");
+  assert.match(await body.innerText(), /Real words stay\./);
+  assert.equal(await body.locator("script, img, style, iframe, [onclick]").count(), 0);
+  assert.equal(await body.locator("a").first().getAttribute("href"), null);
+  assert.equal(await body.locator("a").nth(1).getAttribute("rel"), "noopener noreferrer");
+  await body.locator("p").click();
+  assert.equal(await page.evaluate(() => window.__x), undefined);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("RR-UX-1 the chip beside the score names what it rates (experience), so 90 + chip never reads as a contradiction", async () => {
   const { page } = await openDemo();
   await page.click("#tab-all");
   const chips = await page.locator("#view .chip[class*=fit-]").allTextContents();
   assert.ok(chips.length >= 10);
-  for (const c of chips) assert.match(c, /^(strong|maybe|stretch) fit$/i);
+  for (const c of chips) assert.match(c, /^Experience: (strong|partial|stretch)$/);
+  assert.match(await page.locator("#view .score").first().getAttribute("title"), /Criteria score, 0.100/);
+  assert.deepEqual(await page.locator("#fv-fit option").allTextContents(), ["Any", "Strong", "Partial", "Stretch"]);
+  assert.match(await page.locator("label[for=fv-fit]").innerText(), /^Experience/);
   await page.close();
 });
 
@@ -454,6 +586,18 @@ test("public demo works with the CDN blocked: js-yaml is inlined (RR-P2-9)", asy
   await page.click("#tab-criteria");
   assert.ok((await page.locator("#digestPreview li").count()) > 0);
   assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("a board that can't be reached falls back to the posting link", async () => {
+  const seed = JSON.parse(readFileSync(new URL("../demo/seed.json", import.meta.url), "utf8"));
+  seed.jobs["lever-9"] = { company: "Acme", title: "Senior Product Manager", ats: "lever", source: "lever", status: "new", firstSeen: "@t-1", url: `https://jobs.lever.co/acmetest/0c2f6d1e-8a7b-4c3d-9e1f-2a3b4c5d6e7f` };
+  const { page } = await openDemo({ html: buildDemo({ seed }), width: 1300, ready: "#view" });
+  await page.route("https://api.lever.co/**", (route) => route.abort());
+  await page.click("#tab-all");
+  await page.locator(".job", { hasText: "Acme" }).getByRole("button", { name: "Preview" }).click();
+  await page.waitForFunction(() => /Couldn't load the description/.test(document.querySelector("#preview")?.textContent || ""));
+  assert.ok(await page.locator("#preview").getByRole("link", { name: /Open posting/ }).isVisible());
   await page.close();
 });
 
