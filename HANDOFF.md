@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-23 (PR #18 job description preview merged)
+Updated: 2026-10-23 (PR #18 merged, live page republished)
 
 ## Planning IDs (Oct 21, 2026)
 The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs.
@@ -86,11 +86,11 @@ _Updated 2026-10-22._
   - 8 unit tests, 5 browser tests (desktop, phone sheet, sanitizing, unreachable board, other sources); 68 passing. New screenshots `preview.png`, `phone-preview.png` (`npm run screenshots -- preview phone-preview`).
 
 ## In progress
-- Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. PR #18 (job description preview) merged 2026-10-23 after bringing main in; the live page still needs republishing with `posting.js`.
+- Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. PR #18 (job description preview) merged 2026-10-23 after bringing main in; live page republished with `posting.js` the same day.
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
 ## Exact next step
-- Live page: republish `app/role-radar.html` with `scoring.js`, `gmail-import.js` and the new `posting.js` as supporting files (same db and Gmail capabilities), then open one Greenhouse role's preview to confirm the artifact sandbox allows the board API calls. If it blocks them, have the scan store descriptions on board jobs.
+- Live page: republished 2026-10-23 (version 22) with `scoring.js`, `gmail-import.js` and `posting.js`; it now carries every merged change through PR #18. Next: Chase opens one Greenhouse role's Preview on the live page. If the artifact sandbox blocks the board API calls, have the scan store descriptions on board jobs.
 - Recruiter-ready: merged. Confirm https://chaseholroyd.com/role-radar/ shows the intro and back link on a phone. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) are in `recruiter-ready-intake.md` for Chase to paste into Product Studio.
 - Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm, then the portfolio repoint (see Portfolio / public presence).
 - Gmail import: Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
