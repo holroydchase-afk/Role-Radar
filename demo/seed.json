@@ -251,7 +251,8 @@
       "status": "skipped",
       "skipReason": "Not remote",
       "statusAt": "@t-12",
-      "viewedAt": "@t-13"
+      "viewedAt": "@t-13",
+      "skippedAt": "@t-12"
     },
     "alert-northstar-sr-pm": {
       "company": "Northstar Utilities",
@@ -270,6 +271,45 @@
       "status": "saved",
       "statusAt": "@t-8",
       "viewedAt": "@t-8"
+    },
+    "manual-harborline-mutual-dpm-finance-technology": {
+      "company": "Harborline Mutual",
+      "title": "Digital Product Manager, Finance Technology",
+      "location": "Belfast, UK",
+      "url": "https://example.com/jobs/harborline-dpm",
+      "source": "intake",
+      "firstSeen": "@t-0",
+      "score": 15,
+      "lane": "Pricing & payments",
+      "tags": [],
+      "status": "skipped",
+      "skipReason": "Location",
+      "skipNote": "Belfast office only, and the posting had already closed",
+      "skippedAt": "@t-0",
+      "statusAt": "@t-0",
+      "viewedAt": "@t-0"
+    },
+    "ashby-2207": {
+      "company": "Tidewater Analytics",
+      "title": "Senior Product Manager, Growth",
+      "location": "Remote, US",
+      "url": "https://example.com/jobs/tidewater-growth",
+      "ats": "ashby",
+      "source": "ashby",
+      "postedAt": "@d-3",
+      "firstSeen": "@t-2",
+      "comp": "$175K–$200K",
+      "fit": "maybe",
+      "score": 45,
+      "sector": "Other",
+      "lane": "Other",
+      "tags": [],
+      "status": "skipped",
+      "skipReason": "Culture",
+      "skipNote": "Posting asks for an always-on, fast-paced team",
+      "skippedAt": "@t-1",
+      "statusAt": "@t-1",
+      "viewedAt": "@t-2"
     }
   },
   "companies": {
@@ -455,9 +495,11 @@
       "skipReasons": [
         "Comp too low",
         "Not remote",
+        "Location",
         "Wrong level",
         "Wrong domain",
         "Culture",
+        "Posting closed",
         "Other"
       ],
       "followUpBusinessDays": 5,
