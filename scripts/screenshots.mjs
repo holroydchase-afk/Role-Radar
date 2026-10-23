@@ -16,6 +16,13 @@ const SHOTS = [
   { name: "needs-action", tab: "action", width: 1000, height: 1100 },
   { name: "recruiters", tab: "people", width: 1000, height: 1100, click: "#recPrivacy" },
   { name: "recruiters-hidden", tab: "people", width: 1000, height: 700 },
+  { name: "gmail-import", tab: "people", width: 1000, height: 1400, clip: ["details.gmail", "details.gmail"],
+    prepare: async (page) => {
+      await page.click("#recPrivacy");
+      await page.locator("details.gmail summary").click();
+      await page.click("#gmFind");
+      await page.waitForSelector(".gmlist");
+    } },
   { name: "phone-new-roles", tab: "inbox", width: 390, height: 844 },
   { name: "dark-all-roles", tab: "all", width: 1000, height: 1100, colorScheme: "dark" },
   { name: "preview", tab: "all", width: 1400, height: 1000, click: '.job:has-text("Sunfield Energy") h2 a', wait: "#pvBody li" },
@@ -41,6 +48,7 @@ try {
       });
     }
     if (s.click) await page.click(s.click);
+    if (s.prepare) await s.prepare(page);
     if (s.wait) await page.waitForSelector(s.wait);
     if (s.scrollTo) await page.locator(s.scrollTo).scrollIntoViewIfNeeded();
     await page.mouse.move(0, 0);

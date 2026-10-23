@@ -8,6 +8,7 @@
 #    fit      = strong 35 · maybe 20 · stretch 5 ← match to your background
 #    culture  = +10 good signals, −10 per red flag (max −20)
 #    comp     = +10 if base top ≥ stretch_target
+#    dream    = +15 if the role is like one of dream_roles (see below)
 #  Roles under `scoring.min_score_to_add` are not added (hard excludes never are).
 # ─────────────────────────────────────────────────────────────
 
@@ -157,6 +158,17 @@ culture_fit:                           # would you actually like working there?
     - { id: poor_reviews,        points: -1, short: "weak work-life reviews",     means: "Glassdoor work-life under 3.5, or burnout themes" }
     - { id: recent_layoffs,      points: -2, short: "recent layoffs",             means: "layoffs in the last 12 months" }
     - { id: crunch_risk,         points: -1, short: "launch crunch risk",         means: "new team, greenfield launch, or reviews mention crunches" }
+
+# ── Dream roles: calibration anchors ─────────────────────────
+#  Roles like these score at the top. A role counts as "like" an anchor when it is at
+#  one of these companies, or its title has a role_keywords word in one of in_sectors.
+dream_roles:
+  bonus: 15                            # added to the 0–100 score (shown as "dream role")
+  like:                                # EXAMPLE anchors for the demo candidate
+    - { company: HelioHome, title: "Senior Product Manager, Home Electrification", why: "consumer energy product at a mission company" }
+    - { company: Gridlark, title: "Staff Product Manager, Virtual Power Plants", why: "grid flexibility", check: "only if the VPP is live, not a pilot" }
+  role_keywords: [processing, payments, billing, lending, financing, underwriting]
+  in_sectors: [solar_energy, climate_tech, green_finance]
 
 # ── Digest shape ─────────────────────────────────────────────
 scoring:

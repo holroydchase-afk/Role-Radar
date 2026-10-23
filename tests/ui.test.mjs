@@ -50,10 +50,10 @@ test("digest preview re-ranks live as the criteria are edited", async () => {
   const { page } = await openDemo();
   await page.click("#tab-criteria");
   const first = () => page.locator("#digestPreview li").first().innerText();
-  assert.match(await first(), /Sunfield Energy/);
-  // Make fintech the top priority and watch it move up.
+  assert.match(await first(), /Gridlark.*\n.*dream role/, "a dream-role anchor tops the digest");
   const text = await page.locator("#critText").inputValue();
-  const edited = text.replace(/(- id: fintech\n(?:.*\n)*?\s+weight: )1/, "$13");
+  // Make fintech the top priority, with no dream-role bonus, and watch it move up.
+  const edited = text.replace(/(- id: fintech\n(?:.*\n)*?\s+weight: )1/, "$13").replace(/bonus: 15/, "bonus: 0");
   assert.notEqual(edited, text);
   await page.locator("#critText").fill(edited);
   await page.waitForFunction(() => /Ledgerly/.test(document.querySelector("#digestPreview li")?.textContent || ""));
@@ -149,7 +149,7 @@ test("cards show Values and Culture badges with a reason", async () => {
   assert.match(await card("Sunfield Energy").innerText(), /Values\s+Great[\s\S]*Culture\s+Great/i);
   assert.match(await card("Ledgerly").innerText(), /Values\s+Neutral[\s\S]*Culture\s+Good[\s\S]*but launch crunch risk/i);
   assert.match(await card("Pebblepay").innerText(), /Culture\s+No/i);
-  assert.match(await card("Orbitline").innerText(), /rated up at intake/);
+  assert.match(await card("Orbitline").innerText(), /rated up after research/);
   assert.match(await card("Gridlark").innerText(), /Unrated[\s\S]*Not checked yet/i);
   assert.deepEqual(errors, []);
   await page.close();
@@ -170,7 +170,7 @@ test("Values and Culture filters narrow the list", async () => {
 test("the Criteria tab explains the fit ratings", async () => {
   const { page } = await openDemo();
   await page.click("#tab-criteria");
-  const card = page.locator("div.ccard", { has: page.locator("h3", { hasText: "Fit ratings" }) });
+  const card = page.locator("div.ccard", { has: page.locator("h2", { hasText: "Fit ratings" }) });
   assert.match(await card.innerText(), /\+2\s+calm pace/);
   assert.match(await card.innerText(), /−1\s+launch crunch risk/);
   assert.match(await page.locator("div.ccard", { hasText: "At a glance" }).innerText(), /Home state\s+CO → UT/);
@@ -204,6 +204,38 @@ test("clicking a role opens its description in a side panel on wide screens", as
   await page.close();
 });
 
+test("Gmail import: finds recruiters, skips known ones and job boards, adds only the picked", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-people");
+  await page.click("#recPrivacy");
+  await page.locator("details.gmail summary").click();
+  await page.click("#gmFind");
+  await page.waitForSelector(".gmlist");
+  const rows = await page.locator(".gmlist li").allInnerTexts();
+  assert.equal(rows.length, 4, rows.join("\n"));
+  assert.ok(!rows.some((r) => /Ledgerly|ashby/i.test(r)), "job board mail skipped");
+  assert.match(rows.find((r) => /Jordan Reyes/.test(r)), /already added/);
+  // The long thread was read in full, so the last contact is the newest email, not the preview's.
+  const riley = rows.find((r) => /Riley Chen/.test(r));
+  const d = new Date(Date.now() - 2 * 864e5);
+  assert.match(riley, new RegExp(d.toLocaleDateString(undefined, { month: "short" }) + "\\s+" + d.getDate()));
+  // Only read-only Gmail tools were called.
+  const tools = await page.evaluate(() => window.__RR_MCP_CALLS__.map((c) => c.tool));
+  assert.deepEqual([...new Set(tools)].sort(), ["batch_get_threads", "search_threads"]);
+  // Untick the friend, add the other two.
+  await page.locator(".gmlist li", { hasText: "Taylor Morgan" }).locator("input").uncheck();
+  assert.match(await page.locator("#gmAdd").innerText(), /Add 2 recruiters/);
+  await page.click("#gmAdd");
+  await page.waitForFunction(() => document.querySelectorAll(".rec").length === 7);
+  const list = await page.locator(".list").innerText();
+  assert.match(list, /Riley Chen/);
+  assert.match(list, /Avery Brooks/);
+  assert.doesNotMatch(list, /Taylor Morgan/);
+  assert.match(list, /NORTHSTAR TALENT[\s\S]*AGENCY/i);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test("roles without a board feed show an Open posting link instead", async () => {
   const { page } = await openDemo({ width: 1300 });
   await page.click("#tab-all");
@@ -211,7 +243,9 @@ test("roles without a board feed show an Open posting link instead", async () =>
   const panel = page.locator("#preview");
   assert.match(await panel.innerText(), /No preview for this source/);
   assert.match(await panel.innerText(), /ZipRecruiter/);
-  assert.equal(await panel.getByRole("link", { name: /Open posting/ }).getAttribute("href"), "https://example.com/jobs/carbonmark-reporting");
+  // Demo roles are made up, so the panel says so instead of linking to example.com (RR-P1-2).
+  assert.equal(await panel.locator('a[href*="example.com"]').count(), 0);
+  assert.match(await panel.innerText(), /made-up role/);
   // A board that no longer lists the role says so.
   await page.locator(".job", { hasText: "Watermark Climate" }).getByRole("button", { name: "Preview" }).click();
   await page.waitForFunction(() => /isn't on the board anymore/.test(document.querySelector("#preview")?.textContent || ""));
@@ -232,6 +266,179 @@ test("on a phone the preview is a full-screen sheet that closes back to the card
   await page.click("#pvClose");
   assert.ok(await panel.isHidden());
   assert.equal(await page.evaluate(() => document.activeElement.dataset.preview), "greenhouse-1005");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("Gmail import explains a missing connector instead of failing silently", async () => {
+  const seed = JSON.parse(readFileSync(new URL("../demo/seed.json", import.meta.url), "utf8"), (k, v) => (typeof v === "string" && v.startsWith("@file:") ? readFileSync(new URL("../" + v.slice(6), import.meta.url), "utf8") : v));
+  seed.gmail.error = "server_not_connected";
+  const { page } = await openDemo({ html: buildDemo({ seed }) });
+  await page.click("#tab-people");
+  await page.click("#recPrivacy");
+  await page.locator("details.gmail summary").click();
+  await page.click("#gmFind");
+  assert.match(await page.locator("details.gmail .err").innerText(), /Add the Gmail connector/);
+  await page.close();
+
+  delete seed.gmail;
+  const { page: p2 } = await openDemo({ html: buildDemo({ seed }) });
+  await p2.click("#tab-people");
+  await p2.click("#recPrivacy");
+  await p2.locator("details.gmail summary").click();
+  assert.match(await p2.locator("details.gmail").innerText(), /works when this page is open in Claude/);
+  await p2.close();
+});
+
+test("Gmail import is hidden while recruiter details are hidden", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-people");
+  assert.equal(await page.locator("details.gmail").count(), 0);
+  await page.close();
+});
+
+test("the Watchlist shows board health from the last scan", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-watch");
+  const strip = page.locator(".health");
+  const t = await strip.innerText();
+  assert.match(t, /Boards: 7\/9 read \(solar\/climate 4\/5\)/);
+  assert.match(t, /mode full/);
+  assert.ok(await strip.evaluate((el) => el.classList.contains("low")), "80% priority coverage is flagged");
+  assert.equal(await strip.locator(".hchip.bad").first().getAttribute("title"), "404 from board API (demo)");
+  assert.match(t, /Orbitline: greenhouse:orbitline → lever:orbitline/);
+  const dot = (co) => page.locator(".row", { hasText: co }).locator(".hdot").getAttribute("class");
+  assert.match(await dot("Sunfield Energy"), /green/);
+  assert.match(await dot("Gridlark"), /amber/);
+  assert.match(await dot("Watermark Climate"), /red/);
+  assert.match(await dot("Copperleaf Insurance"), /grey/);
+  assert.equal(await page.locator(".row", { hasText: "QuickCash" }).locator(".hdot").count(), 0);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("public demo: radar only, no resume or recruiter tools anywhere", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page, errors } = await openDemo({ html });
+  assert.equal(await page.locator("#tab-people").count(), 0, "no Recruiters tab");
+  for (const id of ["inbox", "pipeline", "action", "all", "criteria", "watch", "filters"]) {
+    await page.click(`#tab-${id}`);
+    const text = await page.locator("#view").innerText();
+    assert.doesNotMatch(text, /resume|intake/i, `${id} mentions resume tooling`);
+    assert.equal(await page.locator("#view .apply").count(), 0, `${id} has an Apply button`);
+  }
+  await page.click("#tab-all");
+  assert.match(await page.locator("#lede").innerText(), /my own call/);
+  assert.match(await page.locator(".why-score").first().innerText(), /sector/);
+  await page.click("#tab-filters");
+  assert.equal(await page.locator("#cCmd, #cInstr").count(), 0);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("public demo with ?full shows the resume and recruiter tools", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page, errors } = await openDemo({ html, query: "?full" });
+  assert.equal(await page.locator("#tab-people").count(), 1);
+  await page.click("#tab-all");
+  assert.ok((await page.locator("#view .apply").count()) > 0);
+  await page.click("#tab-filters");
+  assert.equal(await page.locator("#cCmd, #cInstr").count(), 2);
+  await page.click("#tab-people");
+  assert.match(await page.locator("#view").innerText(), /Show details/);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("a remembered Recruiters tab falls back to New in the public demo", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html, query: "?full" });
+  await page.click("#tab-people");
+  await page.goto(page.url().split("?")[0]);
+  await page.waitForSelector("#tab-inbox");
+  assert.equal(await page.locator("#tab-inbox").getAttribute("aria-selected"), "true");
+  await page.close();
+});
+
+test("public demo says what it is and links back to the portfolio in the first screen (RR-P0-1)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  for (const [width, height] of [[390, 844], [1280, 800]]) {
+    for (const query of ["", "?full"]) {
+      const { page, errors } = await openDemo({ html, width, height, query });
+      const back = page.locator('a[href="https://chaseholroyd.com/role-radar.html"]');
+      assert.equal(await back.count(), 1, `back link ${width} ${query}`);
+      const box = await back.boundingBox();
+      assert.ok(box && box.y + box.height <= height, `back link in first screen at ${width}`);
+      assert.equal(await page.locator('#showcase a[href="https://chaseholroyd.com/"]').count(), 1);
+      const lede = page.locator("#lede");
+      assert.ok(await lede.isVisible());
+      assert.match(await lede.innerText(), /job-search radar I built/);
+      const lb = await lede.boundingBox();
+      assert.ok(lb.y + lb.height <= height, `lede in first screen at ${width}`);
+      assert.deepEqual(errors, []);
+      await page.close();
+    }
+  }
+});
+
+test("the app outside the public demo has no showcase bar", async () => {
+  const { page } = await openDemo();
+  assert.ok(!(await page.locator("#showcase").isVisible()));
+  assert.ok(!(await page.locator("#lede").isVisible()));
+  await page.close();
+});
+
+test("public demo says 'my own call' once, not on every card (RR-P2-1)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html });
+  await page.click("#tab-all");
+  assert.doesNotMatch(await page.locator("#view").innerText(), /my own call/);
+  assert.match(await page.locator("#lede").innerText(), /my own call/);
+  await page.close();
+});
+
+test("a role added on Pipeline shows up right away (RR-P1-1)", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-pipeline");
+  await page.locator("#addRole summary").click();
+  await page.fill("#aj-co", "Quillfern Labs");
+  await page.fill("#aj-ti", "Senior PM, Test Role");
+  await page.locator("#addJob button[type=submit]").click();
+  await page.waitForFunction(() => /Quillfern Labs/i.test(document.querySelector("#view").innerText), null, { timeout: 2000 });
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("a company added to the watchlist shows up right away (RR-P1-1)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-watch");
+  await page.fill("#coName", "Quillfern Labs");
+  await page.fill("#coSlug", "quillfern");
+  await page.locator("#addCo button[type=submit]").click();
+  await page.waitForFunction(() => /Quillfern Labs/i.test(document.querySelector("#view").innerText), null, { timeout: 2000 });
+  await page.close();
+});
+
+test("a recruiter added on ?full shows up right away (RR-P1-1)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-people");
+  await page.click("#recPrivacy");
+  const form = page.locator("#addRec");
+  if (!(await form.isVisible())) await page.locator("details:has(#addRec) summary").click();
+  await page.fill("#ar-n", "Quill Fernsby (demo)");
+  await page.fill("#ar-c", "Quillfern Labs");
+  await form.locator("button[type=submit]").click();
+  await page.waitForFunction(() => /Quill Fernsby/i.test(document.querySelector("#view").innerText), null, { timeout: 2000 });
+  await page.close();
+});
+
+test("demo roles have no example.com links; 'Sample posting' explains itself (RR-P1-2)", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-all");
+  assert.equal(await page.locator('a[href*="example.com"]').count(), 0);
+  const btn = page.locator("#view button", { hasText: "Sample posting" }).first();
+  await btn.click();
+  assert.match(await page.locator("#toast").innerText(), /made-up role/);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -259,6 +466,66 @@ test("board HTML is sanitized before it is shown", async () => {
   await page.close();
 });
 
+test("fit chips say 'fit' so they don't read as a grade (RR-P1-3)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-all");
+  const chips = await page.locator("#view .chip[class*=fit-]").allTextContents();
+  assert.ok(chips.length >= 10);
+  for (const c of chips) assert.match(c, /^(strong|maybe|stretch) fit$/i);
+  await page.close();
+});
+
+test("header numbers agree with the Watchlist strip and the New tab (RR-P1-4)", async () => {
+  const { page } = await openDemo();
+  const line = await page.locator("#scanLine").innerText();
+  const [, boards, fresh] = /(\d+) boards · (\d+) new/.exec(line) || [];
+  assert.ok(boards, line);
+  const newCount = await page.locator("#tab-inbox .n").innerText();
+  assert.equal(fresh, newCount.trim(), "new matches = New tab");
+  await page.click("#tab-watch");
+  assert.match(await page.locator("#view").innerText(), new RegExp(`\\d+/${boards} read`));
+  assert.doesNotMatch(line, /demo data/i, "the badge already says demo");
+  assert.equal(await page.locator("#scanLine .mono").count(), 0, "one font in the scan line (RR-P2-2)");
+  await page.close();
+});
+
+test("light theme chips meet 4.5:1 contrast (RR-P1-5)", async () => {
+  const { page } = await openDemo();
+  const ratio = await page.evaluate(() => {
+    const lum = (c) => { const v = c.match(/\d+/g).slice(0, 3).map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+    const r = (el) => { const s = getComputedStyle(el); const a = lum(s.color), b = lum(s.backgroundColor); return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05); };
+    return { demo: r(document.querySelector("#demoNote")), fit: r(document.querySelector(".fit-strong")), score: r(document.querySelector(".score.hi")) };
+  });
+  for (const [k, v] of Object.entries(ratio)) assert.ok(v >= 4.5, `${k} ${v.toFixed(2)}`);
+  await page.close();
+});
+
+test("phone controls are at least 44px tall (RR-P1-6)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html, width: 390, height: 844 });
+  for (const id of ["inbox", "pipeline", "watch", "filters"]) {
+    await page.click(`#tab-${id}`);
+    if (id === "pipeline") await page.locator("#addRole summary").click();
+    const small = await page.evaluate(() => [...document.querySelectorAll("button, a.btn, select, input:not([type=checkbox]):not([type=radio]), [role=tab], .showcase a, summary")]
+      .filter((el) => el.offsetParent !== null)
+      .map((el) => [el.id || el.textContent.trim().slice(0, 20), Math.round(el.getBoundingClientRect().height)])
+      .filter(([, h]) => h < 44));
+    assert.deepEqual(small, [], id);
+  }
+  await page.close();
+});
+
+test("public demo works with the CDN blocked: js-yaml is inlined (RR-P2-9)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  assert.doesNotMatch(html, /cdnjs\.cloudflare\.com\/ajax\/libs\/js-yaml/);
+  assert.match(html, /js-yaml 4\.1\.0 .*@license MIT/);
+  const { page, errors } = await openDemo({ html, blockYaml: true });
+  await page.click("#tab-criteria");
+  assert.ok((await page.locator("#digestPreview li").count()) > 0);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test("a board that can't be reached falls back to the posting link", async () => {
   const seed = JSON.parse(readFileSync(new URL("../demo/seed.json", import.meta.url), "utf8"));
   seed.jobs["lever-9"] = { company: "Acme", title: "Senior Product Manager", ats: "lever", source: "lever", status: "new", firstSeen: "@t-1", url: `https://jobs.lever.co/acmetest/0c2f6d1e-8a7b-4c3d-9e1f-2a3b4c5d6e7f` };
@@ -268,5 +535,82 @@ test("a board that can't be reached falls back to the posting link", async () =>
   await page.locator(".job", { hasText: "Acme" }).getByRole("button", { name: "Preview" }).click();
   await page.waitForFunction(() => /Couldn't load the description/.test(document.querySelector("#preview")?.textContent || ""));
   assert.ok(await page.locator("#preview").getByRole("link", { name: /Open posting/ }).isVisible());
+  await page.close();
+});
+
+test("cards name sources in plain words (RR-P2-3)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-all");
+  const text = await page.locator("#view").innerText();
+  assert.match(text, /Greenhouse/);
+  assert.match(text, /ZipRecruiter/);
+  assert.doesNotMatch(text, /\b(greenhouse|ziprecruiter|himalayas)\b/);
+  await page.close();
+});
+
+test("no date repeats as '<status> since' on the same card (RR-P2-7)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-pipeline");
+  for (const d of await page.locator(".dates").allInnerTexts()) {
+    const m = /Applied\s+(\w+ \d+).*Applied since\s+(\w+ \d+)/s.exec(d);
+    assert.ok(!m || m[1] !== m[2], d);
+  }
+  await page.close();
+});
+
+test("public demo on a laptop folds filters so the first role shows (RR-P2-4)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html, width: 1280, height: 800 });
+  assert.ok(!(await page.locator("#fbar .fields").isVisible()));
+  const first = await page.locator(".job").first().boundingBox();
+  assert.ok(first.y < 800, `first role at ${first.y}`);
+  await page.click("#ftoggle");
+  assert.ok(await page.locator("#fbar .fields").isVisible());
+  await page.close();
+});
+
+test("page has a main landmark and valid headings (RR-P2-5)", async () => {
+  const { page } = await openDemo();
+  assert.equal(await page.locator("main").count(), 1);
+  await page.click("#tab-criteria");
+  assert.equal(await page.locator(".ccard h3").count(), 0);
+  assert.equal(await page.locator(".pips:not([role=img])").count(), 0);
+  await page.close();
+});
+
+test("public demo cards show one category chip, the sector (RR-P2-11)", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html });
+  await page.click("#tab-all");
+  const first = page.locator(".job").first();
+  const chips = await first.locator(".chip.lane").allTextContents();
+  assert.deepEqual(chips.map((c) => c.toLowerCase()), ["solar, storage & distributed energy"]);
+  await page.close();
+});
+
+test("Recruiters tab says its number is next steps due (RR-P2-12)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-people");
+  const due = await page.locator("#view .rec .next", { hasText: "due" }).count();
+  assert.equal(await page.locator("#tab-people .n").innerText(), `${due} due`);
+  await page.close();
+});
+
+test("Criteria 'At a glance' reads as plain words (RR-P2-13)", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-criteria");
+  const kv = page.locator(".kv b");
+  const font = await kv.first().evaluate((el) => getComputedStyle(el).fontFamily);
+  assert.doesNotMatch(font, /Plex Mono/);
+  const text = (await kv.allInnerTexts()).join(" | ");
+  assert.match(text, /Fully remote, US/);
+  assert.match(text, /^Senior, staff/);
+  await page.close();
+});
+
+test("'Filters and sort' text is centered in its button", async () => {
+  const html = buildDemo({ publicDemo: true });
+  const { page } = await openDemo({ html, width: 390, height: 844 });
+  assert.equal(await page.locator("#ftoggle").evaluate((el) => getComputedStyle(el).alignItems), "center");
   await page.close();
 });

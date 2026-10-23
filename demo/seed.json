@@ -38,7 +38,7 @@
       "firstSeen": "@t-0",
       "comp": "$185K–$220K",
       "fit": "maybe",
-      "score": 75,
+      "score": 90,
       "sector": "Solar, storage & distributed energy",
       "fitNote": "Strong energy domain match; staff scope asks for prior platform ownership across three teams.",
       "lane": "Geospatial / clean energy",
@@ -91,7 +91,7 @@
       },
       "valuesFit": {
         "rating": "great",
-        "reason": "Demo: earth observation for wildfire response, rated up at intake."
+        "reason": "Demo: earth observation for wildfire response, rated up after research."
       }
     },
     "greenhouse-1005": {
@@ -199,7 +199,7 @@
       "source": "manual",
       "firstSeen": "@t-5",
       "fit": "strong",
-      "score": 80,
+      "score": 95,
       "sector": "Solar, storage & distributed energy",
       "lane": "Geospatial / clean energy",
       "tags": [
@@ -279,7 +279,11 @@
       "slug": "sunfield",
       "industry": "Solar, storage & distributed energy",
       "status": "active",
-      "via": "discovery"
+      "via": "discovery",
+      "lastOk": "@t-0",
+      "lastChecked": "@t-0",
+      "readMode": "full",
+      "failStreak": 0
     },
     "ashby-gridlark": {
       "name": "Gridlark",
@@ -287,7 +291,11 @@
       "slug": "gridlark",
       "industry": "Solar, storage & distributed energy",
       "status": "active",
-      "via": "discovery"
+      "via": "discovery",
+      "lastOk": "@t-0",
+      "lastChecked": "@t-0",
+      "readMode": "partial",
+      "failStreak": 0
     },
     "lever-orbitline": {
       "name": "Orbitline",
@@ -295,7 +303,12 @@
       "slug": "orbitline",
       "industry": "Space & geospatial",
       "status": "active",
-      "via": "you"
+      "via": "you",
+      "lastOk": "@t-0",
+      "lastChecked": "@t-0",
+      "readMode": "full",
+      "failStreak": 0,
+      "reviewNote": "Board moved from greenhouse:orbitline (demo)"
     },
     "greenhouse-ledgerly": {
       "name": "Ledgerly",
@@ -303,7 +316,11 @@
       "slug": "ledgerly",
       "industry": "General fintech & payments",
       "status": "active",
-      "via": "you"
+      "via": "you",
+      "lastOk": "@t-1",
+      "lastChecked": "@t-1",
+      "readMode": "full",
+      "failStreak": 0
     },
     "greenhouse-brightwell": {
       "name": "Brightwell Solar",
@@ -327,7 +344,11 @@
       "slug": "watermark",
       "industry": "Climate & sustainability software",
       "status": "active",
-      "via": "discovery"
+      "via": "discovery",
+      "lastOk": "@t-5",
+      "lastChecked": "@t-0",
+      "failStreak": 3,
+      "lastError": "404 from board API (demo)"
     },
     "lever-copperleaf": {
       "name": "Copperleaf Insurance",
@@ -459,14 +480,211 @@
     },
     "scan": {
       "lastRun": "@t-0",
-      "boardsChecked": 42,
-      "newMatches": 5,
-      "note": "demo data"
+      "boardsChecked": 9,
+      "newMatches": 6,
+      "note": "",
+      "coverage": {
+        "mode": "full",
+        "attempted": 9,
+        "read": 7,
+        "partial": 1,
+        "failed": 1,
+        "priorityRead": 4,
+        "priorityTotal": 5,
+        "moved": [
+          {
+            "name": "Orbitline",
+            "from": "greenhouse:orbitline",
+            "to": "lever:orbitline"
+          }
+        ],
+        "partialList": [
+          "Gridlark"
+        ],
+        "failedList": [
+          {
+            "name": "Watermark Climate",
+            "error": "404 from board API (demo)"
+          }
+        ],
+        "sources": {
+          "ziprecruiter": "ok",
+          "gmail": "ok",
+          "himalayas": "ok",
+          "climatebase": "skipped"
+        }
+      }
     },
     "criteria": {
       "spec": "@file:criteria.yaml",
       "updatedAt": "@t-1",
       "version": 2
+    }
+  },
+  "gmail": {
+    "_about": "DEMO Gmail threads for the import preview. Fictional people; .example domains are reserved and never deliver.",
+    "threads": [
+      {
+        "id": "g1",
+        "messageCount": 7,
+        "viewUrl": "https://example.com/mail/thread/g1",
+        "messages": [
+          {
+            "id": "g1m1",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-30",
+            "subject": "Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g1m2",
+            "sender": "Demo Candidate <candidate@example.com>",
+            "date": "@t-29",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "SENT"
+            ]
+          },
+          {
+            "id": "g1m3",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-28",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g1m4",
+            "sender": "Demo Candidate <candidate@example.com>",
+            "date": "@t-27",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "SENT"
+            ]
+          },
+          {
+            "id": "g1m5",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-25",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g2",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g2",
+        "messages": [
+          {
+            "id": "g2m1",
+            "sender": "Avery Brooks <avery@northstar-talent.example>",
+            "date": "@t-40",
+            "subject": "Staff PM opportunity (climate)",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g3",
+        "messageCount": 2,
+        "viewUrl": "https://example.com/mail/thread/g3",
+        "messages": [
+          {
+            "id": "g3m1",
+            "sender": "Jordan Reyes <jordan@brightwell-solar.example>",
+            "date": "@t-60",
+            "subject": "Following up on Brightwell",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g3m2",
+            "sender": "Demo Candidate <candidate@example.com>",
+            "date": "@t-59",
+            "subject": "Re: Following up on Brightwell",
+            "labelIds": [
+              "SENT"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g4",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g4",
+        "messages": [
+          {
+            "id": "g4m1",
+            "sender": "Ledgerly Careers <no-reply@ashbyhq.example>",
+            "date": "@t-5",
+            "subject": "Thanks for applying to Ledgerly",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "g5",
+        "messageCount": 1,
+        "viewUrl": "https://example.com/mail/thread/g5",
+        "messages": [
+          {
+            "id": "g5m1",
+            "sender": "Taylor Morgan <taylor.morgan@gmail.example>",
+            "date": "@t-90",
+            "subject": "Intro: PM role at Pebblepay",
+            "labelIds": [
+              "INBOX"
+            ]
+          }
+        ]
+      }
+    ],
+    "full": {
+      "g1": {
+        "id": "g1",
+        "messageCount": 7,
+        "viewUrl": "https://example.com/mail/thread/g1",
+        "messages": [
+          {
+            "id": "g1m1",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-30",
+            "subject": "Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g1m6",
+            "sender": "Riley Chen <riley.chen@sunfield-energy.example>",
+            "date": "@t-3",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "INBOX"
+            ]
+          },
+          {
+            "id": "g1m7",
+            "sender": "Demo Candidate <candidate@example.com>",
+            "date": "@t-2",
+            "subject": "Re: Senior PM, Utility Data at Sunfield",
+            "labelIds": [
+              "SENT"
+            ]
+          }
+        ]
+      }
     }
   },
   "postings": {

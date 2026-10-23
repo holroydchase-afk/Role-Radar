@@ -2,6 +2,8 @@
 
 **A job search that runs itself every weekday morning.** Role Radar scans job boards, scores each new role against criteria written as code, and keeps every application, follow-up and recruiter in one place. I built it for my own search for a senior product role, and I use it every day.
 
+**[Try the live demo](https://chaseholroyd.com/role-radar/)** (sample data, no login) · [More of my work](https://chaseholroyd.com/)
+
 ![New roles, each with a score and the reason for it](docs/screenshots/new-roles.png)
 
 *All screenshots use fictional demo data.*
@@ -36,7 +38,7 @@ flowchart LR
 1. **Criteria as code.** Everything I'm looking for lives in one YAML file ([`criteria.yaml`](criteria.yaml)). It sets sector weights, title and location gates, comp floors, culture red flags, hard excludes, and how many roles from each sector can appear in one digest. I edit it on the Criteria tab, and the next scan follows it.
 2. **A transparent score.** Every role gets 0 to 100 from one formula, and each card shows how its score was reached (`45 sector + 35 fit + 10 comp = 90`). The rules live in [`src/scoring.js`](src/scoring.js) and are pinned down by tests, so the page, the tests and the scan's instructions agree.
 3. **A scheduled scan agent.** Each weekday morning, a scheduled Claude run reads the criteria, checks the boards and aggregators, reads job-alert and application emails (read-only), adds new matches, moves application statuses forward from confirmations and rejections, and sends me a short digest. Its instructions are in [`scan/scan-prompt.template.md`](scan/scan-prompt.template.md).
-4. **One tracker.** New roles land in *New*. Saving or applying moves them to *Pipeline*. *Needs action* lists follow-ups that are due, applications with no reply, and resumes that are ready but not sent. *Recruiters* keeps each contact's last touchpoint and next step.
+4. **One tracker.** New roles land in *New*. Saving or applying moves them to *Pipeline*. *Needs action* lists follow-ups that are due, applications with no reply, and resumes that are ready but not sent. *Recruiters* keeps each contact's last touchpoint and next step, and can be filled from Gmail in one pass (below).
 5. **One-tap intake.** *Apply* copies a prompt for my job-intake agent, which screens the posting, asks only the gap questions that would change a bullet, and builds a tailored resume from my career master doc.
 6. **Read the posting in place.** Click a role and a panel on the right shows the posting's own description, word for word, loaded straight from the company's public Greenhouse, Ashby or Lever board. It costs no AI tokens and nothing is saved; roles from other sources get an *Open posting* link instead. On a phone it opens as a full-screen sheet. The logic lives in [`src/posting.js`](src/posting.js).
 
@@ -51,6 +53,12 @@ The Criteria tab previews tomorrow's digest while you edit. In the screenshot be
 | Needs action | Recruiters |
 | --- | --- |
 | ![Follow-ups, stale applications and unsent resumes](docs/screenshots/needs-action.png) | ![Recruiter contacts with next steps and due dates](docs/screenshots/recruiters.png) |
+
+### Start from your inbox
+
+On first run, *Import from Gmail* reads your inbox through Claude's Gmail connector (read-only) and lists the recruiters it finds: name, company, in-house or agency, and the date of the last email. It skips job boards, applicant tracking systems and no-reply senders, marks people you already have, and saves nothing until you pick who to add. Dates come from the emails themselves, never from a guess.
+
+![Gmail import: people found in the inbox, ready to review](docs/screenshots/gmail-import.png)
 
 ## What it saves
 
@@ -70,6 +78,10 @@ The Criteria tab previews tomorrow's digest while you edit. In the screenshot be
 ![Recruiters with details hidden: initials and company only](docs/screenshots/recruiters-hidden.png)
 
 ## Run the demo
+
+**Try it in your browser:** [chaseholroyd.com/role-radar](https://chaseholroyd.com/role-radar/). All data is made up. The public demo shows the radar (scan, scores, pipeline); add [`?full`](https://chaseholroyd.com/role-radar/?full) to see the resume intake and recruiter tools too.
+
+Or run it locally:
 
 ```sh
 npm install
@@ -104,7 +116,7 @@ The demo runs the real page against an in-memory database ([`demo/mock-claude.js
 
 ---
 
-Built by Chase Holroyd, a senior product manager working in energy, fintech and AI, with Claude as the build partner.
+Built by Chase Holroyd, a staff product manager in pricing, payments and point-of-sale lending, with Claude as the build partner. More of my work is at [chaseholroyd.com](https://chaseholroyd.com/).
 
 ## License
 

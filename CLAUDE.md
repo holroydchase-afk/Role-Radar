@@ -10,3 +10,9 @@ A job-search radar: a weekday scan finds senior/staff PM roles, scores each one 
 - Never merge to `main`, force-push, rewrite history, or delete branches. Work happens on milestone branches with draft PRs, stacked.
 - Keep `HANDOFF.md` current in every push: done, in progress, exact next step, decisions to review, blockers.
 - Never publish an artifact publicly or deploy anything.
+
+## Session rules (studio-wide)
+
+- Before starting: read this file and `HANDOFF.md` (a SessionStart hook prints it), then the doc this file points to for the task. Check open PRs and branches and resume, never redo.
+- Every commit or PR that makes progress updates `HANDOFF.md` in the same commit or PR: done, in progress, exact next step, decisions to review, blockers. The `handoff-check` PR workflow enforces it; use `[skip handoff]` in the PR title only for changes that do not move the work.
+- Full rules: `docs/session-rules.md` in the studio-agents repo.
