@@ -162,6 +162,8 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 .dig{display:grid;gap:6px;margin:0;padding:0;list-style:none}
 .dig li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:baseline}
 .dig .sub2{grid-column:2;color:var(--muted);font-size:.8rem}
+.arules{display:grid;gap:6px;margin:0;padding:0;list-style:none}.arules li{display:grid;grid-template-columns:4.2rem minmax(0,1fr);gap:10px;align-items:baseline}
+.lvl{font:600 .7rem var(--f-mono);text-transform:uppercase;letter-spacing:.04em;text-align:center;padding:3px 6px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}.lvl.loud{background:var(--bad-soft);color:var(--bad)}.lvl.off{background:transparent;color:var(--muted);border:1px solid var(--line)}
 .privbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 12px}.privbar .hint{margin:0;max-width:65ch}
 .showcase[hidden]{display:none}.showcase{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.9rem}.showcase a{color:var(--accent);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;min-height:44px}.showcase a:hover{text-decoration:underline}
 .lede{margin:0;max-width:62ch;font-size:1rem}
@@ -223,6 +225,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 <script src="scoring.js"></script>
 <script src="gmail-import.js"></script>
 <script src="posting.js"></script>
+<script src="alerts.js"></script>
 <script>
 // The public demo (chaseholroyd.com/role-radar/) is radar only: scan, score, pipeline. Resume intake, intake
 // settings and the Recruiters tab show only with ?full. The demo build sets __RR_PUBLIC__; the live app never does.
@@ -254,7 +257,7 @@ let recPrivate=true;
 try{recPrivate=localStorage.getItem("rr-rec-private")!=="0";}catch(_){}
 const initials=n=>String(n||"").replace(/\([^)]*\)/g,"").trim().split(/\s+/).filter(Boolean).map(w=>w[0].toUpperCase()+".").join(" ")||"—";
 let criteria=null, critDraft=null, critErr="", specData=null;
-const SC=window.RoleRadarScoring||null;
+const SC=window.RoleRadarScoring||null, AL=window.RoleRadarAlerts||null;
 const PV=window.RoleRadarPosting||null;
 // Preview panel: which role is open, and descriptions loaded this visit (never saved).
 let preview=null, previewFrom=null; const postings=new Map();
@@ -797,7 +800,32 @@ function renderCriteria(){
       <textarea id="critText" class="code" spellcheck="false" autocapitalize="off" autocomplete="off"${critErr||p.err?` aria-invalid="true" aria-describedby="critErr"`:""}>${esc(text)}</textarea>
       <div class="ctl"><button class="primary" type="submit">Save criteria</button>${critDraft!==null?`<button class="btn" type="button" id="critReset">Discard changes</button>`:""}</div>
     </form>
-    <div class="ccard"><h2>Digest preview</h2><p class="sub" style="margin:0">How tomorrow's digest would rank the roles in New with the criteria above. Edit a weight and watch it change.</p><div id="digestPreview">${digestPreview(p.data)}</div></div></div>`;
+    <div class="ccard"><h2>Digest preview</h2><p class="sub" style="margin:0">How tomorrow's digest would rank the roles in New with the criteria above. Edit a weight and watch it change.</p><div id="digestPreview">${digestPreview(p.data)}</div></div>
+    <div class="ccard alerts"><h2>Alerts</h2><p class="sub" style="margin:0">What pings your phone, set by the <span class="mono">alerts</span> block above. Change a level or a score and watch this change.</p><div id="alertsPreview">${alertsPreview(p.data)}</div></div></div>`;
+}
+// Events the alert rules would see in the data on this page: new roles (with score), status moves, due follow-ups, recent recruiter contact.
+function alertEvents(spec){
+  const ev=[];
+  jobs.forEach(j=>{
+    const s=st(j), name=`${j.company||"?"} · ${j.title||"?"}`;
+    if(s==="new"&&SC) ev.push({type:"new_role",score:SC.scoreJob(j,spec).score,label:name,at:j.firstSeen});
+    if(["screen","interviewing","offer","rejected"].includes(s)) ev.push({type:"status_change",to:s,label:name,at:j.statusAt});
+    if(s==="applied"&&j.followUpDue&&j.followUpDue<=today()) ev.push({type:"follow_up_due",label:name,at:j.followUpDue});
+  });
+  if(TOOLS) recruiters.forEach(r=>{const d=daysSince(r.lastContact); if(d!==null&&d<=14) ev.push({type:"recruiter_email",label:`${recPrivate?initials(r.name):r.name||"Recruiter"}${r.company?" · "+r.company:""}`,at:r.lastContact});});
+  return ev;
+}
+function alertsPreview(spec){
+  if(!AL||!spec) return `<p class="hint">Preview needs a valid spec.</p>`;
+  const cfg=AL.normalize(spec), q=cfg.quiet_hours;
+  const rules=cfg.rules.length?`<ul class="arules">${cfg.rules.map(r=>`<li><span class="lvl ${r.level}">${r.level}</span><span>${esc(AL.describe(r))}</span></li>`).join("")}</ul>`:`<p class="hint">No rules, so nothing alerts.</p>`;
+  const how=`<p class="hint">Loud alerts go to: ${cfg.channels.map(esc).join(", ")}.${q?` Quiet hours ${AL.clock(q.start)}–${AL.clock(q.end)}${q.tz?" "+esc(q.tz):""}: ${q.loud_breaks_through?"loud alerts still come through, quiet ones wait":"everything waits until morning"}.`:""}</p>`;
+  const out=AL.evaluate(alertEvents(spec),spec,new Date());
+  const loud=out.filter(x=>x.level==="loud"), quiet=out.filter(x=>x.level==="quiet");
+  const now=out.length?`<p class="sub" style="margin:.6rem 0 .2rem"><strong>With the roles on this page:</strong> ${loud.length} loud, ${quiet.length} for the summary.</p>`
+    +(loud.length?`<ol class="dig">${loud.slice(0,6).map(x=>`<li><span class="lvl loud">ping</span><span>${esc(x.event.label)}</span><span class="sub2">${esc(x.rule.id)}${x.event.score!=null?" · score "+x.event.score:""}${x.held?" · held for quiet hours":""}</span></li>`).join("")}</ol>`:"")
+    :`<p class="hint">Nothing on this page would alert right now.</p>`;
+  return rules+how+now;
 }
 function digestPreview(spec){
   if(!SC||!spec) return `<p class="hint">Preview needs a valid spec.</p>`;
@@ -993,7 +1021,7 @@ document.addEventListener("change",async e=>{
   const f=e.target.closest("#fbar [data-v]");
   if(f){ view[f.dataset.v]=f.value; saveView(); render(); }
 });
-document.addEventListener("input",e=>{ if(e.target.id==="critText"){critDraft=e.target.value; clearTimeout(digestPreview._t); digestPreview._t=setTimeout(()=>{const el=$("#digestPreview"); if(el) el.innerHTML=digestPreview(parseSpec(critDraft).data);},250); return;} if(e.target.id==="q"){view.q=e.target.value; saveView(); const pos=e.target.selectionStart; render(); const el=$("#q"); if(el){el.focus(); el.setSelectionRange(pos,pos);} }});
+document.addEventListener("input",e=>{ if(e.target.id==="critText"){critDraft=e.target.value; clearTimeout(digestPreview._t); digestPreview._t=setTimeout(()=>{const spec=parseSpec(critDraft).data, el=$("#digestPreview"), al=$("#alertsPreview"); if(el) el.innerHTML=digestPreview(spec); if(al) al.innerHTML=alertsPreview(spec);},250); return;} if(e.target.id==="q"){view.q=e.target.value; saveView(); const pos=e.target.selectionStart; render(); const el=$("#q"); if(el){el.focus(); el.setSelectionRange(pos,pos);} }});
 document.addEventListener("submit",async e=>{
   e.preventDefault(); if(!db) return;
   const ed=e.target.closest("form[data-edit]");
