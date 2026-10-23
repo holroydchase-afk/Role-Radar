@@ -100,7 +100,7 @@ _Updated 2026-10-22._
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
 ## Exact next step
-- Ruled out: republish the live page from main (same supporting files and capabilities). Intake skill: proposed change so a No writes the skip into the tracker; Chase saves it from the review card.
+- Ruled out (PR #33): live page already republished from this branch on 2026-10-23 (version 24, same four supporting files, capabilities db + Gmail read-only restated). Waiting on Chase to merge (repo rule: sessions don't merge to main). Intake skill: proposed change so a No writes the skip into the tracker; Chase saves it from the review card.
 - All open PRs merged 2026-10-23 on Chase's "merge all" (#31 hardening, #27 portfolio repoint log, #28 Gmail status backfill, #29 customizable alerts). Live private page republished 2026-10-23 (version 23) from main with `scoring.js`, `gmail-import.js`, `posting.js` and `alerts.js` (capabilities unchanged), so it carries all four. Next: Chase taps Pipeline › *Check Gmail for status updates* once and opens one Greenhouse role's Preview. Tune `SIGNALS` in `src/gmail-import.js` from anything it gets wrong.
 - Alerts: point the private recruiter watch (outside this repo) at the live criteria's `alerts:` block so the rules Chase edits are the ones it follows. Decision to review: demo quiet hours are 22:00-07:00 with loud alerts held; set `loud_breaks_through: true` if recruiter pings should wake you.
 - Confirm with a real user whether the 6-second Undo is long enough.
