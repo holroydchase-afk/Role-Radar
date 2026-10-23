@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-22 (power hour: PRs #16 and #20-#25 merged)
+Updated: 2026-10-23 (PR #18 job description preview merged)
 
 ## Planning IDs (Oct 21, 2026)
 The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs.
@@ -79,13 +79,18 @@ _Updated 2026-10-22._
 - 69 tests passing after merging main (board health).
 - 2026-10-22 (`dream-anchors`): dream-role calibration anchors. `criteria.yaml` gets `dream_roles` (bonus, `like` anchors with company/title/why/check, `role_keywords`, `in_sectors`); `scoreJob` adds `parts.dream` (+15 default) for an anchor company or an anchor-like title in a listed sector; cards show the reason and any check; the scan prompt scores it and marks digest lines "★ dream role". Demo anchors are fictional. 70 tests passing.
 
+- Description preview panel on `claude/project-thread-odpoc3` (branched from main, Chase asked 2026-10-21):
+  - `src/posting.js`: finds a role's public board API (from the posting link, or the `<ats>-<jobId>` doc id plus `companyId` / the watchlist company), fetches Greenhouse, Ashby or Lever, and sanitizes the HTML (no scripts, styles, images, forms, handlers; http(s) links only).
+  - Page: clicking a title or *Preview* opens a right-hand panel (full-screen sheet under 960px) with the description word for word. Other sources get an *Open posting* link; a 404 says the posting may be closed; a failed request falls back to the link. Escape or Close returns focus to the card. Nothing is stored.
+  - Demo: `seed.json` has fictional `postings`; `mock-claude.js` answers the demo boards in each API's real shape and lets other requests through.
+  - 8 unit tests, 5 browser tests (desktop, phone sheet, sanitizing, unreachable board, other sources); 68 passing. New screenshots `preview.png`, `phone-preview.png` (`npm run screenshots -- preview phone-preview`).
 
 ## In progress
-- Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. Open: PR #18 (job description preview) conflicts with main after those merges and needs a rebase before it can merge.
+- Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. PR #18 (job description preview) merged 2026-10-23 after bringing main in; the live page still needs republishing with `posting.js`.
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
 ## Exact next step
-- PR #18: rebase onto main (conflicts in HANDOFF.md, app/role-radar.html, demo/mock-claude.js, demo/seed.json), re-run tests, merge once Chase says ok, then republish the live page with `posting.js`.
+- Live page: republish `app/role-radar.html` with `scoring.js`, `gmail-import.js` and the new `posting.js` as supporting files (same db and Gmail capabilities), then open one Greenhouse role's preview to confirm the artifact sandbox allows the board API calls. If it blocks them, have the scan store descriptions on board jobs.
 - Recruiter-ready: merged. Confirm https://chaseholroyd.com/role-radar/ shows the intro and back link on a phone. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) are in `recruiter-ready-intake.md` for Chase to paste into Product Studio.
 - Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm, then the portfolio repoint (see Portfolio / public presence).
 - Gmail import: Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
@@ -95,7 +100,7 @@ _Updated 2026-10-22._
 - Run `npm run hooks` once so the pre-commit privacy check runs.
 - For the full check, point `PRIVATE_DENYLIST` at the private denylist kept outside this repo.
 - Browser tests use Playwright with the preinstalled Chromium; js-yaml is served from `node_modules` because the CDN may be unreachable.
-- The live page is `app/role-radar.html` published with `src/scoring.js` as a supporting file named `scoring.js`.
+- The live page is `app/role-radar.html` published with `src/scoring.js` and `src/posting.js` as supporting files named `scoring.js` and `posting.js`.
 
 ## Decisions to review
 - Public demo has no "Code on GitHub" link: the repo URL contains a term on the private denylist, so the pre-commit privacy check blocks it. If you're fine with the GitHub handle appearing in page source, allow it in the denylist and add the link; the portfolio page can link the repo meanwhile.
@@ -115,6 +120,9 @@ _Updated 2026-10-22._
 - Fit badges are separate from the 0–100 score on purpose: the score ranks the digest, the badges explain a role. Folding culture into the score twice (signals and checks) would double-count.
 - Dream-role matching reads only the title and team, not the posting text, so "payments" in a boilerplate paragraph doesn't trigger it. An anchor company matches on any title that passes the gates.
 - Values uses "neutral" (not "maybe") for weight-1 sectors, since an allowed-but-lower sector isn't a values concern.
+
+- Preview fetches run in the viewer's browser, straight to the boards' public APIs (all three send `Access-Control-Allow-Origin: *`). Unverified: whether the claude.ai artifact sandbox allows those requests. If it doesn't, the panel shows "Couldn't load the description" plus the link, and the fix is to have the scan store `descriptionHtml` on board jobs (it already fetches postings that pass the gates).
+- Images in postings are dropped (tracking pixels, and they would load third-party content); the text and lists are kept.
 
 ## Blockers
 - None.

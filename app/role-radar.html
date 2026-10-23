@@ -161,6 +161,32 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 .showcase[hidden]{display:none}.showcase{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.9rem}.showcase a{color:var(--accent);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;min-height:44px}.showcase a:hover{text-decoration:underline}
 .lede{margin:0;max-width:62ch;font-size:1rem}
 .cnote{font:500 .84rem var(--f-body);color:var(--warn);background:var(--warn-soft);border-radius:7px;padding:5px 9px;margin:0;max-width:65ch}
+/* Preview panel: the posting's own text, docked on the right on wide screens, a full-screen sheet on phones. */
+.job.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+#preview{position:fixed;z-index:5;background:var(--surface);color:var(--ink);display:flex;flex-direction:column;min-width:0;box-sizing:border-box}
+#preview[hidden]{display:none}
+.pv-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+.pv-head h2{font-family:var(--f-display);font-weight:500;font-size:1.2rem;line-height:1.25;margin:2px 0 4px;text-wrap:balance}
+.pv-head .co{font:600 .78rem var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.pv-head .btn{flex:none}
+.pv-scroll{overflow-y:auto;overscroll-behavior:contain;padding:14px 18px 24px;display:grid;gap:12px;align-content:start;flex:1;min-height:0}
+.pv-body{font-size:.95rem;line-height:1.6;max-width:70ch;min-width:0;overflow-wrap:anywhere}
+.pv-body h1,.pv-body h2,.pv-body h3,.pv-body h4,.pv-body h5,.pv-body h6{font-family:var(--f-display);font-weight:500;font-size:1.02rem;margin:1.1em 0 .3em}
+.pv-body p{margin:0 0 .7em}.pv-body ul,.pv-body ol{margin:0 0 .8em;padding-left:1.3em}.pv-body li{margin:.2em 0}
+.pv-body a{color:var(--accent)}.pv-body table{border-collapse:collapse;max-width:100%;display:block;overflow-x:auto}.pv-body td,.pv-body th{border:1px solid var(--line);padding:4px 6px}
+.pv-body pre{white-space:pre-wrap}
+.pv-src{font-size:.8rem;color:var(--muted);margin:0}
+.pv-msg{border:1px dashed var(--line);border-radius:10px;padding:16px;color:var(--muted);display:grid;gap:8px;justify-items:start}
+.pv-msg strong{color:var(--ink);font-family:var(--f-display);font-weight:500;font-size:1.02rem}
+.pv-open{font:600 .88rem var(--f-body);background:var(--accent);color:var(--surface);border-radius:7px;padding:7px 14px;text-decoration:none;justify-self:start}
+@media (min-width:960px){
+  #preview{top:0;right:0;bottom:0;width:min(560px,46vw);border-left:1px solid var(--line);padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px)}
+  body.previewing .wrap{margin-left:max(0px,calc((100vw - min(560px,46vw) - 760px)/2));margin-right:min(560px,46vw)}
+}
+@media (max-width:959.98px){
+  #preview{inset:0;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+  body.previewing{overflow:hidden}
+}
 </style>
 
 <div class="wrap">
@@ -178,6 +204,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
   <section id="view" aria-live="polite"></section>
   </main>
 </div>
+<aside id="preview" role="region" aria-labelledby="pvTitle" hidden></aside>
 <div class="toast" id="toast" hidden></div>
 <dialog id="applyDlg" aria-labelledby="applyTitle">
   <h3 id="applyTitle">Start intake</h3>
@@ -189,6 +216,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
 <script src="scoring.js"></script>
 <script src="gmail-import.js"></script>
+<script src="posting.js"></script>
 <script>
 // The public demo (chaseholroyd.com/role-radar/) is radar only: scan, score, pipeline. Resume intake, intake
 // settings and the Recruiters tab show only with ?full. The demo build sets __RR_PUBLIC__; the live app never does.
@@ -220,6 +248,9 @@ try{recPrivate=localStorage.getItem("rr-rec-private")!=="0";}catch(_){}
 const initials=n=>String(n||"").replace(/\([^)]*\)/g,"").trim().split(/\s+/).filter(Boolean).map(w=>w[0].toUpperCase()+".").join(" ")||"—";
 let criteria=null, critDraft=null, critErr="", specData=null;
 const SC=window.RoleRadarScoring||null;
+const PV=window.RoleRadarPosting||null;
+// Preview panel: which role is open, and descriptions loaded this visit (never saved).
+let preview=null, previewFrom=null; const postings=new Map();
 let tab="inbox", jobs=[], companies=[], filters=null, scan=null, db=null, view={...DEF_VIEW}, openMore=new Set(), skipOpen=null;
 try{const t=localStorage.getItem("rr-tab"); if(TABS.some(x=>x.id===t)) tab=t; const v=JSON.parse(localStorage.getItem("rr-view")||"null"); if(v) view={...DEF_VIEW,...v};}catch(e){}
 const saveView=()=>{try{localStorage.setItem("rr-view",JSON.stringify(view))}catch(_){}};
@@ -327,10 +358,10 @@ function jobCard(j){
   const cfChip=cf?`<span class="chip conflict" title="Overlaps a product you're building">Conflict</span>`:"";
   const why=tab==="action"?actionReason(j):null;
   const skipRow=skipOpen===j._id?`<div class="skipwhy">Why skip?${SKIP_REASONS.map(r=>`<button class="btn" type="button" data-skipwhy="${esc(r)}" data-job="${id}">${esc(r)}</button>`).join("")}<button class="linkbtn" type="button" data-skipcancel="1">Cancel</button></div>`:"";
-  return `<article class="job">
+  return `<article class="job${preview===j._id?" sel":""}">
     <div class="top"><div style="min-width:0">
       <div class="co">${esc(j.company)}</div>
-      <h2>${url?`<a href="${esc(url)}" target="_blank" rel="noopener" data-view="${id}">${esc(j.title)}</a>`:esc(j.title)}</h2>
+      <h2>${url?`<a href="${esc(url)}" target="_blank" rel="noopener" data-view="${id}" data-preview="${id}">${esc(j.title)}</a>`:sample?`<a href="#preview" role="button" data-preview="${id}">${esc(j.title)}</a>`:esc(j.title)}</h2>
     </div><div class="actions">${fitChip}${cfChip}${stChip}</div></div>
     ${cf?`<p class="cnote">Overlaps ${esc(cf.names.join(", "))}${cf.note?`: ${esc(cf.note)}`:""}</p>`:""}
     ${why?`<div class="why">${esc(why)}</div>`:""}
@@ -359,6 +390,7 @@ function jobCard(j){
       ${INBOX.includes(s)?`<button class="btn" type="button" data-quick="saved" data-job="${id}">Save</button>`:""}
       ${s==="applying"?`<button class="btn" type="button" data-quick="applied" data-job="${id}">I submitted it</button>`:""}
       ${!DONE.includes(s)?`<button class="btn" type="button" data-quick="skipped" data-job="${id}">Skip</button>`:""}
+      <button class="btn" type="button" data-preview="${id}" aria-expanded="${preview===j._id}">Preview</button>
       ${url?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none" data-view="${id}">Open posting</a>`:sample?`<button class="btn" type="button" data-sample="${id}">Sample posting</button>`:""}
     </div>
     ${skipRow}
@@ -735,6 +767,62 @@ async function markViewed(j){
   try{await db.doc("jobs/"+j._id).update(patchFor(j,"viewed"));}catch(_){}
 }
 
+// Preview: load the posting's own description from the company's public job board on open.
+const SOURCE_LABEL={ziprecruiter:"ZipRecruiter",himalayas:"Himalayas",alert:"job alert",gmail:"email",manual:"manually added",climatebase:"Climatebase"};
+async function loadPosting(j){
+  const src=PV&&PV.postingSource(j,companies);
+  if(!src){ postings.set(j._id,{state:"none"}); return; }
+  const prev=postings.get(j._id); if(prev&&(prev.state==="ok"||prev.state==="loading")) return;
+  postings.set(j._id,{state:"loading",src});
+  const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),12000);
+  let next;
+  try{
+    const r=await fetch(PV.apiUrl(src),{signal:ctl.signal,credentials:"omit",referrerPolicy:"no-referrer"});
+    if(r.status===404) next={state:"gone",src};
+    else if(!r.ok) next={state:"error",src};
+    else{ const html=PV.extractHtml(src,await r.json()); next=html.trim()?{state:"ok",src,html}:{state:"gone",src}; }
+  }catch(_){ next={state:"error",src}; }
+  finally{ clearTimeout(t); }
+  postings.set(j._id,next);
+  if(preview===j._id) renderPreview(true);
+}
+function renderPreview(bodyOnly){
+  const el=$("#preview"), j=preview&&jobs.find(x=>x._id===preview);
+  document.body.classList.toggle("previewing",!!j);
+  if(!j){ el.hidden=true; el.innerHTML=""; return; }
+  const sample=isSampleUrl(j.url), url=sample?"":safeUrl(j.url), p=postings.get(j._id)||{state:"loading"};
+  const ats=p.src&&PV?PV.ATS_LABEL[p.src.ats]:"";
+  const open=url?`<a class="pv-open" href="${esc(url)}" target="_blank" rel="noopener">Open posting ↗</a>`:"";
+  const msg=(h,t)=>`<div class="pv-msg"><strong>${h}</strong><span>${t}</span>${open||`<span>${sample?"This is a made-up role, so there's no real posting.":"No posting link is saved for this role."}</span>`}</div>`;
+  const srcName=SOURCE_LABEL[String(j.source||j.ats||"").toLowerCase()]||esc(j.source||j.ats||"this source");
+  const body=p.state==="ok"?`<div class="pv-body" id="pvBody"></div><p class="pv-src">Word for word from ${esc(ats)}'s public job board. Nothing is saved.</p>`
+    :p.state==="loading"?`<p class="pv-src" role="status">Loading the description from ${esc(ats||"the job board")}…</p>`
+    :p.state==="gone"?msg("This posting isn't on the board anymore",`${esc(ats)} no longer lists it, so it may be closed. The original link might still work.`)
+    :p.state==="error"?msg("Couldn't load the description",`${esc(ats)} didn't answer from this page. Open the posting to read it there.`)
+    :msg("No preview for this source",`Roles found via ${srcName} have no public job-board feed to read from.`);
+  if(bodyOnly&&el.querySelector(".pv-scroll")){ el.querySelector(".pv-scroll").innerHTML=body; }
+  else el.innerHTML=`<div class="pv-head"><div style="min-width:0"><div class="co">${esc(j.company)}</div><h2 id="pvTitle">${esc(j.title)}</h2>
+      <div class="meta">${j.location?`<span>${esc(j.location)}</span>`:""}${j.comp?`<span class="mono">${esc(j.comp)}</span>`:""}</div></div>
+      <button class="btn" type="button" id="pvClose" aria-label="Close preview">Close</button></div>
+    <div class="pv-scroll">${p.state==="ok"&&open?`<div>${open}</div>`:""}${body}</div>`;
+  if(bodyOnly&&p.state==="ok"&&open) el.querySelector(".pv-scroll").insertAdjacentHTML("afterbegin",`<div>${open}</div>`);
+  // Sanitized nodes, never raw board HTML.
+  const b=el.querySelector("#pvBody"); if(b&&p.state==="ok") b.appendChild(PV.sanitizeHtml(p.html,document));
+  el.hidden=false;
+}
+function openPreview(j,from){
+  if(!j) return;
+  preview=j._id; previewFrom=from||null;
+  markViewed(j); loadPosting(j);
+  render(); renderPreview();
+  const sc=$("#preview .pv-scroll"); if(sc) sc.scrollTop=0;
+  $("#pvClose")?.focus({preventScroll:true});
+}
+function closePreview(){
+  const id=preview; preview=null; render(); renderPreview();
+  const back=id&&(document.querySelector(`button[data-preview="${CSS.escape(id)}"]`)); if(back) back.focus({preventScroll:true});
+}
+
 function intakePrompt(j){
   return `${config.intakeCommand} ${j.url||""}
 
@@ -749,6 +837,14 @@ async function copyText(s){
   try{ const ta=$("#applyText"); ta.focus(); ta.select(); return document.execCommand("copy"); }catch(_){ return false; }
 }
 document.addEventListener("click",async e=>{
+  if(e.target.closest("#pvClose")){ closePreview(); return; }
+  const pv=e.target.closest("[data-preview]");
+  // A plain click on the title previews; Cmd/Ctrl/Shift/middle click still opens the posting in a new tab.
+  if(pv&&!(pv.tagName==="A"&&(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0))){
+    e.preventDefault(); const j=jobs.find(x=>x._id===pv.dataset.preview);
+    if(preview===j?._id&&pv.tagName!=="A") closePreview(); else openPreview(j);
+    return;
+  }
   const sp=e.target.closest("[data-sample]");
   if(sp){ markViewed(jobs.find(x=>x._id===sp.dataset.sample)); toast("This is a made-up role, so there's no real posting."); return; }
   const vw=e.target.closest("[data-view]");
@@ -866,6 +962,7 @@ document.addEventListener("submit",async e=>{
 });
 
 document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&preview&&!$("#applyDlg").open){ closePreview(); return; }
   if(e.target.id!=="critText"||e.key!=="Tab"||e.shiftKey) return;
   e.preventDefault(); const t=e.target, a=t.selectionStart; t.setRangeText("  ",a,t.selectionEnd,"end"); critDraft=t.value;
 });
