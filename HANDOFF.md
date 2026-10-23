@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-22 (power hour: PRs #16 and #20-#25 merged)
+Updated: 2026-10-23 (night shift hardening done: PR #31 ready for review)
 
 ## Planning IDs (Oct 21, 2026)
 The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs.
@@ -32,6 +32,9 @@ _Updated 2026-10-22._
 - **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in the portfolio repo (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
 
 ## Done
+- 2026-10-23 night shift hardening, round 3 (re-sweep of round 2's fixes: 11 of 13 held, 6 new P2s, all fixed with tests): the Status menu also offers Undo and keeps focus in the list (RR-R2-1); Undo puts focus on the restored card and the toast stays while hovered or focused (RR-R2-2); after a blocked or broken criteria edit the summary keeps showing the saved criteria (RR-R2-3); demo `criteria.yaml` comments say "experience (key: fit)" and "culture signals" (RR-R2-4); demo chip is just "Demo data" with one line under it, so the first role's title is on the first phone screen again (RR-R2-5); watchlist change notes use a 10px radius instead of a pill (RR-R2-6). RR-H-8: Undo restores every field the change touched (skip reason, applied date, follow-up), not only the status. README screenshots regenerated. 127 tests, green 3x.
+- 2026-10-23 night shift hardening, round 2 (UX sweep of public, `?full` and private views at 390x844 and 1280x800, light and dark: 0 P0, 3 P1, 10 P2). Fixed with red-first browser tests in `tests/hardening-ui.test.mjs`: RR-UX-1 the chip beside the score reads "Experience: strong / partial / stretch" (the old "Maybe fit" beside a 90 read as a contradiction), the score line says "experience" and "culture signals", the filter is "Experience", the score has a "Criteria score, 0–100" tooltip; RR-UX-2 the tab bar no longer sticks on phones (it covered 19-33% of the screen); RR-UX-3 saving criteria that drop sector weights, comp, title rules or scoring is blocked with "This would remove: … Nothing was saved."; RR-UX-4 YAML errors say "Line N has a YAML error. Nothing was saved.", focus the editor, set aria-invalid and link the error; RR-UX-5 demo previews say the description is a sample; RR-UX-6/7 demo label "made-up roles, recruiters and scores" plus "changes reset when you reload", demo criteria save says "for this visit"; RR-UX-9 Save/Skip toast "Moved to Saved · Undo" (6s) and focus moves to the next card; RR-UX-10 toast is `role=status`, the list is no longer an aria-live region; RR-UX-11 Gmail import says "Nothing left to add" once everyone is in; RR-UX-12 inline "Criteria" link keeps a 44px target without double line spacing, error text in the body font; RR-UX-13 Watchlist strip says "full scan" and "Orbitline moved its job board (Greenhouse → Lever)". RR-H-7: recruiters and roles added by hand with non-Latin names get unique keys (they overwrote each other). `npm run screenshots` fixed (it waited for Ledgerly at #1, which dream anchors changed) and README screenshots regenerated. 122 tests, green 3x.
+- 2026-10-23 night shift hardening, round 1 (branch `claude/project-thread-vxgzv0`, from main): `tests/hardening.test.mjs` RR-H-1 to RR-H-6, each red first, then fixed. A "401(k)" in a comp string no longer reads as a $401K salary (false stretch bonus); an empty comp object `{min:null,max:null}` no longer fails the comp floor and drops the role; a broken %-escape in a posting link no longer throws; Lever lists without a heading no longer add an empty heading; Gmail suggestions always get a non-empty, unique doc key (names with no Latin letters used to map to `recruiters/` and overwrite each other; accents now fold, José → jose); a sender whose display name is their address gets a name from the address. `npm run review:shots` now also covers the private page (normal mode, demo data), the preview panel and recruiter details. 112 tests, green 3x.
 - 2026-10-22 recruiter-ready round 4: last in-repo P2s (one category chip on public cards, "Recruiters N due", plain-word Criteria summary, centered filter button). Nothing at P2 or above is left in this repo; what's left is the portfolio intake and Chase's https check. 92 tests.
 - 2026-10-22 recruiter-ready round 3: P2 polish (plain source names, folded filters on the public demo, one font in sentences, landmarks and headings with zero axe violations, js-yaml inlined in the public build, README links the live demo), README screenshots regenerated. 88 tests.
 - 2026-10-22 recruiter-ready round 2: demo "Sample posting" instead of example.com links, "Strong fit" chip wording, header numbers match the Watchlist, light-theme contrast at 4.5:1+, 44px touch targets on phones (RR-P1-2 to P1-6). 83 tests.
@@ -80,13 +83,20 @@ _Updated 2026-10-22._
 - 69 tests passing after merging main (board health).
 - 2026-10-22 (`dream-anchors`): dream-role calibration anchors. `criteria.yaml` gets `dream_roles` (bonus, `like` anchors with company/title/why/check, `role_keywords`, `in_sectors`); `scoreJob` adds `parts.dream` (+15 default) for an anchor company or an anchor-like title in a listed sector; cards show the reason and any check; the scan prompt scores it and marks digest lines "★ dream role". Demo anchors are fictional. 70 tests passing.
 
+- Description preview panel on `claude/project-thread-odpoc3` (branched from main, Chase asked 2026-10-21):
+  - `src/posting.js`: finds a role's public board API (from the posting link, or the `<ats>-<jobId>` doc id plus `companyId` / the watchlist company), fetches Greenhouse, Ashby or Lever, and sanitizes the HTML (no scripts, styles, images, forms, handlers; http(s) links only).
+  - Page: clicking a title or *Preview* opens a right-hand panel (full-screen sheet under 960px) with the description word for word. Other sources get an *Open posting* link; a 404 says the posting may be closed; a failed request falls back to the link. Escape or Close returns focus to the card. Nothing is stored.
+  - Demo: `seed.json` has fictional `postings`; `mock-claude.js` answers the demo boards in each API's real shape and lets other requests through.
+  - 8 unit tests, 5 browser tests (desktop, phone sheet, sanitizing, unreachable board, other sources); 68 passing. New screenshots `preview.png`, `phone-preview.png` (`npm run screenshots -- preview phone-preview`).
 
 ## In progress
-- Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. Open: PR #18 (job description preview) conflicts with main after those merges and needs a rebase before it can merge.
+- Night shift 2026-10-23 (hardening), draft PR #31: done and marked ready. Round 3 review found nothing at P2 or above (one P2 leftover also fixed: dates and pay inside sentences now use the body font). 127 tests, green 3x.
+- Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. PR #18 (job description preview) merged 2026-10-23 after bringing main in; live page republished with `posting.js` the same day.
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
 ## Exact next step
-- PR #18: rebase onto main (conflicts in HANDOFF.md, app/role-radar.html, demo/mock-claude.js, demo/seed.json), re-run tests, merge once Chase says ok, then republish the live page with `posting.js`.
+- Night shift PR #31: Chase reviews and merges (or says "hide the chip on the public build" instead of "Experience: partial"). After merge, republish the live private page from `app/role-radar.html` with `scoring.js`, `posting.js`, `gmail-import.js` so it gets the fixes (not done overnight: the night shift doesn't deploy). Confirm with a real user whether the 6-second Undo is long enough.
+- Live page: republished 2026-10-23 (version 22) with `scoring.js`, `gmail-import.js` and `posting.js`; it now carries every merged change through PR #18. Next: Chase opens one Greenhouse role's Preview on the live page. If the artifact sandbox blocks the board API calls, have the scan store descriptions on board jobs.
 - Recruiter-ready: merged. Confirm https://chaseholroyd.com/role-radar/ shows the intro and back link on a phone. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) are in `recruiter-ready-intake.md` for Chase to paste into Product Studio.
 - Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm (the portfolio repoint shipped Oct 22).
 - Gmail import: Chase tries *Import from Gmail* on the live page and reports anything it misses or wrongly includes; tune `DEFAULT_QUERY` and the skip lists in `src/gmail-import.js` from that. Then: status-update backfill from Gmail, and moving recruiter records out of the page's shared database before sharing.
@@ -96,9 +106,13 @@ _Updated 2026-10-22._
 - Run `npm run hooks` once so the pre-commit privacy check runs.
 - For the full check, point `PRIVATE_DENYLIST` at the private denylist kept outside this repo.
 - Browser tests use Playwright with the preinstalled Chromium; js-yaml is served from `node_modules` because the CDN may be unreachable.
-- The live page is `app/role-radar.html` published with `src/scoring.js` as a supporting file named `scoring.js`.
+- The live page is `app/role-radar.html` published with `src/scoring.js` and `src/posting.js` as supporting files named `scoring.js` and `posting.js`.
 
 ## Decisions to review
+- Night shift 2026-10-23: the "fit" chip now reads "Experience: strong / partial / stretch" (stored values stay strong/maybe/stretch, so the scan is unchanged). This replaces round 2's "Strong fit" wording (RR-P1-3). Alternative: hide the chip on the public build.
+- Night shift 2026-10-23: the criteria guard blocks a save only when it drops a section (sectors, comp, role, scoring) that the saved spec has, so a first-time spec in another shape still saves.
+- Night shift 2026-10-23: the tab bar scrolls away on phones instead of becoming one sticky scrolling row (simplest, keeps every tab visible at the top).
+- Left below P2: real brand names in the demo criteria's sector examples (the demo label says roles, recruiters and scores are made up, not the examples); at 320x640 the first role starts just below the first screen.
 - Public demo has no "Code on GitHub" link: the repo URL contains a term on the private denylist, so the pre-commit privacy check blocks it. If you're fine with the GitHub handle appearing in page source, allow it in the denylist and add the link; the portfolio page can link the repo meanwhile.
 - Agents sync skips `focus-coach` and `orchestrator`: they are about Chase's personal routine and would read oddly to a recruiter browsing this public repo. Re-run `scripts/sync.sh <repo> focus-coach orchestrator` from studio-agents if you want them here.
 - The Gmail search result shape was taken from the connector's own documentation, not a live call (reading real mail from the build session was blocked as personal data). The parser accepts the documented camelCase fields and a few likely variants; first real use will confirm it.
@@ -116,6 +130,9 @@ _Updated 2026-10-22._
 - Fit badges are separate from the 0–100 score on purpose: the score ranks the digest, the badges explain a role. Folding culture into the score twice (signals and checks) would double-count.
 - Dream-role matching reads only the title and team, not the posting text, so "payments" in a boilerplate paragraph doesn't trigger it. An anchor company matches on any title that passes the gates.
 - Values uses "neutral" (not "maybe") for weight-1 sectors, since an allowed-but-lower sector isn't a values concern.
+
+- Preview fetches run in the viewer's browser, straight to the boards' public APIs (all three send `Access-Control-Allow-Origin: *`). Unverified: whether the claude.ai artifact sandbox allows those requests. If it doesn't, the panel shows "Couldn't load the description" plus the link, and the fix is to have the scan store `descriptionHtml` on board jobs (it already fetches postings that pass the gates).
+- Images in postings are dropped (tracking pixels, and they would load third-party content); the text and lists are kept.
 
 ## Blockers
 - None.
