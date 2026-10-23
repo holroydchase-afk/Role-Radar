@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-23 (all open PRs merged: #27, #28, #29, #31)
+Updated: 2026-10-23 (all open PRs merged; live page republished, version 23)
 
 ## Planning IDs (Oct 21, 2026)
 The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs.
@@ -99,7 +99,7 @@ _Updated 2026-10-22._
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
 ## Exact next step
-- All open PRs merged 2026-10-23 on Chase's "merge all" (#31 hardening, #27 portfolio repoint log, #28 Gmail status backfill, #29 customizable alerts). Next: republish the live private page from `app/role-radar.html` with supporting files `scoring.js`, `gmail-import.js`, `posting.js` and `alerts.js` (same capabilities) so it carries all four; then Chase taps Pipeline › *Check Gmail for status updates* once and opens one Greenhouse role's Preview. Tune `SIGNALS` in `src/gmail-import.js` from anything it gets wrong.
+- All open PRs merged 2026-10-23 on Chase's "merge all" (#31 hardening, #27 portfolio repoint log, #28 Gmail status backfill, #29 customizable alerts). Live private page republished 2026-10-23 (version 23) from main with `scoring.js`, `gmail-import.js`, `posting.js` and `alerts.js` (capabilities unchanged), so it carries all four. Next: Chase taps Pipeline › *Check Gmail for status updates* once and opens one Greenhouse role's Preview. Tune `SIGNALS` in `src/gmail-import.js` from anything it gets wrong.
 - Alerts: point the private recruiter watch (outside this repo) at the live criteria's `alerts:` block so the rules Chase edits are the ones it follows. Decision to review: demo quiet hours are 22:00-07:00 with loud alerts held; set `loud_breaks_through: true` if recruiter pings should wake you.
 - Confirm with a real user whether the 6-second Undo is long enough.
 - Recruiter-ready: merged. Confirm https://chaseholroyd.com/role-radar/ shows the intro and back link on a phone. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) are in `recruiter-ready-intake.md` for Chase to paste into Product Studio.
