@@ -71,6 +71,7 @@ label{display:grid;gap:4px;font-size:.82rem;color:var(--muted)}
 input,select,textarea{font:400 .92rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 9px;min-width:0}
 textarea{min-height:64px;resize:vertical}
 .primary{font:600 .88rem var(--f-body);background:var(--ink);color:var(--bg);border:0;border-radius:7px;padding:8px 14px;cursor:pointer;justify-self:start}
+.toast-act{background:none;border:0;color:inherit;font:inherit;font-weight:600;text-decoration:underline;padding:4px 6px;margin-left:6px;cursor:pointer}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.88rem}
 .search{width:100%;box-sizing:border-box}
 .apply-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding-top:2px}
@@ -89,10 +90,12 @@ dialog .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-
 .fbar{margin:0 0 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:10px}
 .fbar .fields{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
 #ftoggle{display:none;align-items:center}
+/* On phones the tab bar wraps to 2-3 rows, so it scrolls away instead of covering a fifth of the screen. */
+@media (max-width:600px){#tabs{position:static}}
 @media (max-width:600px){#ftoggle{display:inline-flex}.fbar:not(.open) .fields{display:none}}
 .showcase-mode #ftoggle{display:inline-flex}.showcase-mode .fbar:not(.open) .fields{display:none}
 /* Touch: every control at least 44px tall. */
-@media (max-width:600px), (pointer:coarse){#tabs button,.btn,button,select,input:not([type=checkbox]):not([type=radio]){min-height:44px}a.btn{display:inline-flex;align-items:center}summary{padding-block:14px}}
+@media (max-width:600px), (pointer:coarse){#tabs button,.btn,button,select,input:not([type=checkbox]):not([type=radio]){min-height:44px}a.btn{display:inline-flex;align-items:center}summary{padding-block:14px}.sub .linkbtn,.hint .linkbtn{min-height:44px;display:inline-block;padding-block:12px;margin-block:-12px;line-height:20px;vertical-align:baseline}}
 .fbar .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
 .linkbtn{font:500 .82rem var(--f-body);background:none;border:0;color:var(--accent);cursor:pointer;padding:0}
 .dates{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:.8rem;color:var(--muted)}
@@ -129,7 +132,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 .formula{font:400 .82rem var(--f-mono);color:var(--muted);margin:0;white-space:pre-wrap}
 .xchip{font:500 .78rem var(--f-body);padding:2px 9px;border-radius:999px;background:var(--bad-soft);color:var(--bad)}
 .code{font:400 .84rem/1.55 var(--f-mono);tab-size:2;min-height:420px;width:100%;box-sizing:border-box;background:var(--bg);white-space:pre;overflow:auto}
-.err{font:500 .84rem var(--f-mono);color:var(--bad);background:var(--bad-soft);border-radius:7px;padding:6px 9px;margin:0;white-space:pre-wrap}
+.err{font:500 .88rem var(--f-body);color:var(--bad);background:var(--bad-soft);border-radius:7px;padding:6px 9px;margin:0;white-space:pre-wrap}
 .score{font:600 .74rem var(--f-mono);padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
 .score.hi{background:var(--good-soft);color:var(--good)}
 .fitr{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:baseline;font:500 .84rem var(--f-body)}
@@ -194,18 +197,19 @@ details.more form{display:grid;gap:10px;padding-top:10px}
   <header>
     <h1>Role Radar</h1>
     <p class="lede" id="lede" hidden>A job-search radar I built for my own search. It reads job boards every weekday and scores each role 0–100 against criteria I edit, with the math on every card. Applying stays my own call.</p>
-    <span class="demo" id="demoNote" hidden>Demo data: fictional companies and people</span>
+    <span class="demo" id="demoNote" hidden>Demo data: made-up roles, recruiters and scores</span>
+    <p class="sub" id="demoTry" hidden>Try anything: changes stay in this tab and reset when you reload.</p>
     <p class="sub" id="scanLine">Remote Senior and Staff PM roles from company boards, ZipRecruiter, Himalayas and job alerts, checked every weekday morning.</p>
   </header>
 
   <main class="main">
   <div role="tablist" id="tabs" aria-label="Sections"></div>
 
-  <section id="view" aria-live="polite"></section>
+  <section id="view"></section>
   </main>
 </div>
 <aside id="preview" role="region" aria-labelledby="pvTitle" hidden></aside>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
 <dialog id="applyDlg" aria-labelledby="applyTitle">
   <h3 id="applyTitle">Start intake</h3>
   <p class="sub" style="margin:0 0 10px" id="applyWhere">Open a new chat in your job-search project and paste this. Claude screens the role, asks only what it needs, builds the Google Doc resume, and links it back here.</p>
@@ -237,6 +241,7 @@ let config={...DEF_CONFIG};
 let LANES=config.lanes, SKIP_REASONS=config.skipReasons;
 function setConfig(c){config={...DEF_CONFIG,...(c||{})}; LANES=config.lanes; SKIP_REASONS=config.skipReasons;}
 const ATS=["greenhouse","ashby","lever"];
+const FIT_LABEL={strong:"strong",maybe:"partial",stretch:"stretch"};
 const DEF_VIEW={q:"",status:"",lane:"",fit:"",values:"",culture:"",source:"",tag:"",found:"",conflict:"",sort:"fit"};
 // Gmail import: the viewer's Gmail connector, read-only (search_threads, batch_get_threads).
 let mcp=null, mcpState="checking", gm={state:"idle",items:[],picked:new Set(),msg:""};
@@ -263,7 +268,10 @@ const fmtDate=s=>{if(!s)return"";const d=new Date(String(s).length===10?s+"T12:0
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
 const daysSince=s=>{if(!s)return null;const d=new Date(String(s).length===10?s+"T12:00:00":s);return isNaN(d)?null:(Date.now()-d)/864e5;};
 function addBusinessDays(from,n){const d=new Date(from);let k=0;while(k<n){d.setDate(d.getDate()+1);const w=d.getDay();if(w!==0&&w!==6)k++;}return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
-function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2200);}
+// toast(message) or toast(message, {label, run}) for a one-tap action such as Undo (shown longer).
+function toast(m,action){const t=$("#toast");t.textContent=m;
+  if(action){const b=document.createElement("button");b.type="button";b.className="toast-act";b.textContent=action.label;b.onclick=()=>{t.hidden=true;action.run();};t.append(" ",b);}
+  t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,action?6000:2200);}
 const st=j=>j.status||"new";
 const tagsOf=j=>Array.isArray(j.tags)?j.tags:(j.tags?String(j.tags).split(",").map(s=>s.trim()).filter(Boolean):[]);
 // Products the owner is building (meta/filters.products). Conflicts are flags only: nothing is hidden or skipped.
@@ -305,6 +313,8 @@ function renderTabs(){
   const c=counts();
   $("#tabs").innerHTML=TABS.map(t=>`<button role="tab" id="tab-${t.id}" aria-selected="${t.id===tab}" data-tab="${t.id}">${t.label}${c[t.id]!==""?` <span class="n">${c[t.id]}${t.id==="people"?" due":""}</span>`:""}</button>`).join("");
 }
+// "greenhouse:orbitline" -> "Greenhouse"
+const boardName=v=>{const a=String(v||"").split(":")[0].toLowerCase(); return (PV&&PV.ATS_LABEL[a])||{workday:"Workday",ashby:"Ashby"}[a]||a||"?";};
 function renderScan(){
   if(!scan){ $("#scanLine").textContent="Remote Senior and Staff PM roles from company boards, ZipRecruiter, Himalayas and job alerts, checked every weekday morning. No scan has run yet."; return;}
   const when=scan.lastRun?new Date(scan.lastRun).toLocaleString(undefined,{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
@@ -349,7 +359,7 @@ function jobCard(j){
   const id=esc(j._id), s=st(j), fit=(j.fit||"").toLowerCase(), resumeUrl=safeUrl(j.resumeUrl);
   // Demo roles are made up: their example.com links would be dead ends, so they become a "Sample posting" note.
   const sample=isSampleUrl(j.url), url=sample?"":safeUrl(j.url);
-  const fitChip=(typeof j.score==="number"?`<span class="score${j.score>=70?" hi":""}" title="Criteria score">${esc(j.score)}</span>`:"")+(fit?`<span class="chip fit-${esc(fit)}">${esc(fit)} fit</span>`:"");
+  const fitChip=(typeof j.score==="number"?`<span class="score${j.score>=70?" hi":""}" title="Criteria score, 0–100">${esc(j.score)}</span>`:"")+(fit?`<span class="chip fit-${esc(fit)}" title="How well the candidate's experience matches; one part of the score">Experience: ${esc(FIT_LABEL[fit]||fit)}</span>`:"");
   const stChip=s!=="new"?`<span class="chip st st-${esc(s)}">${esc(STATUS_LABEL[s]||s)}</span>`:"";
   // The public demo shows one category per card (the sector); the lane is Chase's own grouping.
   const laneChip=j.lane&&!(window.__RR_SHOWCASE__&&j.sector)?`<span class="chip lane">${esc(j.lane)}</span>`:"";
@@ -423,7 +433,7 @@ function filterBar(){
     <div class="fields">
       <label for="fv-status">Status<select id="fv-status" data-v="status">${opts(statusList,view.status,"Any")}</select></label>
       <label for="fv-lane">Lane<select id="fv-lane" data-v="lane">${opts(LANES.map(l=>[l,l]),view.lane,"Any")}</select></label>
-      <label for="fv-fit">Fit<select id="fv-fit" data-v="fit">${opts([["strong","Strong"],["maybe","Maybe"],["stretch","Stretch"]],view.fit,"Any")}</select></label>
+      <label for="fv-fit">Experience<select id="fv-fit" data-v="fit">${opts([["strong","Strong"],["maybe","Partial"],["stretch","Stretch"]],view.fit,"Any")}</select></label>
       <label for="fv-values">Values<select id="fv-values" data-v="values">${opts([["good+","Good or better"],["great","Great"],["good","Good"],["neutral","Neutral"],["no","No"]],view.values,"Any")}</select></label>
       <label for="fv-culture">Culture<select id="fv-culture" data-v="culture">${opts([["good+","Good or better"],["great","Great"],["good","Good"],["maybe","Maybe"],["no","No"],["unrated","Unrated"]],view.culture,"Any")}</select></label>
       <label for="fv-source">Source<select id="fv-source" data-v="source">${opts(sources,view.source,"Any")}</select></label>
@@ -432,7 +442,7 @@ function filterBar(){
       <label for="fv-conflict">Product conflict<select id="fv-conflict" data-v="conflict">${opts([["flag","Flagged"],["clear","No conflict"]],view.conflict,"Any")}</select></label>
       <label for="fv-sort">Sort<select id="fv-sort" data-v="sort">${[["fit","Best match"],["culture","Best culture"],["found","Newest found"],["posted","Newest posted"],["updated","Recently changed"],["followup","Follow-up date"]].map(([v,l])=>`<option value="${v}"${v===view.sort?" selected":""}>${l}</option>`).join("")}</select></label>
     </div>
-    <div class="foot"><span id="fcount"></span><button class="btn" type="button" id="ftoggle" aria-expanded="${filtersOpen}">${filtersOpen?"Hide filters":"Filters and sort"}${nf?` (${nf})`:""}</button>${active?`<button class="linkbtn" type="button" id="fclear">Clear filters</button>`:""}</div>
+    <div class="foot"><span id="fcount" role="status"></span><button class="btn" type="button" id="ftoggle" aria-expanded="${filtersOpen}">${filtersOpen?"Hide filters":"Filters and sort"}${nf?` (${nf})`:""}</button>${active?`<button class="linkbtn" type="button" id="fclear">Clear filters</button>`:""}</div>
   </form>`;
 }
 function applyView(list){
@@ -505,17 +515,17 @@ function boardHealth(){
   const n=v=>Number(v)||0, arrOf=a=>Array.isArray(a)?a:[];
   const pr=n(cv.priorityRead), pt=n(cv.priorityTotal), low=pt>0&&pr/pt<0.9;
   const when=scan.lastRun?new Date(scan.lastRun).toLocaleString(undefined,{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
-  const mode=cv.mode==="webfetch"?"web reader":cv.mode==="skipped"?"skipped":cv.mode==="full"?"full":(cv.mode||"");
+  const mode=cv.mode==="webfetch"?"web reader":cv.mode==="skipped"?"skipped":cv.mode==="full"?"full scan":(cv.mode||"");
   const failed=arrOf(cv.failedList).map(f=>typeof f==="string"?{name:f}:f||{}).filter(f=>f.name);
   const moved=arrOf(cv.moved).filter(m=>m&&m.name), partial=arrOf(cv.partialList).filter(Boolean);
   const src=cv.sources&&typeof cv.sources==="object"?Object.entries(cv.sources):[];
   const srcLabel={ziprecruiter:"ZipRecruiter",gmail:"Gmail",himalayas:"Himalayas",climatebase:"Climatebase"};
   return `<div class="health${low?" low":""}" role="status">
-    <p class="sum">Boards: <b>${n(cv.read)}/${n(cv.attempted)}</b> read${pt?` (solar/climate <b>${pr}/${pt}</b>)`:""}${n(cv.partial)?` · ${n(cv.partial)} partial`:""}${when?` · last run ${esc(when)}`:""}${mode?` · mode ${esc(mode)}`:""}</p>
+    <p class="sum">Boards: <b>${n(cv.read)}/${n(cv.attempted)}</b> read${pt?` (solar/climate <b>${pr}/${pt}</b>)`:""}${n(cv.partial)?` · ${n(cv.partial)} partial`:""}${when?` · last run ${esc(when)}`:""}${mode?` · ${esc(mode)}`:""}</p>
     ${low?`<p class="sum" style="color:var(--warn)">Priority boards under 90% read. Some solar and climate roles may be missing from this run.</p>`:""}
     ${failed.length?`<div class="chips">Failed${failed.map(f=>`<span class="hchip bad" title="${esc(f.error||"")}">${esc(f.name)}</span>`).join("")}</div>`:""}
     ${partial.length?`<div class="chips">Partial${partial.map(x=>`<span class="hchip warn">${esc(x)}</span>`).join("")}</div>`:""}
-    ${moved.length?`<div class="chips">Moved${moved.map(m=>`<span class="hchip" title="Board moved; the scan repointed it">${esc(m.name)}: ${esc(m.from||"?")} → ${esc(m.to||"?")}</span>`).join("")}</div>`:""}
+    ${moved.length?`<div class="chips">Changes${moved.map(m=>`<span class="hchip" title="The scan found the new board and switched to it">${esc(m.name)} moved its job board (${esc(boardName(m.from))} → ${esc(boardName(m.to))})</span>`).join("")}</div>`:""}
     ${src.length?`<div class="chips">Sources${src.map(([k,v])=>`<span class="hchip${v==="failed"?" bad":v==="skipped"?" warn":""}">${esc(srcLabel[k]||k)} ${esc(v)}</span>`).join("")}</div>`:""}
   </div>`;
 }
@@ -560,10 +570,18 @@ function renderFilters(){
     <button class="primary" type="submit">Save settings</button></form>`;
 }
 
+// Sections the scan and the page read. Saving a spec that drops one the saved spec has is blocked.
+const SPEC_PARTS=[["sectors","sector weights"],["comp","comp floor"],["role","title rules"],["scoring","min score and digest size"]];
+function droppedParts(next,saved){ if(!saved||typeof saved!=="object") return []; return SPEC_PARTS.filter(([k])=>saved[k]!=null&&(next==null||typeof next!=="object"||next[k]==null)).map(([,l])=>l); }
+// A readable doc key from names: accents fold (José → jose); a part with no Latin letters adds a short hash, so
+// "李明" and "王芳" at one company get different keys instead of overwriting each other.
+const slugOf=x=>String(x||"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const hashOf=x=>{let h=5381; for(const ch of String(x)) h=((h*33)^ch.codePointAt(0))>>>0; return h.toString(36);};
+function docKey(...parts){ const key=parts.map(slugOf).filter(Boolean).join("-").slice(0,60); return parts.some(x=>String(x||"").trim()&&!slugOf(x))||!key?(key?key+"-":"")+hashOf(parts.join(" ")):key; }
 function parseSpec(t){
   if(!window.jsyaml) return {data:null,err:""};
   try{ const d=window.jsyaml.load(t); if(!d||typeof d!=="object") return {err:"The spec should be a YAML map (key: value)."}; return {data:d,err:""}; }
-  catch(e){ return {err:String(e.message||e).split("\n")[0]}; }
+  catch(e){ return {err:String(e.message||e).split("\n")[0],line:e.mark&&Number.isFinite(e.mark.line)?e.mark.line+1:null}; }
 }
 const money=n=>typeof n==="number"?"$"+Math.round(n/1000)+"K":esc(n??"—");
 const sentence=t=>String(t).replace(/^\w/,c=>c.toUpperCase());
@@ -587,10 +605,10 @@ function critSummary(d){
     </div></div>
     <div class="ccard"><h2>Sector weights</h2><div>${secs.map(s=>`<div class="sec"><span class="lbl">${esc(s.label||s.id)}</span>${pip(Number(s.weight)||0)}${Array.isArray(s.examples)&&s.examples.length?`<span class="ex">${listTxt(s.examples.slice(0,6))}</span>`:""}</div>`).join("")||`<span class="hint">No sectors yet.</span>`}</div></div>
     ${xs.length?`<div class="ccard"><h2>Never show</h2><div class="tags">${xs.map(x=>`<span class="xchip">${esc(x)}</span>`).join("")}</div></div>`:""}
-    <div class="ccard"><h2>Scoring</h2><p class="formula">sector  = weight × 15        (0–45)
-fit     = strong 35 · maybe 20 · stretch 5
-culture = +10 good signals, −10 per red flag
-comp    = +10 if the range reaches ${money(c.stretch_target_usd)}</p></div>
+    <div class="ccard"><h2>Scoring</h2><p class="formula">sector = weight × 15 (0–45)
+experience = strong 35 · partial 20 · stretch 5
+culture signals = +10 good, −10 per red flag
+comp = +10 if the range reaches ${money(c.stretch_target_usd)}</p></div>
     ${fitCard(d)}`;
 }
 function fitCard(d){
@@ -599,7 +617,7 @@ function fitCard(d){
   if(!checks.length&&!d.values_fit) return "";
   const badge=r=>`<span class="rate r-${esc(r)}">${esc(RATE_LABEL[r]||r)}</span>`;
   return `<div class="ccard"><h2>Fit ratings</h2>
-    <p class="sub" style="margin:0">Two badges on every role. They explain a role and never change its score.</p>
+    <p class="sub" style="margin:0">Two badges on every role. They explain a role and never change its score; the Culture badge is separate from the culture-signals points above.</p>
     <div class="legend"><small>Values by sector weight</small>${[3,2,1,0].map(w=>`<span>${badge(vw[w]||"no")} weight ${w}</span>`).join("")}</div>
     <div class="legend"><small>Culture by total points</small><span>${badge("great")} ${esc(b.great)}+</span><span>${badge("good")} ${esc(b.good)}+</span><span>${badge("maybe")} ${esc(b.maybe)}+</span><span>${badge("no")} below ${esc(b.maybe)}</span></div>
     ${checks.length?`<div class="checks">${checks.map(k=>{const n=Number(k.points)||0;return `<div><span class="pt ${n>0?"pos":n<0?"neg":""}">${n>0?"+":n<0?"−":""}${Math.abs(n)}</span><span>${esc(k.short||k.id)}${k.means?` <span class="m">· ${esc(k.means)}</span>`:""}</span></div>`;}).join("")}</div>`:""}
@@ -657,7 +675,8 @@ function gmailImport(){
   else if(gm.state==="loading") body=`<p class="hint" role="status">Reading your Gmail…</p>`;
   else if(gm.state==="done"){
     const fresh=gm.items.filter(c=>!c.exists), n=gm.picked.size;
-    body=gm.items.length?`<p class="hint">Found ${gm.items.length} ${gm.items.length===1?"person":"people"}${fresh.length<gm.items.length?`, ${gm.items.length-fresh.length} already in your list`:""}. Untick anyone who isn't a recruiter, then add the rest.</p>
+    body=gm.items.length&&!fresh.length?`<p class="hint" role="status">All ${gm.items.length===1?"of them":gm.items.length} ${gm.items.length===1?"is":"are"} in your list. Nothing left to add.</p><button class="btn" type="button" id="gmFind">Search again</button>`
+      :gm.items.length?`<p class="hint">Found ${gm.items.length} ${gm.items.length===1?"person":"people"}${fresh.length<gm.items.length?`, ${gm.items.length-fresh.length} already in your list`:""}. Untick anyone who isn't a recruiter, then add the rest.</p>
       <ul class="gmlist">${gm.items.map(c=>`<li><label><input type="checkbox" data-gmpick="${esc(c.key)}"${gm.picked.has(c.key)?" checked":""}${c.exists?" disabled":""}>
         <span><b>${esc(c.name||c.email)}</b>${c.company?` · ${esc(c.company)}`:""} <span class="chip lane">${esc(c.type)}</span>${c.exists?` <i class="gmhave">already added</i>`:""}
         <span class="hint">${c.lastContact?`Last email <span class="mono">${fmtDate(c.lastContact)}</span>`:"No date on these emails"}${c.threads>1?` · ${c.threads} threads`:""}${c.subject?` · ${esc(c.subject)}`:""}</span></span></label></li>`).join("")}</ul>
@@ -717,10 +736,10 @@ function renderCriteria(){
   return `<div class="crit">${critSummary(p.data)}
     <form class="ccard" id="critForm"><h2>criteria.yaml</h2>
       <p class="sub" style="margin:0">The scan reads this before every run. Change a weight, add a company to <span class="mono">hard_exclude</span>, or move the comp floor, then save.${when?` Last saved ${esc(when)}.`:""}</p>
-      ${critErr||p.err?`<p class="err">${esc(critErr||p.err)}</p>`:""}
+      ${critErr||p.err?`<p class="err" id="critErr" role="alert" style="scroll-margin-top:16px">${esc(critErr||p.err)}</p>`:""}
       ${!window.jsyaml?`<p class="err">The YAML reader didn't load, so the summary and preview are off. You can still edit and save.</p>`:""}
       <label for="critText" class="sr" style="position:absolute;left:-9999px">Criteria YAML</label>
-      <textarea id="critText" class="code" spellcheck="false" autocapitalize="off" autocomplete="off">${esc(text)}</textarea>
+      <textarea id="critText" class="code" spellcheck="false" autocapitalize="off" autocomplete="off"${critErr||p.err?` aria-invalid="true" aria-describedby="critErr"`:""}>${esc(text)}</textarea>
       <div class="ctl"><button class="primary" type="submit">Save criteria</button>${critDraft!==null?`<button class="btn" type="button" id="critReset">Discard changes</button>`:""}</div>
     </form>
     <div class="ccard"><h2>Digest preview</h2><p class="sub" style="margin:0">How tomorrow's digest would rank the roles in New with the criteria above. Edit a weight and watch it change.</p><div id="digestPreview">${digestPreview(p.data)}</div></div></div>`;
@@ -757,11 +776,16 @@ function patchFor(j,next){
   if(next==="applied"){ if(!j.appliedAt) p.appliedAt=now; if(!j.followUpDue) p.followUpDue=addBusinessDays(j.appliedAt||now,config.followUpBusinessDays); }
   return p;
 }
-async function setStatus(j,next,extra){
+async function setStatus(j,next,extra,opts){
   if(!db) return;
-  try{await db.doc("jobs/"+j._id).update({...patchFor(j,next),...(extra||{})}); toast("Marked "+(STATUS_LABEL[next]||next).toLowerCase());}
-  catch(err){toast("Couldn't save that change. Try again in a moment.");}
+  const prev={status:st(j),statusAt:j.statusAt||""};
+  try{await db.doc("jobs/"+j._id).update({...patchFor(j,next),...(extra||{})});}
+  catch(err){toast("Couldn't save that change. Try again in a moment.");return;}
+  if(!(opts&&opts.undo)){ toast("Marked "+(STATUS_LABEL[next]||next).toLowerCase()); return; }
+  toast("Moved to "+(STATUS_LABEL[next]||next),{label:"Undo",run:async()=>{try{await db.doc("jobs/"+j._id).update(prev); toast("Back in "+(STATUS_LABEL[prev.status]||prev.status));}catch(_){toast("Couldn't undo that.");}}});
 }
+// After a card leaves the list, put focus on the card that took its place so keyboard users don't land at the top.
+function focusCardAfter(i){ requestAnimationFrame(()=>{ const cards=[...document.querySelectorAll("#view article.job")]; const c=cards[Math.min(i,cards.length-1)]; const h=c&&(c.querySelector("h2 a, h2")); if(h){ if(!h.matches("a")) h.tabIndex=-1; h.focus({preventScroll:false}); } }); }
 async function markViewed(j){
   if(!db||!j||st(j)!=="new") return;
   try{await db.doc("jobs/"+j._id).update(patchFor(j,"viewed"));}catch(_){}
@@ -795,7 +819,7 @@ function renderPreview(bodyOnly){
   const open=url?`<a class="pv-open" href="${esc(url)}" target="_blank" rel="noopener">Open posting ↗</a>`:"";
   const msg=(h,t)=>`<div class="pv-msg"><strong>${h}</strong><span>${t}</span>${open||`<span>${sample?"This is a made-up role, so there's no real posting.":"No posting link is saved for this role."}</span>`}</div>`;
   const srcName=SOURCE_LABEL[String(j.source||j.ats||"").toLowerCase()]||esc(j.source||j.ats||"this source");
-  const body=p.state==="ok"?`<div class="pv-body" id="pvBody"></div><p class="pv-src">Word for word from ${esc(ats)}'s public job board. Nothing is saved.</p>`
+  const body=p.state==="ok"?`<div class="pv-body" id="pvBody"></div><p class="pv-src">${window.__RR_DEMO__?`Sample description written for this demo. On the live page this loads word for word from ${esc(ats||"the company")}'s public job board.`:`Word for word from ${esc(ats)}'s public job board. Nothing is saved.`}</p>`
     :p.state==="loading"?`<p class="pv-src" role="status">Loading the description from ${esc(ats||"the job board")}…</p>`
     :p.state==="gone"?msg("This posting isn't on the board anymore",`${esc(ats)} no longer lists it, so it may be closed. The original link might still work.`)
     :p.state==="error"?msg("Couldn't load the description",`${esc(ats)} didn't answer from this page. Open the posting to read it there.`)
@@ -876,12 +900,13 @@ document.addEventListener("click",async e=>{
   if(t){tab=t.dataset.tab; view.status=""; saveView(); try{localStorage.setItem("rr-tab",tab)}catch(_){} render(); return;}
   if(e.target.closest("[data-skipcancel]")){ skipOpen=null; render(); return; }
   const sw=e.target.closest("[data-skipwhy]");
-  if(sw){ const j=jobs.find(x=>x._id===sw.dataset.job); skipOpen=null; if(j) await setStatus(j,"skipped",{skipReason:sw.dataset.skipwhy}); render(); return; }
+  if(sw){ const j=jobs.find(x=>x._id===sw.dataset.job); skipOpen=null; const i=[...document.querySelectorAll("#view article.job")].indexOf(sw.closest("article.job")); if(j) await setStatus(j,"skipped",{skipReason:sw.dataset.skipwhy},{undo:true}); render(); focusCardAfter(Math.max(0,i)); return; }
   const qk=e.target.closest("[data-quick]");
   if(qk){
     const j=jobs.find(x=>x._id===qk.dataset.job); if(!j) return;
     if(qk.dataset.quick==="skipped"){ skipOpen=j._id; render(); return; }
-    await setStatus(j,qk.dataset.quick); return;
+    const i=[...document.querySelectorAll("#view article.job")].indexOf(qk.closest("article.job"));
+    await setStatus(j,qk.dataset.quick,null,{undo:true}); render(); focusCardAfter(Math.max(0,i)); return;
   }
   const c=e.target.closest("[data-co]");
   if(c&&db){
@@ -922,15 +947,13 @@ document.addEventListener("submit",async e=>{
   }
   if(e.target.id==="addRec"){
     const n=$("#ar-n").value.trim(), c=$("#ar-c").value.trim(); if(!n||!c) return;
-    const slug=x=>x.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
     const doc={name:n,company:c,type:$("#ar-t").value,roles:$("#ar-r").value.trim(),nextStep:$("#ar-x").value.trim(),nextStepDue:$("#ar-d").value,lastContact:today(),source:"manual",createdAt:new Date().toISOString(),mailSearch:"https://mail.google.com/mail/u/0/#search/"+encodeURIComponent(c)};
-    try{await db.doc("recruiters/"+slug(n+" "+c)).set(doc); e.target.reset(); document.activeElement?.blur?.(); toast("Recruiter added"); render();}catch(_){toast("Couldn't add that.");}
+    try{await db.doc("recruiters/"+docKey(n,c)).set(doc); e.target.reset(); document.activeElement?.blur?.(); toast("Recruiter added"); render();}catch(_){toast("Couldn't add that.");}
     return;
   }
   if(e.target.id==="addJob"){
     const co=$("#aj-co").value.trim(), ti=$("#aj-ti").value.trim(); if(!co||!ti) return;
-    const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
-    const id="manual-"+slug(co)+"-"+slug(ti), now=new Date().toISOString(), status=$("#aj-st").value;
+    const id="manual-"+docKey(co,ti), now=new Date().toISOString(), status=$("#aj-st").value;
     const doc={company:co,title:ti,url:$("#aj-url").value.trim(),lane:$("#aj-ln").value,source:"manual",firstSeen:now,status,statusAt:now,viewedAt:now};
     if(status==="applied"){doc.appliedAt=now; doc.followUpDue=addBusinessDays(now,config.followUpBusinessDays);}
     try{await db.doc("jobs/"+id).set(doc); toast("Added to the pipeline"); e.target.reset(); document.activeElement?.blur?.(); render();}catch(err){toast("Couldn't add that role.");}
@@ -955,8 +978,11 @@ document.addEventListener("submit",async e=>{
   }
   if(e.target.id==="critForm"){
     const spec=$("#critText").value, parsed=parseSpec(spec);
-    if(parsed.err){ critDraft=spec; critErr=parsed.err; render(); toast("Fix the YAML first"); return; }
-    try{await db.doc("meta/criteria").set({spec,updatedAt:new Date().toISOString(),version:(parsed.data&&parsed.data.version)||null}); critDraft=null; critErr=""; document.activeElement?.blur?.(); toast("Criteria saved. Next scan uses them.");}
+    const showErr=(m,t)=>{ critDraft=spec; critErr=m; render(); toast(t); const ta=$("#critText"); if(ta){ ta.focus({preventScroll:true}); } $("#critErr")?.scrollIntoView({block:"nearest"}); };
+    if(parsed.err){ showErr(parsed.err,`${parsed.line?`Line ${parsed.line} has`:"There's"} a YAML error. Nothing was saved.`); return; }
+    const gone=droppedParts(parsed.data,parseSpec((criteria&&criteria.spec)||"").data);
+    if(gone.length){ const m=`This would remove: ${gone.join(", ")}. Nothing was saved.`; showErr(m+" Put those sections back, or choose Discard changes.",m); return; }
+    try{await db.doc("meta/criteria").set({spec,updatedAt:new Date().toISOString(),version:(parsed.data&&parsed.data.version)||null}); critDraft=null; critErr=""; document.activeElement?.blur?.(); toast(window.__RR_DEMO__?"Criteria saved for this visit. The demo resets when you reload.":"Criteria saved. Next scan uses them.");}
     catch(err){toast("Couldn't save the criteria.");}
   }
 });
@@ -967,7 +993,7 @@ document.addEventListener("keydown",e=>{
   e.preventDefault(); const t=e.target, a=t.selectionStart; t.setRangeText("  ",a,t.selectionEnd,"end"); critDraft=t.value;
 });
 
-if(window.__RR_DEMO__) $("#demoNote").hidden=false;
+if(window.__RR_DEMO__){ $("#demoNote").hidden=false; $("#demoTry").hidden=false; }
 if(window.__RR_SHOWCASE__){ $("#showcase").hidden=false; $("#lede").hidden=false; document.body.classList.add("showcase-mode"); }
 render();
 (async()=>{

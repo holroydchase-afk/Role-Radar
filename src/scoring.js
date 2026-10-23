@@ -207,11 +207,13 @@
     return { rating: r, reason: reason.charAt(0).toUpperCase() + reason.slice(1) + ".", points, hits, source: "computed" };
   }
 
-  /** "45 sector + 35 fit + 10 comp" — the parts that moved the score. */
+  /** "45 sector + 35 experience + 10 comp" — the parts that moved the score.
+   *  "fit" is stored as strong/maybe/stretch but shown as experience strong/partial/stretch,
+   *  so it doesn't read as the overall verdict next to the score. */
   function explain(result) {
     const p = result.parts, out = [];
     const add = (n, label) => { if (n) out.push((out.length ? (n < 0 ? "− " : "+ ") : n < 0 ? "−" : "") + Math.abs(n) + " " + label); };
-    add(p.sector, "sector"); add(p.fit, "fit"); add(p.culture, "culture"); add(p.comp, "comp"); add(p.values, "values"); add(p.dream, "dream role");
+    add(p.sector, "sector"); add(p.fit, "experience"); add(p.culture, "culture signals"); add(p.comp, "comp"); add(p.values, "values"); add(p.dream, "dream role");
     return out.join(" ") || "0";
   }
 

@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-23 (night shift: hardening round 1 in progress)
+Updated: 2026-10-23 (night shift: hardening rounds 1-2)
 
 ## Planning IDs (Oct 21, 2026)
 The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs.
@@ -31,6 +31,7 @@ _Updated 2026-10-22._
 - **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in the portfolio repo (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
 
 ## Done
+- 2026-10-23 night shift hardening, round 2 (UX sweep of public, `?full` and private views at 390x844 and 1280x800, light and dark: 0 P0, 3 P1, 10 P2). Fixed with red-first browser tests in `tests/hardening-ui.test.mjs`: RR-UX-1 the chip beside the score reads "Experience: strong / partial / stretch" (the old "Maybe fit" beside a 90 read as a contradiction), the score line says "experience" and "culture signals", the filter is "Experience", the score has a "Criteria score, 0–100" tooltip; RR-UX-2 the tab bar no longer sticks on phones (it covered 19-33% of the screen); RR-UX-3 saving criteria that drop sector weights, comp, title rules or scoring is blocked with "This would remove: … Nothing was saved."; RR-UX-4 YAML errors say "Line N has a YAML error. Nothing was saved.", focus the editor, set aria-invalid and link the error; RR-UX-5 demo previews say the description is a sample; RR-UX-6/7 demo label "made-up roles, recruiters and scores" plus "changes reset when you reload", demo criteria save says "for this visit"; RR-UX-9 Save/Skip toast "Moved to Saved · Undo" (6s) and focus moves to the next card; RR-UX-10 toast is `role=status`, the list is no longer an aria-live region; RR-UX-11 Gmail import says "Nothing left to add" once everyone is in; RR-UX-12 inline "Criteria" link keeps a 44px target without double line spacing, error text in the body font; RR-UX-13 Watchlist strip says "full scan" and "Orbitline moved its job board (Greenhouse → Lever)". RR-H-7: recruiters and roles added by hand with non-Latin names get unique keys (they overwrote each other). `npm run screenshots` fixed (it waited for Ledgerly at #1, which dream anchors changed) and README screenshots regenerated. 122 tests, green 3x.
 - 2026-10-23 night shift hardening, round 1 (branch `claude/project-thread-vxgzv0`, from main): `tests/hardening.test.mjs` RR-H-1 to RR-H-6, each red first, then fixed. A "401(k)" in a comp string no longer reads as a $401K salary (false stretch bonus); an empty comp object `{min:null,max:null}` no longer fails the comp floor and drops the role; a broken %-escape in a posting link no longer throws; Lever lists without a heading no longer add an empty heading; Gmail suggestions always get a non-empty, unique doc key (names with no Latin letters used to map to `recruiters/` and overwrite each other; accents now fold, José → jose); a sender whose display name is their address gets a name from the address. `npm run review:shots` now also covers the private page (normal mode, demo data), the preview panel and recruiter details. 112 tests, green 3x.
 - 2026-10-22 recruiter-ready round 4: last in-repo P2s (one category chip on public cards, "Recruiters N due", plain-word Criteria summary, centered filter button). Nothing at P2 or above is left in this repo; what's left is the portfolio intake and Chase's https check. 92 tests.
 - 2026-10-22 recruiter-ready round 3: P2 polish (plain source names, folded filters on the public demo, one font in sentences, landmarks and headings with zero axe violations, js-yaml inlined in the public build, README links the live demo), README screenshots regenerated. 88 tests.
@@ -87,7 +88,7 @@ _Updated 2026-10-22._
   - 8 unit tests, 5 browser tests (desktop, phone sheet, sanitizing, unreachable board, other sources); 68 passing. New screenshots `preview.png`, `phone-preview.png` (`npm run screenshots -- preview phone-preview`).
 
 ## In progress
-- Night shift 2026-10-23 (hardening): round 1 pushed (pure-module edge cases). UX sweep of every screen (public, `?full`, private; phone and laptop; light and dark) running next; P0 to P2 fixes follow on this branch.
+- Night shift 2026-10-23 (hardening), draft PR #31: rounds 1-2 pushed. Next: re-sweep the fixed build (`npm run review:shots`, then look at the shots) and fix anything new at P2+.
 - Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. PR #18 (job description preview) merged 2026-10-23 after bringing main in; live page republished with `posting.js` the same day.
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
@@ -105,6 +106,10 @@ _Updated 2026-10-22._
 - The live page is `app/role-radar.html` published with `src/scoring.js` and `src/posting.js` as supporting files named `scoring.js` and `posting.js`.
 
 ## Decisions to review
+- Night shift 2026-10-23: the "fit" chip now reads "Experience: strong / partial / stretch" (stored values stay strong/maybe/stretch, so the scan is unchanged). This replaces round 2's "Strong fit" wording (RR-P1-3). Alternative: hide the chip on the public build.
+- Night shift 2026-10-23: the criteria guard blocks a save only when it drops a section (sectors, comp, role, scoring) that the saved spec has, so a first-time spec in another shape still saves.
+- Night shift 2026-10-23: the tab bar scrolls away on phones instead of becoming one sticky scrolling row (simplest, keeps every tab visible at the top).
+- Not done (P2, left): RR-UX-12's other half (comp and dates in the mono font inside sentences) and the real brand names in the demo criteria's sector examples (the demo label now says roles, recruiters and scores are made up, not the examples).
 - Public demo has no "Code on GitHub" link: the repo URL contains a term on the private denylist, so the pre-commit privacy check blocks it. If you're fine with the GitHub handle appearing in page source, allow it in the denylist and add the link; the portfolio page can link the repo meanwhile.
 - Agents sync skips `focus-coach` and `orchestrator`: they are about Chase's personal routine and would read oddly to a recruiter browsing this public repo. Re-run `scripts/sync.sh <repo> focus-coach orchestrator` from studio-agents if you want them here.
 - The Gmail search result shape was taken from the connector's own documentation, not a live call (reading real mail from the build session was blocked as personal data). The parser accepts the documented camelCase fields and a few likely variants; first real use will confirm it.
