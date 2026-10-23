@@ -28,7 +28,10 @@
     const u = String(url || "").trim();
     for (const r of URL_RULES) {
       const m = r.re.exec(u);
-      if (m) return { ats: r.ats, slug: decodeURIComponent(m[2]), id: m[3], eu: !!m[1] };
+      if (!m) continue;
+      let slug;
+      try { slug = decodeURIComponent(m[2]); } catch { return null; } // a broken %-escape: no preview, no crash
+      return { ats: r.ats, slug, id: m[3], eu: !!m[1] };
     }
     return null;
   }
@@ -82,7 +85,7 @@
       return job ? String(job.descriptionHtml || (job.descriptionPlain ? `<p>${escText(job.descriptionPlain)}</p>` : "")) : "";
     }
     if (src.ats === "lever") {
-      const lists = (Array.isArray(data.lists) ? data.lists : []).map((l) => `<h3>${escText(l && l.text)}</h3><ul>${(l && l.content) || ""}</ul>`).join("");
+      const lists = (Array.isArray(data.lists) ? data.lists : []).map((l) => `${l && l.text ? `<h3>${escText(l.text)}</h3>` : ""}<ul>${(l && l.content) || ""}</ul>`).join("");
       const body = data.description || (data.descriptionPlain ? `<p>${escText(data.descriptionPlain)}</p>` : "");
       return body || lists ? String(body) + lists + String(data.additional || "") : "";
     }

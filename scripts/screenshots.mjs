@@ -39,7 +39,8 @@ try {
       // Show the live preview reacting: bump fintech to weight 3 in the editor.
       const text = await page.locator("#critText").inputValue();
       await page.locator("#critText").fill(text.replace(/(- id: fintech\n(?:.*\n)*?\s+weight: )1/, "$13"));
-      await page.waitForFunction(() => /Ledgerly/.test(document.querySelector("#digestPreview li")?.textContent || ""));
+      // Dream-role anchors keep a solar role on top, so look for Ledgerly moving into the top three.
+      await page.waitForFunction(() => [...document.querySelectorAll("#digestPreview li")].slice(0, 3).some((li) => /Ledgerly/.test(li.textContent)));
       // Scroll the editor so the edited fintech block is in view.
       await page.locator("#critText").evaluate((el) => {
         const line = el.value.slice(0, el.value.indexOf("- id: fintech")).split("\n").length - 1;

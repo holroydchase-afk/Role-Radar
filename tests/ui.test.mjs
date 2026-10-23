@@ -41,7 +41,7 @@ test("cards explain their score with the criteria rules", async () => {
   await page.click("#tab-all");
   const lines = await page.locator(".why-score").allInnerTexts();
   assert.ok(lines.length >= 10);
-  assert.ok(lines.some((l) => /^45 sector \+ 35 fit \+ 10 comp = 90/.test(l)), lines.join("\n"));
+  assert.ok(lines.some((l) => /^45 sector \+ 35 experience \+ 10 comp = 90/.test(l)), lines.join("\n"));
   assert.ok(!lines.some((l) => /scan said/.test(l)), "demo scores match the rules");
   await page.close();
 });
@@ -303,10 +303,10 @@ test("the Watchlist shows board health from the last scan", async () => {
   const strip = page.locator(".health");
   const t = await strip.innerText();
   assert.match(t, /Boards: 7\/9 read \(solar\/climate 4\/5\)/);
-  assert.match(t, /mode full/);
+  assert.match(t, /full scan/); // RR-UX-13 plain words
   assert.ok(await strip.evaluate((el) => el.classList.contains("low")), "80% priority coverage is flagged");
   assert.equal(await strip.locator(".hchip.bad").first().getAttribute("title"), "404 from board API (demo)");
-  assert.match(t, /Orbitline: greenhouse:orbitline → lever:orbitline/);
+  assert.match(t, /Orbitline moved its job board \(Greenhouse → Lever\)/);
   const dot = (co) => page.locator(".row", { hasText: co }).locator(".hdot").getAttribute("class");
   assert.match(await dot("Sunfield Energy"), /green/);
   assert.match(await dot("Gridlark"), /amber/);
@@ -466,12 +466,15 @@ test("board HTML is sanitized before it is shown", async () => {
   await page.close();
 });
 
-test("fit chips say 'fit' so they don't read as a grade (RR-P1-3)", async () => {
+test("RR-UX-1 the chip beside the score names what it rates (experience), so 90 + chip never reads as a contradiction", async () => {
   const { page } = await openDemo();
   await page.click("#tab-all");
   const chips = await page.locator("#view .chip[class*=fit-]").allTextContents();
   assert.ok(chips.length >= 10);
-  for (const c of chips) assert.match(c, /^(strong|maybe|stretch) fit$/i);
+  for (const c of chips) assert.match(c, /^Experience: (strong|partial|stretch)$/);
+  assert.match(await page.locator("#view .score").first().getAttribute("title"), /Criteria score, 0.100/);
+  assert.deepEqual(await page.locator("#fv-fit option").allTextContents(), ["Any", "Strong", "Partial", "Stretch"]);
+  assert.match(await page.locator("label[for=fv-fit]").innerText(), /^Experience/);
   await page.close();
 });
 
