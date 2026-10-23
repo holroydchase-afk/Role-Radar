@@ -14,7 +14,7 @@ const thread = (id, messages) => ({ id, messageCount: messages.length, messages 
 
 test("RR-H-1 a 401(k) mention is not read as a $401K salary", () => {
   assert.deepEqual(S.parseComp("$170K–$205K + equity, 401(k) match"), { min: 170000, max: 205000 });
-  assert.deepEqual(S.parseComp("$150,000 - $180,000, 401k with 4% match"), { min: 150000, max: 180000 });
+  assert.deepEqual(S.parseComp("$150,000 - $175,000, 401k with 4% match"), { min: 150000, max: 175000 });
   assert.equal(S.parseComp("Great benefits including a 401(k)"), null);
   const spec = { comp: { stretch_target_usd: 220000 } };
   const r = S.scoreJob({ company: "Acme", title: "Senior Product Manager", fit: "maybe", comp: "$170K–$205K, 401(k)" }, spec);
@@ -25,7 +25,7 @@ test("RR-H-2 an empty comp object counts as no comp, so the floor gate doesn't d
   assert.equal(S.parseComp({ min: null, max: null }), null);
   assert.equal(S.parseComp({ min: "", max: "" }), null);
   assert.equal(S.parseComp({}), null);
-  assert.deepEqual(S.parseComp({ min: 180000, max: null }), { min: 180000, max: 180000 });
+  assert.deepEqual(S.parseComp({ min: 172000, max: null }), { min: 172000, max: 172000 });
   const spec = { comp: { base_floor_usd: 150000 } };
   const m = S.matchJob({ company: "Acme", title: "Senior Product Manager", location: "Remote, US", comp: { min: null, max: null } }, spec);
   assert.deepEqual(m.reasons, []);
