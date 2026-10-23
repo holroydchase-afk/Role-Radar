@@ -109,8 +109,8 @@ test("digest respects digest_max_items", () => {
 });
 
 test("explain lists the parts that moved the score", () => {
-  assert.equal(S.explain(S.scoreJob(job({ sector: "solar_energy", fit: "strong", comp: "$200K" }), spec)), "45 sector + 35 fit + 10 comp");
-  assert.equal(S.explain(S.scoreJob(job({ fit: "maybe", postingText: "fast-paced" }), spec)), "15 sector + 20 fit − 10 culture");
+  assert.equal(S.explain(S.scoreJob(job({ sector: "solar_energy", fit: "strong", comp: "$200K" }), spec)), "45 sector + 35 experience + 10 comp");
+  assert.equal(S.explain(S.scoreJob(job({ fit: "maybe", postingText: "fast-paced" }), spec)), "15 sector + 20 experience − 10 culture signals");
 });
 
 test("dream_roles: anchor companies and anchor-like titles in listed sectors get the bonus", () => {

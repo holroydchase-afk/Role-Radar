@@ -38,12 +38,15 @@
   /** "$170K–$205K", "$160,000 - $180,000", "170k" → {min, max} in dollars, or null. */
   function parseComp(comp) {
     if (comp && typeof comp === "object") {
-      const min = Number(comp.min), max = Number(comp.max);
+      // null, "" and 0 mean "not stated", not $0.
+      const num = (v) => (v == null || v === "" ? NaN : Number(v) > 0 ? Number(v) : NaN);
+      const min = num(comp.min), max = num(comp.max);
       if (isFinite(min) || isFinite(max)) return { min: isFinite(min) ? min : max, max: isFinite(max) ? max : min };
       return null;
     }
     const nums = [];
-    String(comp == null ? "" : comp).replace(/\$?\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*([kKmM]?)/g, (_, n, unit) => {
+    // A 401(k) is a retirement plan, not a $401K salary.
+    String(comp == null ? "" : comp).replace(/\b401\s*\(?k\)?/gi, " ").replace(/\$?\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*([kKmM]?)/g, (_, n, unit) => {
       let v = Number(n.replace(/,/g, ""));
       if (/k/i.test(unit)) v *= 1e3;
       else if (/m/i.test(unit)) v *= 1e6;
@@ -204,11 +207,13 @@
     return { rating: r, reason: reason.charAt(0).toUpperCase() + reason.slice(1) + ".", points, hits, source: "computed" };
   }
 
-  /** "45 sector + 35 fit + 10 comp" — the parts that moved the score. */
+  /** "45 sector + 35 experience + 10 comp" — the parts that moved the score.
+   *  "fit" is stored as strong/maybe/stretch but shown as experience strong/partial/stretch,
+   *  so it doesn't read as the overall verdict next to the score. */
   function explain(result) {
     const p = result.parts, out = [];
     const add = (n, label) => { if (n) out.push((out.length ? (n < 0 ? "− " : "+ ") : n < 0 ? "−" : "") + Math.abs(n) + " " + label); };
-    add(p.sector, "sector"); add(p.fit, "fit"); add(p.culture, "culture"); add(p.comp, "comp"); add(p.values, "values"); add(p.dream, "dream role");
+    add(p.sector, "sector"); add(p.fit, "experience"); add(p.culture, "culture signals"); add(p.comp, "comp"); add(p.values, "values"); add(p.dream, "dream role");
     return out.join(" ") || "0";
   }
 

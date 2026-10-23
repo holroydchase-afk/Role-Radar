@@ -106,7 +106,8 @@
     return n > messagesOf(t).length;
   }
 
-  const slug = (s) => str(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+  // Accents fold to plain letters (José → jose); names with no Latin letters fall back to the address.
+  const slug = (s) => str(s).normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 
   function existingIndex(existing) {
     const byEmail = new Set(), byKey = new Set(), byName = new Set();
@@ -137,16 +138,16 @@
       if (prev) {
         prev.threads += 1;
         if (last > prev.lastContact) Object.assign(prev, { lastContact: last, subject: subject || prev.subject, viewUrl: str(t.viewUrl) || prev.viewUrl });
-        if (!prev.name && from.name) prev.name = from.name;
+        if (!prev.name && from.name && !/@/.test(from.name)) prev.name = from.name;
         continue;
       }
-      const name = from.name || nameFromEmail(from.email);
+      const name = (from.name && !/@/.test(from.name) ? from.name : "") || nameFromEmail(from.email);
       const company = companyFromEmail(from.email);
       people.set(from.email, { name, email: from.email, company, type: typeFor(from.email, company), subject, lastContact: last, threads: 1, viewUrl: str(t.viewUrl) });
     }
     return [...people.values()]
       .map((c) => {
-        const key = slug((c.name || c.email) + " " + c.company);
+        const key = (slug(c.name) ? slug(c.name + " " + c.company) : "") || slug(c.email.replace(/@.*/, "") + " " + (c.company || domainOf(c.email)));
         const exists = idx.byEmail.has(c.email) || idx.byKey.has(key) || (!!c.name && idx.byName.has(c.name.toLowerCase()));
         return { ...c, key, exists };
       })
