@@ -26,11 +26,13 @@ _Updated 2026-10-22._
 - **Two views:** the default is radar only (scan, 0-100 scores with reasons, pipeline, criteria, watchlist). Resume intake (Apply, resume links, intake settings) and the Recruiters tab show only with `?full` (https://chaseholroyd.com/role-radar/?full), because recruiters judge AI-written resumes. The page reads `window.__RR_PUBLIC__`, which only the public build sets; Chase's live app never sets it and is unchanged. Tests cover both views.
 - **Demo data:** entirely made up (companies, people, jobs, comp floor), held in memory only. Never real applications or recruiters.
 - **Portfolio repoint (pending):** the portfolio thread is not in this project, so the intake (repoint "Try the demo" to `/role-radar/`, delete `demo/role-radar/` and its `make_demos.py` EDITS) went to Chase to pass along. Once it lands, add a dated line here.
+- 2026-10-23: the demo's Criteria tab gains an Alerts card (rules from the `alerts:` block, a live preview of what would ping). Portfolio copy can mention customizable alerts once this merges.
 - **Studio-wide status** (portfolio, domain, every demo, what's waiting on Chase): `STUDIO-STATUS.md` in the pm-tools repo
 - 2026-10-21: the portfolio home page lists Role Radar first, tagged "Live demo".
 - **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in the portfolio repo (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
 
 ## Done
+- 2026-10-23 (`claude/project-thread-7egldj`): customizable alerts. `criteria.yaml` gets an `alerts:` block (channels, quiet hours with tz, rules: `when` recruiter_email / status_change `to` / new_role `min_score` / follow_up_due, `level` loud/quiet/off, `remind_after_hours`; first match wins). `src/alerts.js` (normalize, evaluate, quiet hours, plain-sentence describe) is inlined in the demo build; the Criteria tab shows an Alerts card that updates live as the YAML is edited. Recruiter events only appear with the recruiter tools on, never in the public view. 102 tests.
 - 2026-10-22 recruiter-ready round 4: last in-repo P2s (one category chip on public cards, "Recruiters N due", plain-word Criteria summary, centered filter button). Nothing at P2 or above is left in this repo; what's left is the portfolio intake and Chase's https check. 92 tests.
 - 2026-10-22 recruiter-ready round 3: P2 polish (plain source names, folded filters on the public demo, one font in sentences, landmarks and headings with zero axe violations, js-yaml inlined in the public build, README links the live demo), README screenshots regenerated. 88 tests.
 - 2026-10-22 recruiter-ready round 2: demo "Sample posting" instead of example.com links, "Strong fit" chip wording, header numbers match the Watchlist, light-theme contrast at 4.5:1+, 44px touch targets on phones (RR-P1-2 to P1-6). 83 tests.
@@ -85,6 +87,7 @@ _Updated 2026-10-22._
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 
 ## Exact next step
+- Alerts PR: review and merge. Then point the private recruiter watch (outside this repo) at the live criteria's `alerts:` block so the rules Chase edits are the ones it follows. Decision to review: demo quiet hours are 22:00-07:00 with loud alerts held; set `loud_breaks_through: true` if recruiter pings should wake you. PR #18 also touches app/role-radar.html, so expect a small conflict.
 - PR #18: rebase onto main (conflicts in HANDOFF.md, app/role-radar.html, demo/mock-claude.js, demo/seed.json), re-run tests, merge once Chase says ok, then republish the live page with `posting.js`.
 - Recruiter-ready: merged. Confirm https://chaseholroyd.com/role-radar/ shows the intro and back link on a phone. Portfolio fixes (RR-P0-2, RR-P1-7, RR-P2-10) are in `recruiter-ready-intake.md` for Chase to paste into Product Studio.
 - Open https://chaseholroyd.com/role-radar/ and `?full` in a browser to confirm, then the portfolio repoint (see Portfolio / public presence).

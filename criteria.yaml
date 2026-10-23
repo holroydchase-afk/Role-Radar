@@ -176,6 +176,21 @@ scoring:
   digest_max_items: 8
   per_sector_cap: { fintech: 2, ai_tooling: 2, home_services: 1 }  # extras still saved, just not listed
 
+# ── Alerts: what pings your phone ────────────────────────────
+#  level: loud = every channel below, right away · quiet = one line in the summary · off
+#  when:  recruiter_email · status_change (to: [...]) · new_role (min_score) · follow_up_due
+#  The first rule that matches wins, so put the specific ones first.
+alerts:
+  channels: [push, thread]             # push = phone notification · thread = message with links · email = backup email
+  quiet_hours: { start: "22:00", end: "07:00", tz: America/Denver, loud_breaks_through: false }
+  rules:
+    - { id: recruiter, when: recruiter_email, level: loud, remind_after_hours: [4, 18] }
+    - { id: interview, when: status_change, to: [screen, interviewing, offer], level: loud }
+    - { id: rejection, when: status_change, to: [rejected], level: quiet }
+    - { id: dream_match, when: new_role, min_score: 85, level: loud }
+    - { id: good_match, when: new_role, min_score: 60, level: quiet }
+    - { id: follow_up, when: follow_up_due, level: quiet }
+
 # ── Where to look ────────────────────────────────────────────
 search:
   ziprecruiter_queries:                # remote, full-time, senior, salary ≥ floor, posted in the last day

@@ -61,6 +61,21 @@ test("digest preview re-ranks live as the criteria are edited", async () => {
   await page.close();
 });
 
+test("alerts preview lists the rules and updates live as the criteria are edited", async () => {
+  const { page, errors } = await openDemo();
+  await page.click("#tab-criteria");
+  const preview = () => page.locator("#alertsPreview").innerText();
+  assert.match(await preview(), /recruiter or hiring manager emails or replies: alert right away/);
+  assert.match(await preview(), /scoring 85\+: alert right away/);
+  const text = await page.locator("#critText").inputValue();
+  const edited = text.replace("min_score: 85, level: loud", "min_score: 70, level: off");
+  assert.notEqual(edited, text);
+  await page.locator("#critText").fill(edited);
+  await page.waitForFunction(() => /scoring 70\+: do nothing/.test(document.querySelector("#alertsPreview")?.textContent || ""));
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test("non-http links from scan data are not clickable", async () => {
   const html = buildDemo().replace("https://example.com/jobs/sunfield-utility-data", "javascript:alert(1)");
   const { page } = await openDemo({ html });
