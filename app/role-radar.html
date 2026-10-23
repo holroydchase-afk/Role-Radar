@@ -61,7 +61,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .health.low{border-color:var(--warn);background:var(--warn-soft)}
 .health .sum{margin:0;font-size:.9rem}.health .sum b{font-family:var(--f-mono);font-weight:500}
 .health .chips{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-size:.8rem;color:var(--muted)}
-.hchip{font:500 .78rem var(--f-body);padding:2px 9px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
+.hchip{font:500 .78rem var(--f-body);padding:2px 9px;border-radius:10px;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
 .hchip.bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}.hchip.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
 .hdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--line)}
 .hdot.green{background:var(--good)}.hdot.amber{background:var(--warn)}.hdot.red{background:var(--bad)}
@@ -197,8 +197,8 @@ details.more form{display:grid;gap:10px;padding-top:10px}
   <header>
     <h1>Role Radar</h1>
     <p class="lede" id="lede" hidden>A job-search radar I built for my own search. It reads job boards every weekday and scores each role 0–100 against criteria I edit, with the math on every card. Applying stays my own call.</p>
-    <span class="demo" id="demoNote" hidden>Demo data: made-up roles, recruiters and scores</span>
-    <p class="sub" id="demoTry" hidden>Try anything: changes stay in this tab and reset when you reload.</p>
+    <span class="demo" id="demoNote" hidden>Demo data</span>
+    <p class="sub" id="demoTry" hidden>Roles, recruiters and scores are made up. Try anything; it resets when you reload.</p>
     <p class="sub" id="scanLine">Remote Senior and Staff PM roles from company boards, ZipRecruiter, Himalayas and job alerts, checked every weekday morning.</p>
   </header>
 
@@ -271,7 +271,9 @@ function addBusinessDays(from,n){const d=new Date(from);let k=0;while(k<n){d.set
 // toast(message) or toast(message, {label, run}) for a one-tap action such as Undo (shown longer).
 function toast(m,action){const t=$("#toast");t.textContent=m;
   if(action){const b=document.createElement("button");b.type="button";b.className="toast-act";b.textContent=action.label;b.onclick=()=>{t.hidden=true;action.run();};t.append(" ",b);}
-  t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,action?6000:2200);}
+  t.hidden=false;clearTimeout(toast._t);toast._ms=action?6000:2200;toast._t=setTimeout(()=>t.hidden=true,toast._ms);}
+// Keep the toast (and its Undo) up while the pointer or keyboard focus is on it.
+const toastHold=()=>clearTimeout(toast._t), toastLetGo=()=>{clearTimeout(toast._t);toast._t=setTimeout(()=>$("#toast").hidden=true,toast._ms||2200);};
 const st=j=>j.status||"new";
 const tagsOf=j=>Array.isArray(j.tags)?j.tags:(j.tags?String(j.tags).split(",").map(s=>s.trim()).filter(Boolean):[]);
 // Products the owner is building (meta/filters.products). Conflicts are flags only: nothing is hidden or skipped.
@@ -733,7 +735,9 @@ function renderCriteria(){
   const p=parseSpec(text);
   const when=criteria&&criteria.updatedAt?new Date(criteria.updatedAt).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
   if(!text) return `<div class="empty"><strong>No criteria yet</strong><span>Once a criteria spec is saved, the morning scan reads it before every run.</span></div>`;
-  return `<div class="crit">${critSummary(p.data)}
+  // While a draft is broken or was blocked, the summary keeps showing what is saved, so nothing looks wiped.
+  const shown=critErr||p.err?parseSpec((criteria&&criteria.spec)||"").data:p.data;
+  return `<div class="crit">${critSummary(shown)}
     <form class="ccard" id="critForm"><h2>criteria.yaml</h2>
       <p class="sub" style="margin:0">The scan reads this before every run. Change a weight, add a company to <span class="mono">hard_exclude</span>, or move the comp floor, then save.${when?` Last saved ${esc(when)}.`:""}</p>
       ${critErr||p.err?`<p class="err" id="critErr" role="alert" style="scroll-margin-top:16px">${esc(critErr||p.err)}</p>`:""}
@@ -778,13 +782,16 @@ function patchFor(j,next){
 }
 async function setStatus(j,next,extra,opts){
   if(!db) return;
-  const prev={status:st(j),statusAt:j.statusAt||""};
-  try{await db.doc("jobs/"+j._id).update({...patchFor(j,next),...(extra||{})});}
+  const patch={...patchFor(j,next),...(extra||{})};
+  // Undo puts back every field this change touched (appliedAt, followUpDue, skipReason...), not just the status.
+  const prev=Object.fromEntries(Object.keys(patch).map(k=>[k,k==="status"?st(j):(j[k]??"")]));
+  try{await db.doc("jobs/"+j._id).update(patch);}
   catch(err){toast("Couldn't save that change. Try again in a moment.");return;}
   if(!(opts&&opts.undo)){ toast("Marked "+(STATUS_LABEL[next]||next).toLowerCase()); return; }
-  toast("Moved to "+(STATUS_LABEL[next]||next),{label:"Undo",run:async()=>{try{await db.doc("jobs/"+j._id).update(prev); toast("Back in "+(STATUS_LABEL[prev.status]||prev.status));}catch(_){toast("Couldn't undo that.");}}});
+  toast("Moved to "+(STATUS_LABEL[next]||next),{label:"Undo",run:async()=>{try{await db.doc("jobs/"+j._id).update(prev); toast("Back in "+(STATUS_LABEL[prev.status]||prev.status)); render(); focusCard(j._id);}catch(_){toast("Couldn't undo that.");}}});
 }
 // After a card leaves the list, put focus on the card that took its place so keyboard users don't land at the top.
+function focusCard(id){ requestAnimationFrame(()=>{ const sel=document.getElementById("st-"+id); const c=sel&&sel.closest("article.job"); const h=c&&c.querySelector("h2 a, h2"); if(h){ if(!h.matches("a")) h.tabIndex=-1; h.focus(); } }); }
 function focusCardAfter(i){ requestAnimationFrame(()=>{ const cards=[...document.querySelectorAll("#view article.job")]; const c=cards[Math.min(i,cards.length-1)]; const h=c&&(c.querySelector("h2 a, h2")); if(h){ if(!h.matches("a")) h.tabIndex=-1; h.focus({preventScroll:false}); } }); }
 async function markViewed(j){
   if(!db||!j||st(j)!=="new") return;
@@ -924,7 +931,10 @@ document.addEventListener("change",async e=>{
   const s=e.target.closest("[data-setstatus]");
   if(s){ const j=jobs.find(x=>x._id===s.dataset.setstatus); if(!j) return;
     if(s.value==="skipped"&&!j.skipReason){ skipOpen=j._id; render(); return; }
-    await setStatus(j,s.value); return; }
+    const i=[...document.querySelectorAll("#view article.job")].indexOf(s.closest("article.job")), id=j._id;
+    await setStatus(j,s.value,null,{undo:true}); render();
+    // Still listed (All roles): stay on its menu. Moved off this tab: go to the card that took its place.
+    requestAnimationFrame(()=>{ const again=document.getElementById("st-"+id); if(again) again.focus(); else focusCardAfter(Math.max(0,i)); }); return; }
   const f=e.target.closest("#fbar [data-v]");
   if(f){ view[f.dataset.v]=f.value; saveView(); render(); }
 });
@@ -993,6 +1003,7 @@ document.addEventListener("keydown",e=>{
   e.preventDefault(); const t=e.target, a=t.selectionStart; t.setRangeText("  ",a,t.selectionEnd,"end"); critDraft=t.value;
 });
 
+{ const t=$("#toast"); t.addEventListener("mouseenter",toastHold); t.addEventListener("mouseleave",toastLetGo); t.addEventListener("focusin",toastHold); t.addEventListener("focusout",toastLetGo); }
 if(window.__RR_DEMO__){ $("#demoNote").hidden=false; $("#demoTry").hidden=false; }
 if(window.__RR_SHOWCASE__){ $("#showcase").hidden=false; $("#lede").hidden=false; document.body.classList.add("showcase-mode"); }
 render();

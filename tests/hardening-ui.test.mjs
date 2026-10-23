@@ -78,9 +78,10 @@ test("RR-UX-5 the demo's preview says its description is a sample, not word for 
 
 test("RR-UX-6/7 the demo label says what's made up and that changes reset on reload", async () => {
   const { page } = await openPublic();
-  assert.match(await page.locator("#demoNote").textContent(), /made-up roles, recruiters and scores/);
+  assert.ok((await page.locator("#demoNote").textContent()).length <= 28, "chip stays on one line at 320px");
   assert.ok(await page.locator("#demoTry").isVisible());
-  assert.match(await page.locator("#demoTry").innerText(), /reset when you reload/);
+  assert.match(await page.locator("#demoTry").innerText(), /roles, recruiters and scores are made up/i);
+  assert.match(await page.locator("#demoTry").innerText(), /resets when you reload/);
   await page.click("#tab-criteria");
   await page.click("#critForm button[type=submit]");
   assert.match(await toastText(page), /for this visit/);
@@ -144,5 +145,62 @@ test("RR-H-7 two recruiters added by hand with non-Latin names at one company ar
     await page.waitForFunction(([n]) => document.querySelector(".list")?.textContent.includes(n), [name]);
   }
   assert.equal(await page.locator(".rec").count(), n0 + 2);
+  await page.close();
+});
+
+test("RR-H-8 Undo after Skip with a reason puts the role back with no skip reason left behind", async () => {
+  const { page } = await openDemo();
+  const first = page.locator("article.job").first();
+  const title = await first.locator("h2").innerText();
+  await first.locator("button[data-quick=skipped]").click();
+  await page.locator("[data-skipwhy]").first().click();
+  await page.click("#toast button", { timeout: 2000 });
+  await page.waitForFunction((t) => [...document.querySelectorAll("article.job h2")].some((h) => h.textContent === t), title);
+  // Skip it again from the status menu: an old reason left on the record would show up as "Skipped: …".
+  await page.click("#tab-all");
+  const card = page.locator("article.job", { hasText: title });
+  await card.locator("select[id^=st-]").selectOption("skipped");
+  await page.waitForTimeout(200);
+  assert.doesNotMatch(await page.locator("article.job", { hasText: title }).innerText(), /Skipped:/);
+  await page.close();
+});
+
+test("RR-R2-1/2 the Status menu also offers Undo, and Undo puts focus back on the restored card", async () => {
+  const { page } = await openDemo();
+  const first = page.locator("article.job").first();
+  const title = await first.locator("h2").innerText();
+  await first.locator("select[id^=st-]").selectOption("applying");
+  assert.match(await toastText(page), /Moved to Applying/);
+  assert.equal(await page.evaluate(() => !!document.activeElement.closest("article.job")), true, "focus stays in the list");
+  await page.click("#toast button", { timeout: 2000 });
+  await page.waitForFunction((t) => document.activeElement && document.activeElement.closest("article.job")?.querySelector("h2")?.textContent === t, title);
+  await page.close();
+});
+
+test("RR-R2-2 the Undo toast stays while the pointer or focus is on it", async () => {
+  const { page } = await openDemo();
+  await page.locator("article.job").first().locator("button[data-quick=saved]").click();
+  await page.hover("#toast button");
+  await page.waitForTimeout(6500);
+  assert.ok(await page.locator("#toast").isVisible());
+  await page.close();
+});
+
+test("RR-R2-3 after a blocked save the summary still shows the saved criteria", async () => {
+  const { page } = await openDemo();
+  await page.click("#tab-criteria");
+  const glance = await page.locator("div.ccard", { hasText: "At a glance" }).innerText();
+  await page.locator("#critText").fill("foo: 1\n");
+  await page.click("#critForm button[type=submit]");
+  assert.equal(await page.locator("div.ccard", { hasText: "At a glance" }).innerText(), glance);
+  assert.doesNotMatch(await page.locator("#view").innerText(), /No sectors yet/);
+  await page.close();
+});
+
+test("RR-R2-6 long watchlist change notes don't sit in a fully rounded pill", async () => {
+  const { page } = await openPublic({ width: 390, height: 844 });
+  await page.click("#tab-watch");
+  const r = await page.locator(".hchip", { hasText: "moved its job board" }).evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius));
+  assert.ok(r <= 12, "radius " + r);
   await page.close();
 });
