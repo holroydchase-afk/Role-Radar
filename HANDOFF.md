@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-10-23 (PR #18 merged, live page republished)
+Updated: 2026-10-23 (night shift: hardening round 1 in progress)
 
 ## Planning IDs (Oct 21, 2026)
 The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1.1.1`; product code `RR` across products). Old labels stay in git history and branch names. New work uses the new IDs.
@@ -31,6 +31,7 @@ _Updated 2026-10-22._
 - **Keep in sync:** when a change here alters what the portfolio page or demo shows (features, numbers, screenshots, privacy claims), tell the portfolio thread ("Portfolio research and upgrade plan") or update the page in the portfolio repo (`tools/build.py`). Any portfolio change that touches this product adds a dated line here.
 
 ## Done
+- 2026-10-23 night shift hardening, round 1 (branch `claude/project-thread-vxgzv0`, from main): `tests/hardening.test.mjs` RR-H-1 to RR-H-6, each red first, then fixed. A "401(k)" in a comp string no longer reads as a $401K salary (false stretch bonus); an empty comp object `{min:null,max:null}` no longer fails the comp floor and drops the role; a broken %-escape in a posting link no longer throws; Lever lists without a heading no longer add an empty heading; Gmail suggestions always get a non-empty, unique doc key (names with no Latin letters used to map to `recruiters/` and overwrite each other; accents now fold, José → jose); a sender whose display name is their address gets a name from the address. `npm run review:shots` now also covers the private page (normal mode, demo data), the preview panel and recruiter details. 112 tests, green 3x.
 - 2026-10-22 recruiter-ready round 4: last in-repo P2s (one category chip on public cards, "Recruiters N due", plain-word Criteria summary, centered filter button). Nothing at P2 or above is left in this repo; what's left is the portfolio intake and Chase's https check. 92 tests.
 - 2026-10-22 recruiter-ready round 3: P2 polish (plain source names, folded filters on the public demo, one font in sentences, landmarks and headings with zero axe violations, js-yaml inlined in the public build, README links the live demo), README screenshots regenerated. 88 tests.
 - 2026-10-22 recruiter-ready round 2: demo "Sample posting" instead of example.com links, "Strong fit" chip wording, header numbers match the Watchlist, light-theme contrast at 4.5:1+, 44px touch targets on phones (RR-P1-2 to P1-6). 83 tests.
@@ -86,6 +87,7 @@ _Updated 2026-10-22._
   - 8 unit tests, 5 browser tests (desktop, phone sheet, sanitizing, unreachable board, other sources); 68 passing. New screenshots `preview.png`, `phone-preview.png` (`npm run screenshots -- preview phone-preview`).
 
 ## In progress
+- Night shift 2026-10-23 (hardening): round 1 pushed (pure-module edge cases). UX sweep of every screen (public, `?full`, private; phone and laptop; light and dark) running next; P0 to P2 fixes follow on this branch.
 - Power hour (Chase, 2026-10-22): PRs #20-#25 (recruiter-ready) and #16 (dream-role anchors, 93/93 tests on the merge) are merged to main. PR #18 (job description preview) merged 2026-10-23 after bringing main in; live page republished with `posting.js` the same day.
 - Public demo: merged (PR #17), repo renamed to `role-radar`, redeployed, Pages green after #25. Waiting on a phone check of the live URL and https, and on the portfolio repoint (intake with Chase).
 

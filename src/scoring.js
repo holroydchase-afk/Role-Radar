@@ -38,12 +38,15 @@
   /** "$170K–$205K", "$160,000 - $180,000", "170k" → {min, max} in dollars, or null. */
   function parseComp(comp) {
     if (comp && typeof comp === "object") {
-      const min = Number(comp.min), max = Number(comp.max);
+      // null, "" and 0 mean "not stated", not $0.
+      const num = (v) => (v == null || v === "" ? NaN : Number(v) > 0 ? Number(v) : NaN);
+      const min = num(comp.min), max = num(comp.max);
       if (isFinite(min) || isFinite(max)) return { min: isFinite(min) ? min : max, max: isFinite(max) ? max : min };
       return null;
     }
     const nums = [];
-    String(comp == null ? "" : comp).replace(/\$?\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*([kKmM]?)/g, (_, n, unit) => {
+    // A 401(k) is a retirement plan, not a $401K salary.
+    String(comp == null ? "" : comp).replace(/\b401\s*\(?k\)?/gi, " ").replace(/\$?\s*(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*([kKmM]?)/g, (_, n, unit) => {
       let v = Number(n.replace(/,/g, ""));
       if (/k/i.test(unit)) v *= 1e3;
       else if (/m/i.test(unit)) v *= 1e6;
