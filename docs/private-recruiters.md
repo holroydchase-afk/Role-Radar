@@ -23,7 +23,7 @@ The routine brief asked for "a private backend, the shared database as a read-fo
 
 Two layers:
 
-1. **The database rule (the lock).** `app/capabilities.json` is the publish manifest: `db.rules` makes `recruiters` owner-only, and `mcp` keeps Gmail read-only (`search_threads`, `batch_get_threads`). "Owner" means the artifact's own owner, not someone granted Editor or Owner in the share menu. For an artifact Claude made inside a project, it means the members who can post in that project. This project is private to Chase, so that's Chase.
+1. **The database rule (the lock).** `app/capabilities.json` is the publish manifest: `db.rules` makes `recruiters` owner-only, and `mcp` keeps Gmail read-only (`search_threads`, `batch_get_threads`). "Owner" means the artifact's own owner, not someone granted Editor or Owner in the share menu. For an artifact Claude made inside a project, it means every member who can post in that project. The project is believed to be private to Chase, so that would be Chase alone. This is not verified from the repo: deploy step 2 checks it.
 2. **The page (the second layer).** `src/recruiter-store.js` is the only code that reads or writes recruiters. On load it asks the platform `user.isOwner()`:
    - `owner`: Recruiters tab, Gmail import, add and edit, all as before.
    - `viewer` (shared with someone else): no Recruiters tab, no recruiter events in the Alerts preview, no recruiter count in the header. The page never asks the database for recruiters.
@@ -42,7 +42,7 @@ Two layers:
 - In the browser, a shared viewer (`?as=viewer` on the demo build) sees no recruiter name, note or email on any tab, has no Recruiters tab (a remembered one falls back to New), and the page never asks the database for recruiters.
 - The demo database enforces the same rule (empty read, `invalid_argument` on write), so the demo behaves like the platform.
 
-What the repo can't prove: that the live platform enforces the rule. That check is step 4 of the deploy checklist, run against the live artifact.
+What the repo can't prove: that the live platform enforces the rule. That check is step 5 of the deploy checklist, run against the live artifact.
 
 ## Not covered (scheduled)
 
@@ -54,10 +54,11 @@ What the repo can't prove: that the live platform enforces the rule. That check 
 A Claude session with the Artifact and ArtifactData tools does all of this once Chase replies `deploy`:
 
 1. Merge order: this PR, then the stacked ones. Deploy from `main` after the merge, or from this branch if Chase says deploy first.
-2. Republish the live page (same URL, from project memory) with `app/role-radar.html` and supporting files `scoring.js`, `gmail-import.js`, `posting.js`, `alerts.js` and **`recruiter-store.js`** (new), all from `src/`, plus `capabilities` = the contents of `app/capabilities.json`. Don't change `contract`.
-3. Owner check: `ArtifactData list recruiters` as Chase returns the same count as before the republish (note the count first).
-4. Rule check: `ArtifactData list recruiters` with a lower `as_level` (`view`, then `interact`, then `admin`) returns nothing. If any returns rows, republish the previous version's capabilities and stop.
-5. Open the page as Chase: the Recruiters tab, *Show details* and *Import from Gmail* work. One recruiter edit saves.
-6. Log the version number and the date in HANDOFF.md ("live page republished with private recruiters").
+2. Owner check before publishing: open the live artifact's share menu (or ask Chase for a screenshot of it) and confirm the owner row is Chase alone. If a project or channel owns it, everyone who can post there counts as owner and would see recruiters; stop and tell Chase. Also read the live artifact's current capabilities and compare them with `app/capabilities.json`. They should differ only by the new rule (today: db + read-only Gmail).
+3. Republish the live page (same URL, from project memory) with `app/role-radar.html` and supporting files `scoring.js`, `gmail-import.js`, `posting.js`, `alerts.js` and **`recruiter-store.js`** (new), all from `src/`, plus `capabilities` = the contents of `app/capabilities.json`. Don't change `contract`.
+4. Owner check: `ArtifactData list recruiters` as Chase returns the same count as before the republish (note the count first).
+5. Rule check: `ArtifactData list recruiters` with a lower `as_level` (`view`, then `interact`, then `admin`) returns nothing. A `get` of one known recruiter doc at `interact` and `admin` reads as non-existent, and an `update` at those levels is refused. If any check shows data, **don't** roll the capabilities back: the old defaults are more open. Keep the rule, make sure the live page isn't shared with anyone, and tell Chase.
+6. Open the page as Chase: the Recruiters tab, *Show details* and *Import from Gmail* work. One recruiter edit saves.
+7. Update `docs/SETUP.md` so it says recruiters are owner-only and jobs and notes are not. Log the version number and the date in HANDOFF.md ("live page republished with private recruiters").
 
-No data moves, so there is nothing to roll back except the republish itself (step 4's fallback).
+No data moves, so nothing needs a rollback. If step 5 fails, the fix is to unshare the page, not to restore the old rules.
