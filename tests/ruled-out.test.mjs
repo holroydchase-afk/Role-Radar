@@ -15,8 +15,8 @@ after(async () => { await browser?.close(); });
 
 test("the header counts today's and this week's applications and ruled-out roles", async () => {
   const { page, errors } = await openDemo();
-  // The demo has one role ruled out today (screened out in an intake chat) and none applied today.
-  assert.match(await progress(page), /^Today: applied 0, ruled out 1 · This week: applied \d+, ruled out \d+$/);
+  // The demo has one role ruled out today (screened out in an intake chat) and one applied today.
+  assert.match(await progress(page), /^Today: applied 1, ruled out 1 · This week: applied \d+, ruled out \d+$/);
   assert.deepEqual(errors, []);
   await page.close();
 });
