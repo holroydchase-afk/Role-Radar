@@ -114,6 +114,9 @@ dialog .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-
 .skipwhy input{flex:1 1 100%;font:inherit;font-size:.88rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 9px;min-width:0}
 /* Progress line and the Ruled out tab: eliminated roles count as progress next to applications. */
 .progress b{color:var(--ink);font-weight:600}
+/* Phones, public demo: the Ruled out tab carries the count, so the first role stays on the first screen. */
+@media(max-width:600px){.showcase-mode #progress{display:none}}
+.gmlist a{color:var(--accent)}
 .ruled{display:grid;gap:14px}
 .ruled .sum{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:grid;gap:6px}
 .ruled .sum p{margin:0}
@@ -236,6 +239,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 <script src="gmail-import.js"></script>
 <script src="posting.js"></script>
 <script src="alerts.js"></script>
+<script src="recruiter-store.js"></script>
 <script>
 // The public demo (chaseholroyd.com/role-radar/) is radar only: scan, score, pipeline. Resume intake, intake
 // settings and the Recruiters tab show only with ?full. The demo build sets __RR_PUBLIC__; the live app never does.
@@ -262,6 +266,12 @@ const DEF_VIEW={q:"",status:"",lane:"",fit:"",values:"",culture:"",source:"",tag
 let mcp=null, mcpState="checking", gm={state:"idle",items:[],picked:new Set(),msg:""}, gs={state:"idle",items:[],picked:new Set(),msg:""};
 const GM=window.RoleRadarGmail||null;
 let recruiters=[], editRec=null, filtersOpen=false;
+// Recruiters are private to the page's owner: every read and write goes through this store, and the database
+// rule in app/capabilities.json enforces it. Viewers the page is shared with get no tab and no data.
+const RS=window.RoleRadarRecruiters||null;
+let recStore=null, savedTab=null;
+const showPeople=()=>TOOLS&&!!recStore&&recStore.visible;
+const tabList=()=>TABS.filter(t=>t.id!=="people"||showPeople());
 // Privacy: recruiter details are hidden on screen until this viewer chooses to show them.
 let recPrivate=true;
 try{recPrivate=localStorage.getItem("rr-rec-private")!=="0";}catch(_){}
@@ -272,7 +282,7 @@ const PV=window.RoleRadarPosting||null;
 // Preview panel: which role is open, and descriptions loaded this visit (never saved).
 let preview=null, previewFrom=null; const postings=new Map();
 let tab="inbox", jobs=[], companies=[], filters=null, scan=null, db=null, view={...DEF_VIEW}, openMore=new Set(), skipOpen=null;
-try{const t=localStorage.getItem("rr-tab"); if(TABS.some(x=>x.id===t)) tab=t; const v=JSON.parse(localStorage.getItem("rr-view")||"null"); if(v) view={...DEF_VIEW,...v};}catch(e){}
+try{const t=localStorage.getItem("rr-tab"); if(t==="people"&&TOOLS) savedTab=t; else if(TABS.some(x=>x.id===t)) tab=t; const v=JSON.parse(localStorage.getItem("rr-view")||"null"); if(v) view={...DEF_VIEW,...v};}catch(e){}
 const saveView=()=>{try{localStorage.setItem("rr-view",JSON.stringify(view))}catch(_){}};
 
 const $=s=>document.querySelector(s);
@@ -292,6 +302,8 @@ const toastHold=()=>clearTimeout(toast._t), toastLetGo=()=>{clearTimeout(toast._
 const st=j=>j.status||"new";
 // Ruled out = skipped by the owner, here or in an intake chat (source "intake"). Counted as progress next to applications.
 const ruledAt=j=>j.skippedAt||j.statusAt||"";
+// Sort key for ruled-out dates: date-only values count as local noon, like dayOf, so they sort among full timestamps.
+const ruledTime=j=>{const s=ruledAt(j); if(!s) return -Infinity; const d=new Date(String(s).length===10?s+"T12:00:00":s); return isNaN(d)?-Infinity:d.getTime();};
 const dayOf=s=>{if(!s)return"";const d=new Date(String(s).length===10?s+"T12:00:00":s);return isNaN(d)?"":d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
 // Monday of this week, local time.
 const weekStart=()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return dayOf(d.toISOString());};
@@ -343,7 +355,8 @@ function counts(){
 }
 function renderTabs(){
   const c=counts();
-  $("#tabs").innerHTML=TABS.map(t=>`<button role="tab" id="tab-${t.id}" aria-selected="${t.id===tab}" data-tab="${t.id}">${t.label}${c[t.id]!==""?` <span class="n">${c[t.id]}${t.id==="people"?" due":""}</span>`:""}</button>`).join("");
+  if(tab==="people"&&!showPeople()) tab="inbox";
+  $("#tabs").innerHTML=tabList().map(t=>`<button role="tab" id="tab-${t.id}" aria-selected="${t.id===tab}" data-tab="${t.id}">${t.label}${c[t.id]!==""?` <span class="n">${c[t.id]}${t.id==="people"?" due":""}</span>`:""}</button>`).join("");
 }
 // "greenhouse:orbitline" -> "Greenhouse"
 const boardName=v=>{const a=String(v||"").split(":")[0].toLowerCase(); return (PV&&PV.ATS_LABEL[a])||{workday:"Workday",ashby:"Ashby"}[a]||a||"?";};
@@ -635,6 +648,7 @@ function critSummary(d){
       <div><small>Priority-sector floor</small><b>${money(c.priority_sector_floor_usd)}</b></div>
       <div><small>Min score to add</small><b>${esc(sc.min_score_to_add??"—")}</b></div>
       <div><small>Digest size</small><b>${esc(sc.digest_max_items??"—")}</b></div>
+      ${AL?(()=>{const rs=AL.normalize(d).rules, n=l=>rs.filter(r=>r.level===l).length;return `<div><small>Alerts</small><b><a href="#alerts">${n("loud")} loud, ${n("quiet")} quiet (see Alerts)</a></b></div>`;})():""}
     </div></div>
     <div class="ccard"><h2>Sector weights</h2><div>${secs.map(s=>`<div class="sec"><span class="lbl">${esc(s.label||s.id)}</span>${pip(Number(s.weight)||0)}${Array.isArray(s.examples)&&s.examples.length?`<span class="ex">${listTxt(s.examples.slice(0,6))}</span>`:""}</div>`).join("")||`<span class="hint">No sectors yet.</span>`}</div></div>
     ${xs.length?`<div class="ccard"><h2>Never show</h2><div class="tags">${xs.map(x=>`<span class="xchip">${esc(x)}</span>`).join("")}</div></div>`:""}
@@ -758,7 +772,7 @@ async function gmAdd(){
   if(!db||!gm.picked.size) return;
   const picks=gm.items.filter(c=>gm.picked.has(c.key)&&!c.exists), now=new Date().toISOString();
   let ok=0;
-  for(const c of picks){ try{ await db.doc("recruiters/"+c.key).set(GM.recruiterDoc(c,now)); ok++; c.exists=true; gm.picked.delete(c.key);}catch(_){} }
+  for(const c of picks){ try{ await recStore.add(c.key,GM.recruiterDoc(c,now)); ok++; c.exists=true; gm.picked.delete(c.key);}catch(_){} }
   toast(ok===picks.length?`Added ${ok} ${ok===1?"recruiter":"recruiters"}`:`Added ${ok} of ${picks.length}. Try the rest again.`);
   render();
 }
@@ -775,9 +789,9 @@ function gmailStatus(){
   else if(gs.state==="done"){
     const n=gs.picked.size;
     body=gs.items.length?`<p class="hint">${gs.items.length} ${gs.items.length===1?"role has":"roles have"} news in Gmail. Untick anything that's wrong, then update the rest. The status date is the email's date.</p>
-      <ul class="gmlist">${gs.items.map(u=>{const url=safeUrl(u.viewUrl);return `<li><label><input type="checkbox" data-gspick="${esc(u.key)}"${gs.picked.has(u.key)?" checked":""}>
+      <ul class="gmlist">${gs.items.map(u=>{const sample=isSampleUrl(u.viewUrl), url=sample?"":safeUrl(u.viewUrl);return `<li><label><input type="checkbox" data-gspick="${esc(u.key)}"${gs.picked.has(u.key)?" checked":""}>
         <span><b>${esc(u.company)}</b> · ${esc(u.title)} <span class="chip st st-${esc(u.from)}">${esc(STATUS_LABEL[u.from]||u.from)}</span> → <span class="chip st st-${esc(u.to)}">${esc(STATUS_LABEL[u.to]||u.to)}</span>
-        <span class="hint">Email <span class="mono">${fmtDate(u.date)}</span>${u.subject?` · ${esc(u.subject)}`:""}${url?` · <a href="${esc(url)}" target="_blank" rel="noopener">Open email</a>`:""}</span></span></label></li>`;}).join("")}</ul>
+        <span class="hint">Email <span class="mono">${fmtDate(u.date)}</span>${u.subject?` · ${esc(u.subject)}`:""}${url?` · <a href="${esc(url)}" target="_blank" rel="noopener">Open email</a>`:sample?" · Sample email":""}</span></span></label></li>`;}).join("")}</ul>
       <div class="gmfoot"><button class="primary" type="button" id="gsApply"${n?"":" disabled"}>Update ${n} ${n===1?"role":"roles"}</button><button class="btn" type="button" id="gsFind">Check again</button></div>`
       :`<p class="hint">No new confirmations, interview invites, rejections or offers for the ${pipeN} ${pipeN===1?"role":"roles"} in your pipeline.</p><button class="btn" type="button" id="gsFind">Check again</button>`;
   }
@@ -827,7 +841,7 @@ function renderCriteria(){
       <div class="ctl"><button class="primary" type="submit">Save criteria</button>${critDraft!==null?`<button class="btn" type="button" id="critReset">Discard changes</button>`:""}</div>
     </form>
     <div class="ccard"><h2>Digest preview</h2><p class="sub" style="margin:0">How tomorrow's digest would rank the roles in New with the criteria above. Edit a weight and watch it change.</p><div id="digestPreview">${digestPreview(p.data)}</div></div>
-    <div class="ccard alerts"><h2>Alerts</h2><p class="sub" style="margin:0">What pings your phone, set by the <span class="mono">alerts</span> block above. Change a level or a score and watch this change.</p><div id="alertsPreview">${alertsPreview(p.data)}</div></div></div>`;
+    <div class="ccard alerts" id="alerts"><h2>Alerts</h2><p class="sub" style="margin:0">What pings your phone, set by the <span class="mono">alerts</span> block above. Change a level or a score and watch this change.</p><div id="alertsPreview">${alertsPreview(p.data)}</div></div></div>`;
 }
 // Events the alert rules would see in the data on this page: new roles (with score), status moves, due follow-ups, recent recruiter contact.
 function alertEvents(spec){
@@ -841,15 +855,24 @@ function alertEvents(spec){
   if(TOOLS) recruiters.forEach(r=>{const d=daysSince(r.lastContact); if(d!==null&&d<=14) ev.push({type:"recruiter_email",label:`${recPrivate?initials(r.name):r.name||"Recruiter"}${r.company?" · "+r.company:""}`,at:r.lastContact});});
   return ev;
 }
+// Plain words for the Alerts card: channel codes and rule types as a person would say them.
+const CHANNEL_WORDS={push:"phone notification",thread:"the chat thread",email:"email"};
+const alertWhat=x=>x.rule.when==="status_change"?"Moved to "+(STATUS_LABEL[x.event.to]||x.event.to||"a new status"):({new_role:"New role",recruiter_email:"Recruiter email",follow_up_due:"Follow-up due"})[x.rule.when]||"Alert";
+// The demo's alert preview runs at 9:00 in the spec's time zone, so it reads the same whenever it's opened.
+function demoClock(tz){
+  const now=new Date();
+  try{ const [h,m]=new Intl.DateTimeFormat("en-US",{timeZone:tz||undefined,hour:"numeric",minute:"numeric",hourCycle:"h23"}).format(now).split(":").map(Number); return new Date(now.getTime()-((h-9)*60+m)*60000); }
+  catch(_){ return now; }
+}
 function alertsPreview(spec){
   if(!AL||!spec) return `<p class="hint">Preview needs a valid spec.</p>`;
   const cfg=AL.normalize(spec), q=cfg.quiet_hours;
   const rules=cfg.rules.length?`<ul class="arules">${cfg.rules.map(r=>`<li><span class="lvl ${r.level}">${r.level}</span><span>${esc(AL.describe(r))}</span></li>`).join("")}</ul>`:`<p class="hint">No rules, so nothing alerts.</p>`;
-  const how=`<p class="hint">Loud alerts go to: ${cfg.channels.map(esc).join(", ")}.${q?` Quiet hours ${AL.clock(q.start)}–${AL.clock(q.end)}${q.tz?" "+esc(q.tz):""}: ${q.loud_breaks_through?"loud alerts still come through, quiet ones wait":"everything waits until morning"}.`:""}</p>`;
-  const out=AL.evaluate(alertEvents(spec),spec,new Date());
+  const how=`<p class="hint">Loud alerts go to: ${cfg.channels.map(c=>esc(CHANNEL_WORDS[c]||c)).join(", ")}.${q?` Quiet hours ${AL.clock(q.start)}–${AL.clock(q.end)}${q.tz?" "+esc(q.tz):""}: ${q.loud_breaks_through?"loud alerts still come through, quiet ones wait":"everything waits until morning"}.`:""}</p>`;
+  const out=AL.evaluate(alertEvents(spec),spec,window.__RR_DEMO__?demoClock(q&&q.tz):new Date());
   const loud=out.filter(x=>x.level==="loud"), quiet=out.filter(x=>x.level==="quiet");
   const now=out.length?`<p class="sub" style="margin:.6rem 0 .2rem"><strong>With the roles on this page:</strong> ${loud.length} loud, ${quiet.length} for the summary.</p>`
-    +(loud.length?`<ol class="dig">${loud.slice(0,6).map(x=>`<li><span class="lvl loud">ping</span><span>${esc(x.event.label)}</span><span class="sub2">${esc(x.rule.id)}${x.event.score!=null?" · score "+x.event.score:""}${x.held?" · held for quiet hours":""}</span></li>`).join("")}</ol>`:"")
+    +(loud.length?`<ol class="dig">${loud.slice(0,6).map(x=>`<li><span class="lvl loud">ping</span><span>${esc(x.event.label)}</span><span class="sub2">${esc(alertWhat(x))}${x.event.score!=null?" · score "+x.event.score:""}${x.held?" · held for quiet hours":""}</span></li>`).join("")}</ol>`:"")
     :`<p class="hint">Nothing on this page would alert right now.</p>`;
   return rules+how+now;
 }
@@ -872,7 +895,7 @@ function renderProgress(){
 }
 // Ruled out: every role the owner eliminated, newest first, grouped by day, with the reason.
 function renderRuled(){
-  const list=jobs.filter(j=>st(j)==="skipped").sort((a,b)=>String(ruledAt(b)).localeCompare(String(ruledAt(a))));
+  const list=jobs.filter(j=>st(j)==="skipped").sort((a,b)=>(ruledTime(b)-ruledTime(a))||0);
   if(!list.length) return `<div class="empty"><strong>Nothing ruled out yet</strong><span>Skip a role and pick a reason, and it's listed and counted here.${TOOLS?" Roles screened out in an intake chat land here too.":""}</span></div>`;
   const p=progressOf(jobs), reasons={};
   list.forEach(j=>{const r=j.skipReason||"No reason given"; reasons[r]=(reasons[r]||0)+1;});
@@ -958,7 +981,7 @@ function renderPreview(bodyOnly){
   const open=url?`<a class="pv-open" href="${esc(url)}" target="_blank" rel="noopener">Open posting ↗</a>`:"";
   const msg=(h,t)=>`<div class="pv-msg"><strong>${h}</strong><span>${t}</span>${open||`<span>${sample?"This is a made-up role, so there's no real posting.":"No posting link is saved for this role."}</span>`}</div>`;
   const srcName=SOURCE_LABEL[String(j.source||j.ats||"").toLowerCase()]||esc(j.source||j.ats||"this source");
-  const body=p.state==="ok"?`<div class="pv-body" id="pvBody"></div><p class="pv-src">${window.__RR_DEMO__?`Sample description written for this demo. On the live page this loads word for word from ${esc(ats||"the company")}'s public job board.`:`Word for word from ${esc(ats)}'s public job board. Nothing is saved.`}</p>`
+  const body=p.state==="ok"?`<p class="pv-src">${window.__RR_DEMO__?`Sample description written for this demo. On the live page this loads word for word from ${esc(ats||"the company")}'s public job board.`:`Word for word from ${esc(ats)}'s public job board. Nothing is saved.`}</p><div class="pv-body" id="pvBody"></div>`
     :p.state==="loading"?`<p class="pv-src" role="status">Loading the description from ${esc(ats||"the job board")}…</p>`
     :p.state==="gone"?msg("This posting isn't on the board anymore",`${esc(ats)} no longer lists it, so it may be closed. The original link might still work.`)
     :p.state==="error"?msg("Couldn't load the description",`${esc(ats)} didn't answer from this page. Open the posting to read it there.`)
@@ -1024,7 +1047,7 @@ document.addEventListener("click",async e=>{
   if(e.target.id==="applyCopy"){ toast(await copyText($("#applyText").value)?"Copied":"Select the text and copy it"); return; }
   if(e.target.id==="applyClose"){ const d=$("#applyDlg"); try{d.close();}catch(_){d.removeAttribute("open");} return; }
   const rd=e.target.closest("[data-recdone]");
-  if(rd&&db){ try{await db.doc("recruiters/"+rd.dataset.recdone).update({lastContact:today(),nextStep:"",nextStepDue:""}); toast("Marked done");}catch(_){toast("Couldn't save that.");} return; }
+  if(rd&&db){ try{await recStore.update(rd.dataset.recdone,{lastContact:today(),nextStep:"",nextStepDue:""}); toast("Marked done");}catch(_){toast("Couldn't save that.");} return; }
   if(e.target.id==="gmFind"){ gmFind(); return; }
   if(e.target.id==="gmAdd"){ gmAdd(); return; }
   if(e.target.id==="gsFind"){ gsFind(); return; }
@@ -1090,13 +1113,13 @@ document.addEventListener("submit",async e=>{
   const rf=e.target.closest("form[data-recform]");
   if(rf){
     const g=n=>rf.elements[n].value.trim();
-    try{await db.doc("recruiters/"+rf.dataset.recform).update({outcome:g("outcome"),lastContact:g("lastContact"),nextStepDue:g("nextStepDue"),nextStep:g("nextStep"),lastNote:g("lastNote")}); editRec=null; document.activeElement?.blur?.(); toast("Saved"); render();}catch(_){toast("Couldn't save.");}
+    try{await recStore.update(rf.dataset.recform,{outcome:g("outcome"),lastContact:g("lastContact"),nextStepDue:g("nextStepDue"),nextStep:g("nextStep"),lastNote:g("lastNote")}); editRec=null; document.activeElement?.blur?.(); toast("Saved"); render();}catch(_){toast("Couldn't save.");}
     return;
   }
   if(e.target.id==="addRec"){
     const n=$("#ar-n").value.trim(), c=$("#ar-c").value.trim(); if(!n||!c) return;
     const doc={name:n,company:c,type:$("#ar-t").value,roles:$("#ar-r").value.trim(),nextStep:$("#ar-x").value.trim(),nextStepDue:$("#ar-d").value,lastContact:today(),source:"manual",createdAt:new Date().toISOString(),mailSearch:"https://mail.google.com/mail/u/0/#search/"+encodeURIComponent(c)};
-    try{await db.doc("recruiters/"+docKey(n,c)).set(doc); e.target.reset(); document.activeElement?.blur?.(); toast("Recruiter added"); render();}catch(_){toast("Couldn't add that.");}
+    try{await recStore.add(docKey(n,c),doc); e.target.reset(); document.activeElement?.blur?.(); toast("Recruiter added"); render();}catch(_){toast("Couldn't add that.");}
     return;
   }
   if(e.target.id==="addJob"){
@@ -1149,12 +1172,16 @@ render();
   Promise.resolve(window.claude?.use?.("mcp")).then(m=>{mcp=m||null; mcpState=m?"ready":"none";},()=>{mcpState="none";}).then(()=>{ if(tab==="people"||tab==="pipeline") render(); });
   try{ db=await window.claude?.use?.("db"); }catch(e){ db=null; }
   if(!db){ render(); return; }
+  let user=null; try{ user=await window.claude?.use?.("user"); }catch(_){ user=null; }
+  recStore=RS?RS.create({db,user,publicView:!TOOLS}):null;
+  if(recStore) await recStore.init();
+  if(savedTab&&showPeople()) tab=savedTab;
   render();
   db.collection("jobs").onSnapshot(s=>{jobs=s.docs.map(d=>({...d.data(),_id:d.id})); softRender();},()=>{});
   db.collection("companies").onSnapshot(s=>{companies=s.docs.map(d=>({...d.data(),_id:d.id})); if(tab==="watch"&&document.activeElement?.closest("form")) {renderTabs(); return;} if(tab==="watch") render(); else renderTabs();},()=>{});
   db.doc("meta/filters").onSnapshot(s=>{filters=s.exists?s.data():null; if(tab==="filters"&&document.activeElement?.closest("form")) return; softRender();},()=>{});
   db.doc("meta/config").onSnapshot(s=>{setConfig(s.exists?s.data():null); softRender();},()=>{});
-  db.collection("recruiters").onSnapshot(s=>{recruiters=s.docs.map(d=>({...d.data(),_id:d.id})); if(tab==="people") softRender(); else renderTabs();},()=>{});
+  if(recStore) recStore.subscribe(list=>{recruiters=list; if(tab==="people") softRender(); else renderTabs();});
   db.doc("meta/criteria").onSnapshot(s=>{criteria=s.exists?s.data():null; specData=criteria&&criteria.spec?parseSpec(criteria.spec).data||null:null; if(tab==="criteria"&&critDraft!==null) return; softRender();},()=>{});
   db.doc("meta/scan").onSnapshot(s=>{scan=s.exists?s.data():null; renderScan(); if(tab==="watch"&&!document.activeElement?.closest("form")) render();},()=>{});
 })();

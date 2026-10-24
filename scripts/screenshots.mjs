@@ -23,6 +23,14 @@ const SHOTS = [
       await page.click("#gmFind");
       await page.waitForSelector(".gmlist");
     } },
+  { name: "ruled-out", tab: "ruled", width: 1000, height: 900 },
+  { name: "alerts", tab: "criteria", width: 1000, height: 2600, clip: [".ccard.alerts", ".ccard.alerts"] },
+  { name: "gmail-status", tab: "pipeline", width: 1000, height: 1400, clip: ["details.gmail-status", "details.gmail-status"],
+    prepare: async (page) => {
+      await page.locator("details.gmail-status summary").click();
+      await page.click("#gsFind");
+      await page.waitForSelector("details.gmail-status .gmlist, details.gmail-status #gsFind:has-text('Check again')");
+    } },
   { name: "phone-new-roles", tab: "inbox", width: 390, height: 844 },
   { name: "dark-all-roles", tab: "all", width: 1000, height: 1100, colorScheme: "dark" },
   { name: "preview", tab: "all", width: 1400, height: 1000, click: '.job:has-text("Sunfield Energy") h2 a', wait: "#pvBody li" },

@@ -38,11 +38,17 @@ flowchart LR
 1. **Criteria as code.** Everything I'm looking for lives in one YAML file ([`criteria.yaml`](criteria.yaml)). It sets sector weights, title and location gates, comp floors, culture red flags, hard excludes, and how many roles from each sector can appear in one digest. I edit it on the Criteria tab, and the next scan follows it.
 2. **A transparent score.** Every role gets 0 to 100 from one formula, and each card shows how its score was reached (`45 sector + 35 experience + 10 comp = 90`). The rules live in [`src/scoring.js`](src/scoring.js) and are pinned down by tests, so the page, the tests and the scan's instructions agree.
 3. **A scheduled scan agent.** Each weekday morning, a scheduled Claude run reads the criteria, checks the boards and aggregators, reads job-alert and application emails (read-only), adds new matches, moves application statuses forward from confirmations and rejections, and sends me a short digest. Its instructions are in [`scan/scan-prompt.template.md`](scan/scan-prompt.template.md).
-4. **One tracker.** New roles land in *New*. Saving or applying moves them to *Pipeline*. *Needs action* lists follow-ups that are due, applications with no reply, and resumes that are ready but not sent. *Recruiters* keeps each contact's last touchpoint and next step, and can be filled from Gmail in one pass (below).
+4. **One tracker.** New roles land in *New*. Saving or applying moves them to *Pipeline*. *Needs action* lists follow-ups that are due, applications with no reply, and resumes that are ready but not sent. *Ruled out* keeps every role I said no to, with the reason. *Recruiters* keeps each contact's last touchpoint and next step, and can be filled from Gmail in one pass (below).
 5. **One-tap intake.** *Apply* copies a prompt for my job-intake agent, which screens the posting, asks only the gap questions that would change a bullet, and builds a tailored resume from my career master doc.
 6. **Read the posting in place.** Click a role and a panel on the right shows the posting's own description, word for word, loaded straight from the company's public Greenhouse, Ashby or Lever board. It costs no AI tokens and nothing is saved; roles from other sources get an *Open posting* link instead. On a phone it opens as a full-screen sheet. The logic lives in [`src/posting.js`](src/posting.js).
 
 ![A role's description in the preview panel](docs/screenshots/preview.png)
+
+### Count the no's, not just the applications
+
+A good search says no far more often than yes, so ruling a role out counts as progress. Skipping a role asks for a one-tap reason (comp, location, culture, closed). The *Ruled out* tab lists those roles by day with the reasons tallied, and a line at the top of every tab reads "Today: applied N, ruled out N · This week: …". *Reconsider* puts a role back in *New*.
+
+![Ruled out: every role I said no to, grouped by day with the reason](docs/screenshots/ruled-out.png)
 
 ### Tune it and watch the ranking move
 
@@ -54,11 +60,21 @@ The Criteria tab previews tomorrow's digest while you edit. In the screenshot be
 | --- | --- |
 | ![Follow-ups, stale applications and unsent resumes](docs/screenshots/needs-action.png) | ![Recruiter contacts with next steps and due dates](docs/screenshots/recruiters.png) |
 
+### Alerts you set in the same file
+
+The `alerts:` block in `criteria.yaml` decides what pings my phone: a recruiter's reply or an interview invite right away, a rejection only in the next summary, a new role only above a score I choose, and quiet hours overnight. The Criteria tab spells out each rule in a plain sentence and previews what would ping with the roles on the page. The rules are code in [`src/alerts.js`](src/alerts.js), with tests.
+
+![Alerts card: each rule in a sentence and a live preview of what would ping](docs/screenshots/alerts.png)
+
 ### Start from your inbox
 
 On first run, *Import from Gmail* reads your inbox through Claude's Gmail connector (read-only) and lists the recruiters it finds: name, company, in-house or agency, and the date of the last email. It skips job boards, applicant tracking systems and no-reply senders, marks people you already have, and saves nothing until you pick who to add. Dates come from the emails themselves, never from a guess.
 
 ![Gmail import: people found in the inbox, ready to review](docs/screenshots/gmail-import.png)
+
+The same read-only search keeps the pipeline current. *Check Gmail for status updates* finds confirmations, interview invites, rejections and offers from the companies in the pipeline. It suggests each move with the email's own date, and nothing changes until I tick it. A role only moves forward, or to Rejected. (In the demo, the inbox is a labeled fake.)
+
+![Gmail status check: three roles with news, each with the email it came from](docs/screenshots/gmail-status.png)
 
 ## What it saves
 
@@ -73,7 +89,7 @@ On first run, *Import from Gmail* reads your inbox through Claude's Gmail connec
 - **Read-only by default.** The scan never applies, never sends email and never contacts anyone. Gmail access is read-only, and every status it changes can be changed back from the page.
 - **Flags, not filters, for gray areas.** Culture red flags and overlaps with my own side projects lower a score or add a flag. They never hide a role.
 - **Built for reuse.** Per-person settings (lanes, follow-up timing, intake prompt) live in config, the scan prompt is a template, and the demo runs on fictional data, so someone else can run their own copy.
-- **Privacy first.** This repo is public, so it holds only demo data. A pre-commit check blocks emails, phone numbers, private links and a private list of names. In the app, recruiter names, notes and email links are hidden by default (initials and company only) until the viewer chooses to show them, and the page remembers that choice.
+- **Privacy first.** This repo is public, so it holds only demo data. A pre-commit check blocks emails, phone numbers, private links and a private list of names. In the app, recruiter records are readable only by the page's owner: a database rule enforces it, so anyone the tracker is shared with sees no Recruiters tab and gets no recruiter data at all ([design](docs/private-recruiters.md)). Even for the owner, names, notes and email links stay hidden on screen (initials and company only) until they choose to show them.
 
 ![Recruiters with details hidden: initials and company only](docs/screenshots/recruiters-hidden.png)
 
@@ -101,6 +117,10 @@ The demo runs the real page against an in-memory database ([`demo/mock-claude.js
 | `app/role-radar.html` | The tracker page (single file, no build step) |
 | `src/scoring.js` | Scoring and matching rules, shared by the page and the tests |
 | `src/posting.js` | Finds a role's public job-board API and reads its description for the preview panel |
+| `src/alerts.js` | The `alerts:` rules: what pings, how loud, quiet hours |
+| `src/gmail-import.js` | Reads Gmail search results into recruiter suggestions and pipeline status updates |
+| `src/recruiter-store.js` | The one place recruiters are read and written; owner-only |
+| `app/capabilities.json` | What the live page may use: its database (with the owner-only recruiter rule) and read-only Gmail |
 | `criteria.yaml` | Example criteria for a demo candidate |
 | `scan/` | The weekday scan prompt, as a template |
 | `demo/` | Fictional seed data and the in-memory database |

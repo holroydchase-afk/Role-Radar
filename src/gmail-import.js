@@ -232,8 +232,11 @@
       if (!full) return false;
       const words = " " + norm(text) + " ";
       if (words.includes(" " + full + " ")) return true;
-      const dom = compact(domain.split(".").slice(0, -1).join(" "));
-      if (dom && (dom === compact(j.company) || dom.endsWith(compact(j.company)))) return true;
+      // The domain names the company when its last labels (before the TLD) spell the name:
+      // careers.volt.example and volt-energy.example do, revolt.example doesn't.
+      const labels = domain.split(".").slice(0, -1).map(compact);
+      const dom = labels.join("");
+      if (labels.some((_, i) => labels.slice(i).join("") === compact(j.company))) return true;
       const f = first(j);
       const uniqueNames = new Set(jobs.filter((x) => first(x) === f).map((x) => norm(x.company)));
       return f.length >= 5 && uniqueNames.size === 1 && (words.includes(" " + f + " ") || dom === f);
