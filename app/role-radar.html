@@ -302,6 +302,8 @@ const toastHold=()=>clearTimeout(toast._t), toastLetGo=()=>{clearTimeout(toast._
 const st=j=>j.status||"new";
 // Ruled out = skipped by the owner, here or in an intake chat (source "intake"). Counted as progress next to applications.
 const ruledAt=j=>j.skippedAt||j.statusAt||"";
+// Sort key for ruled-out dates: date-only values count as local noon, like dayOf, so they sort among full timestamps.
+const ruledTime=j=>{const s=ruledAt(j); if(!s) return -Infinity; const d=new Date(String(s).length===10?s+"T12:00:00":s); return isNaN(d)?-Infinity:d.getTime();};
 const dayOf=s=>{if(!s)return"";const d=new Date(String(s).length===10?s+"T12:00:00":s);return isNaN(d)?"":d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
 // Monday of this week, local time.
 const weekStart=()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return dayOf(d.toISOString());};
@@ -893,7 +895,7 @@ function renderProgress(){
 }
 // Ruled out: every role the owner eliminated, newest first, grouped by day, with the reason.
 function renderRuled(){
-  const list=jobs.filter(j=>st(j)==="skipped").sort((a,b)=>String(ruledAt(b)).localeCompare(String(ruledAt(a))));
+  const list=jobs.filter(j=>st(j)==="skipped").sort((a,b)=>(ruledTime(b)-ruledTime(a))||0);
   if(!list.length) return `<div class="empty"><strong>Nothing ruled out yet</strong><span>Skip a role and pick a reason, and it's listed and counted here.${TOOLS?" Roles screened out in an intake chat land here too.":""}</span></div>`;
   const p=progressOf(jobs), reasons={};
   list.forEach(j=>{const r=j.skipReason||"No reason given"; reasons[r]=(reasons[r]||0)+1;});

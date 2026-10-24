@@ -29,11 +29,11 @@ function fontsCss() {
 }
 
 /** Opens the demo in a new page. Returns {page, errors}. */
-export async function openDemo(browser, { html = buildDemo(), blockYaml = false, width = 900, height = 1200, colorScheme = "light", file = "dist/browser-demo.html", ready = ".job", query = "" } = {}) {
+export async function openDemo(browser, { html = buildDemo(), blockYaml = false, width = 900, height = 1200, colorScheme = "light", file = "dist/browser-demo.html", ready = ".job", query = "", timezoneId } = {}) {
   const out = join(root, file);
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, html);
-  const page = await browser.newPage({ viewport: { width, height }, colorScheme, deviceScaleFactor: 2 });
+  const page = await browser.newPage({ viewport: { width, height }, colorScheme, deviceScaleFactor: 2, ...(timezoneId ? { timezoneId } : {}) });
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
