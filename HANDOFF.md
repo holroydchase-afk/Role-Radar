@@ -18,7 +18,8 @@ The repo now uses the studio planning IDs (milestone `M1`, task `M1.1`, step `M1
 | Status updates from Gmail (Later list) | RR-M2.3 | Gmail status backfill |
 
 ## Portfolio / public presence
-_Updated 2026-10-22._
+_Updated 2026-10-24._
+- 2026-10-24 (night shift, `claude/project-thread-6wmh2k-2`, stacked on PR #34): README case study now shows the features shipped after PR #31: a "Count the no's" section with a Ruled out screenshot, "Alerts you set in the same file" with the Alerts card, and the Gmail status check with its screenshot (demo inbox is a labeled fake). The privacy bullet says recruiters are owner-only (PR #34), and the layout table lists `alerts.js`, `gmail-import.js`, `recruiter-store.js` and `app/capabilities.json`. New screenshots: `ruled-out.png`, `alerts.png`, `gmail-status.png` (`npm run screenshots`).
 - 2026-10-22: portfolio repoint shipped (portfolio PR #14, merged): role-radar.html's "Try the live demo" opens https://chaseholroyd.com/role-radar/, with a "Code on GitHub" link, "5 sources" (adds Climatebase), "Try anything: the demo resets when you reload." and the footer "Charlotte area". The old `/demo/role-radar/` snapshot is deleted from the portfolio repo, and the page's screenshot was re-shot from this repo's public build.
 - 2026-10-22: README screenshots regenerated ("Strong fit" chips, 9 boards, "Sample posting"); if the portfolio reuses any of them, refresh there too.
 - 2026-10-22: the public demo now links back to https://chaseholroyd.com/role-radar.html and the portfolio home, with a one-line intro (public build only).
