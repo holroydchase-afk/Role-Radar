@@ -268,9 +268,11 @@
       "sector": "Solar, storage & distributed energy",
       "lane": "Ops & processing",
       "tags": [],
-      "status": "saved",
-      "statusAt": "@t-8",
-      "viewedAt": "@t-8"
+      "status": "applied",
+      "statusAt": "@t-0",
+      "viewedAt": "@t-8",
+      "appliedAt": "@t-0",
+      "followUpDue": "@d--5"
     },
     "manual-harborline-mutual-dpm-finance-technology": {
       "company": "Harborline Mutual",

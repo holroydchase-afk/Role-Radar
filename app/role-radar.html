@@ -114,6 +114,9 @@ dialog .row2{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-
 .skipwhy input{flex:1 1 100%;font:inherit;font-size:.88rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 9px;min-width:0}
 /* Progress line and the Ruled out tab: eliminated roles count as progress next to applications. */
 .progress b{color:var(--ink);font-weight:600}
+/* Phones, public demo: the Ruled out tab carries the count, so the first role stays on the first screen. */
+@media(max-width:600px){.showcase-mode #progress{display:none}}
+.gmlist a{color:var(--accent)}
 .ruled{display:grid;gap:14px}
 .ruled .sum{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:grid;gap:6px}
 .ruled .sum p{margin:0}
@@ -643,6 +646,7 @@ function critSummary(d){
       <div><small>Priority-sector floor</small><b>${money(c.priority_sector_floor_usd)}</b></div>
       <div><small>Min score to add</small><b>${esc(sc.min_score_to_add??"—")}</b></div>
       <div><small>Digest size</small><b>${esc(sc.digest_max_items??"—")}</b></div>
+      ${AL?(()=>{const rs=AL.normalize(d).rules, n=l=>rs.filter(r=>r.level===l).length;return `<div><small>Alerts</small><b><a href="#alerts">${n("loud")} loud, ${n("quiet")} quiet (see Alerts)</a></b></div>`;})():""}
     </div></div>
     <div class="ccard"><h2>Sector weights</h2><div>${secs.map(s=>`<div class="sec"><span class="lbl">${esc(s.label||s.id)}</span>${pip(Number(s.weight)||0)}${Array.isArray(s.examples)&&s.examples.length?`<span class="ex">${listTxt(s.examples.slice(0,6))}</span>`:""}</div>`).join("")||`<span class="hint">No sectors yet.</span>`}</div></div>
     ${xs.length?`<div class="ccard"><h2>Never show</h2><div class="tags">${xs.map(x=>`<span class="xchip">${esc(x)}</span>`).join("")}</div></div>`:""}
@@ -783,9 +787,9 @@ function gmailStatus(){
   else if(gs.state==="done"){
     const n=gs.picked.size;
     body=gs.items.length?`<p class="hint">${gs.items.length} ${gs.items.length===1?"role has":"roles have"} news in Gmail. Untick anything that's wrong, then update the rest. The status date is the email's date.</p>
-      <ul class="gmlist">${gs.items.map(u=>{const url=safeUrl(u.viewUrl);return `<li><label><input type="checkbox" data-gspick="${esc(u.key)}"${gs.picked.has(u.key)?" checked":""}>
+      <ul class="gmlist">${gs.items.map(u=>{const sample=isSampleUrl(u.viewUrl), url=sample?"":safeUrl(u.viewUrl);return `<li><label><input type="checkbox" data-gspick="${esc(u.key)}"${gs.picked.has(u.key)?" checked":""}>
         <span><b>${esc(u.company)}</b> · ${esc(u.title)} <span class="chip st st-${esc(u.from)}">${esc(STATUS_LABEL[u.from]||u.from)}</span> → <span class="chip st st-${esc(u.to)}">${esc(STATUS_LABEL[u.to]||u.to)}</span>
-        <span class="hint">Email <span class="mono">${fmtDate(u.date)}</span>${u.subject?` · ${esc(u.subject)}`:""}${url?` · <a href="${esc(url)}" target="_blank" rel="noopener">Open email</a>`:""}</span></span></label></li>`;}).join("")}</ul>
+        <span class="hint">Email <span class="mono">${fmtDate(u.date)}</span>${u.subject?` · ${esc(u.subject)}`:""}${url?` · <a href="${esc(url)}" target="_blank" rel="noopener">Open email</a>`:sample?" · Sample email":""}</span></span></label></li>`;}).join("")}</ul>
       <div class="gmfoot"><button class="primary" type="button" id="gsApply"${n?"":" disabled"}>Update ${n} ${n===1?"role":"roles"}</button><button class="btn" type="button" id="gsFind">Check again</button></div>`
       :`<p class="hint">No new confirmations, interview invites, rejections or offers for the ${pipeN} ${pipeN===1?"role":"roles"} in your pipeline.</p><button class="btn" type="button" id="gsFind">Check again</button>`;
   }
@@ -835,7 +839,7 @@ function renderCriteria(){
       <div class="ctl"><button class="primary" type="submit">Save criteria</button>${critDraft!==null?`<button class="btn" type="button" id="critReset">Discard changes</button>`:""}</div>
     </form>
     <div class="ccard"><h2>Digest preview</h2><p class="sub" style="margin:0">How tomorrow's digest would rank the roles in New with the criteria above. Edit a weight and watch it change.</p><div id="digestPreview">${digestPreview(p.data)}</div></div>
-    <div class="ccard alerts"><h2>Alerts</h2><p class="sub" style="margin:0">What pings your phone, set by the <span class="mono">alerts</span> block above. Change a level or a score and watch this change.</p><div id="alertsPreview">${alertsPreview(p.data)}</div></div></div>`;
+    <div class="ccard alerts" id="alerts"><h2>Alerts</h2><p class="sub" style="margin:0">What pings your phone, set by the <span class="mono">alerts</span> block above. Change a level or a score and watch this change.</p><div id="alertsPreview">${alertsPreview(p.data)}</div></div></div>`;
 }
 // Events the alert rules would see in the data on this page: new roles (with score), status moves, due follow-ups, recent recruiter contact.
 function alertEvents(spec){
@@ -849,15 +853,24 @@ function alertEvents(spec){
   if(TOOLS) recruiters.forEach(r=>{const d=daysSince(r.lastContact); if(d!==null&&d<=14) ev.push({type:"recruiter_email",label:`${recPrivate?initials(r.name):r.name||"Recruiter"}${r.company?" · "+r.company:""}`,at:r.lastContact});});
   return ev;
 }
+// Plain words for the Alerts card: channel codes and rule types as a person would say them.
+const CHANNEL_WORDS={push:"phone notification",thread:"the chat thread",email:"email"};
+const alertWhat=x=>x.rule.when==="status_change"?"Moved to "+(STATUS_LABEL[x.event.to]||x.event.to||"a new status"):({new_role:"New role",recruiter_email:"Recruiter email",follow_up_due:"Follow-up due"})[x.rule.when]||"Alert";
+// The demo's alert preview runs at 9:00 in the spec's time zone, so it reads the same whenever it's opened.
+function demoClock(tz){
+  const now=new Date();
+  try{ const [h,m]=new Intl.DateTimeFormat("en-US",{timeZone:tz||undefined,hour:"numeric",minute:"numeric",hourCycle:"h23"}).format(now).split(":").map(Number); return new Date(now.getTime()-((h-9)*60+m)*60000); }
+  catch(_){ return now; }
+}
 function alertsPreview(spec){
   if(!AL||!spec) return `<p class="hint">Preview needs a valid spec.</p>`;
   const cfg=AL.normalize(spec), q=cfg.quiet_hours;
   const rules=cfg.rules.length?`<ul class="arules">${cfg.rules.map(r=>`<li><span class="lvl ${r.level}">${r.level}</span><span>${esc(AL.describe(r))}</span></li>`).join("")}</ul>`:`<p class="hint">No rules, so nothing alerts.</p>`;
-  const how=`<p class="hint">Loud alerts go to: ${cfg.channels.map(esc).join(", ")}.${q?` Quiet hours ${AL.clock(q.start)}–${AL.clock(q.end)}${q.tz?" "+esc(q.tz):""}: ${q.loud_breaks_through?"loud alerts still come through, quiet ones wait":"everything waits until morning"}.`:""}</p>`;
-  const out=AL.evaluate(alertEvents(spec),spec,new Date());
+  const how=`<p class="hint">Loud alerts go to: ${cfg.channels.map(c=>esc(CHANNEL_WORDS[c]||c)).join(", ")}.${q?` Quiet hours ${AL.clock(q.start)}–${AL.clock(q.end)}${q.tz?" "+esc(q.tz):""}: ${q.loud_breaks_through?"loud alerts still come through, quiet ones wait":"everything waits until morning"}.`:""}</p>`;
+  const out=AL.evaluate(alertEvents(spec),spec,window.__RR_DEMO__?demoClock(q&&q.tz):new Date());
   const loud=out.filter(x=>x.level==="loud"), quiet=out.filter(x=>x.level==="quiet");
   const now=out.length?`<p class="sub" style="margin:.6rem 0 .2rem"><strong>With the roles on this page:</strong> ${loud.length} loud, ${quiet.length} for the summary.</p>`
-    +(loud.length?`<ol class="dig">${loud.slice(0,6).map(x=>`<li><span class="lvl loud">ping</span><span>${esc(x.event.label)}</span><span class="sub2">${esc(x.rule.id)}${x.event.score!=null?" · score "+x.event.score:""}${x.held?" · held for quiet hours":""}</span></li>`).join("")}</ol>`:"")
+    +(loud.length?`<ol class="dig">${loud.slice(0,6).map(x=>`<li><span class="lvl loud">ping</span><span>${esc(x.event.label)}</span><span class="sub2">${esc(alertWhat(x))}${x.event.score!=null?" · score "+x.event.score:""}${x.held?" · held for quiet hours":""}</span></li>`).join("")}</ol>`:"")
     :`<p class="hint">Nothing on this page would alert right now.</p>`;
   return rules+how+now;
 }
@@ -966,7 +979,7 @@ function renderPreview(bodyOnly){
   const open=url?`<a class="pv-open" href="${esc(url)}" target="_blank" rel="noopener">Open posting ↗</a>`:"";
   const msg=(h,t)=>`<div class="pv-msg"><strong>${h}</strong><span>${t}</span>${open||`<span>${sample?"This is a made-up role, so there's no real posting.":"No posting link is saved for this role."}</span>`}</div>`;
   const srcName=SOURCE_LABEL[String(j.source||j.ats||"").toLowerCase()]||esc(j.source||j.ats||"this source");
-  const body=p.state==="ok"?`<div class="pv-body" id="pvBody"></div><p class="pv-src">${window.__RR_DEMO__?`Sample description written for this demo. On the live page this loads word for word from ${esc(ats||"the company")}'s public job board.`:`Word for word from ${esc(ats)}'s public job board. Nothing is saved.`}</p>`
+  const body=p.state==="ok"?`<p class="pv-src">${window.__RR_DEMO__?`Sample description written for this demo. On the live page this loads word for word from ${esc(ats||"the company")}'s public job board.`:`Word for word from ${esc(ats)}'s public job board. Nothing is saved.`}</p><div class="pv-body" id="pvBody"></div>`
     :p.state==="loading"?`<p class="pv-src" role="status">Loading the description from ${esc(ats||"the job board")}…</p>`
     :p.state==="gone"?msg("This posting isn't on the board anymore",`${esc(ats)} no longer lists it, so it may be closed. The original link might still work.`)
     :p.state==="error"?msg("Couldn't load the description",`${esc(ats)} didn't answer from this page. Open the posting to read it there.`)
