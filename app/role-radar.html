@@ -236,6 +236,7 @@ details.more form{display:grid;gap:10px;padding-top:10px}
 <script src="gmail-import.js"></script>
 <script src="posting.js"></script>
 <script src="alerts.js"></script>
+<script src="recruiter-store.js"></script>
 <script>
 // The public demo (chaseholroyd.com/role-radar/) is radar only: scan, score, pipeline. Resume intake, intake
 // settings and the Recruiters tab show only with ?full. The demo build sets __RR_PUBLIC__; the live app never does.
@@ -262,6 +263,12 @@ const DEF_VIEW={q:"",status:"",lane:"",fit:"",values:"",culture:"",source:"",tag
 let mcp=null, mcpState="checking", gm={state:"idle",items:[],picked:new Set(),msg:""}, gs={state:"idle",items:[],picked:new Set(),msg:""};
 const GM=window.RoleRadarGmail||null;
 let recruiters=[], editRec=null, filtersOpen=false;
+// Recruiters are private to the page's owner: every read and write goes through this store, and the database
+// rule in app/capabilities.json enforces it. Viewers the page is shared with get no tab and no data.
+const RS=window.RoleRadarRecruiters||null;
+let recStore=null, savedTab=null;
+const showPeople=()=>TOOLS&&!!recStore&&recStore.visible;
+const tabList=()=>TABS.filter(t=>t.id!=="people"||showPeople());
 // Privacy: recruiter details are hidden on screen until this viewer chooses to show them.
 let recPrivate=true;
 try{recPrivate=localStorage.getItem("rr-rec-private")!=="0";}catch(_){}
@@ -272,7 +279,7 @@ const PV=window.RoleRadarPosting||null;
 // Preview panel: which role is open, and descriptions loaded this visit (never saved).
 let preview=null, previewFrom=null; const postings=new Map();
 let tab="inbox", jobs=[], companies=[], filters=null, scan=null, db=null, view={...DEF_VIEW}, openMore=new Set(), skipOpen=null;
-try{const t=localStorage.getItem("rr-tab"); if(TABS.some(x=>x.id===t)) tab=t; const v=JSON.parse(localStorage.getItem("rr-view")||"null"); if(v) view={...DEF_VIEW,...v};}catch(e){}
+try{const t=localStorage.getItem("rr-tab"); if(t==="people"&&TOOLS) savedTab=t; else if(TABS.some(x=>x.id===t)) tab=t; const v=JSON.parse(localStorage.getItem("rr-view")||"null"); if(v) view={...DEF_VIEW,...v};}catch(e){}
 const saveView=()=>{try{localStorage.setItem("rr-view",JSON.stringify(view))}catch(_){}};
 
 const $=s=>document.querySelector(s);
@@ -343,7 +350,8 @@ function counts(){
 }
 function renderTabs(){
   const c=counts();
-  $("#tabs").innerHTML=TABS.map(t=>`<button role="tab" id="tab-${t.id}" aria-selected="${t.id===tab}" data-tab="${t.id}">${t.label}${c[t.id]!==""?` <span class="n">${c[t.id]}${t.id==="people"?" due":""}</span>`:""}</button>`).join("");
+  if(tab==="people"&&!showPeople()) tab="inbox";
+  $("#tabs").innerHTML=tabList().map(t=>`<button role="tab" id="tab-${t.id}" aria-selected="${t.id===tab}" data-tab="${t.id}">${t.label}${c[t.id]!==""?` <span class="n">${c[t.id]}${t.id==="people"?" due":""}</span>`:""}</button>`).join("");
 }
 // "greenhouse:orbitline" -> "Greenhouse"
 const boardName=v=>{const a=String(v||"").split(":")[0].toLowerCase(); return (PV&&PV.ATS_LABEL[a])||{workday:"Workday",ashby:"Ashby"}[a]||a||"?";};
@@ -758,7 +766,7 @@ async function gmAdd(){
   if(!db||!gm.picked.size) return;
   const picks=gm.items.filter(c=>gm.picked.has(c.key)&&!c.exists), now=new Date().toISOString();
   let ok=0;
-  for(const c of picks){ try{ await db.doc("recruiters/"+c.key).set(GM.recruiterDoc(c,now)); ok++; c.exists=true; gm.picked.delete(c.key);}catch(_){} }
+  for(const c of picks){ try{ await recStore.add(c.key,GM.recruiterDoc(c,now)); ok++; c.exists=true; gm.picked.delete(c.key);}catch(_){} }
   toast(ok===picks.length?`Added ${ok} ${ok===1?"recruiter":"recruiters"}`:`Added ${ok} of ${picks.length}. Try the rest again.`);
   render();
 }
@@ -1024,7 +1032,7 @@ document.addEventListener("click",async e=>{
   if(e.target.id==="applyCopy"){ toast(await copyText($("#applyText").value)?"Copied":"Select the text and copy it"); return; }
   if(e.target.id==="applyClose"){ const d=$("#applyDlg"); try{d.close();}catch(_){d.removeAttribute("open");} return; }
   const rd=e.target.closest("[data-recdone]");
-  if(rd&&db){ try{await db.doc("recruiters/"+rd.dataset.recdone).update({lastContact:today(),nextStep:"",nextStepDue:""}); toast("Marked done");}catch(_){toast("Couldn't save that.");} return; }
+  if(rd&&db){ try{await recStore.update(rd.dataset.recdone,{lastContact:today(),nextStep:"",nextStepDue:""}); toast("Marked done");}catch(_){toast("Couldn't save that.");} return; }
   if(e.target.id==="gmFind"){ gmFind(); return; }
   if(e.target.id==="gmAdd"){ gmAdd(); return; }
   if(e.target.id==="gsFind"){ gsFind(); return; }
@@ -1090,13 +1098,13 @@ document.addEventListener("submit",async e=>{
   const rf=e.target.closest("form[data-recform]");
   if(rf){
     const g=n=>rf.elements[n].value.trim();
-    try{await db.doc("recruiters/"+rf.dataset.recform).update({outcome:g("outcome"),lastContact:g("lastContact"),nextStepDue:g("nextStepDue"),nextStep:g("nextStep"),lastNote:g("lastNote")}); editRec=null; document.activeElement?.blur?.(); toast("Saved"); render();}catch(_){toast("Couldn't save.");}
+    try{await recStore.update(rf.dataset.recform,{outcome:g("outcome"),lastContact:g("lastContact"),nextStepDue:g("nextStepDue"),nextStep:g("nextStep"),lastNote:g("lastNote")}); editRec=null; document.activeElement?.blur?.(); toast("Saved"); render();}catch(_){toast("Couldn't save.");}
     return;
   }
   if(e.target.id==="addRec"){
     const n=$("#ar-n").value.trim(), c=$("#ar-c").value.trim(); if(!n||!c) return;
     const doc={name:n,company:c,type:$("#ar-t").value,roles:$("#ar-r").value.trim(),nextStep:$("#ar-x").value.trim(),nextStepDue:$("#ar-d").value,lastContact:today(),source:"manual",createdAt:new Date().toISOString(),mailSearch:"https://mail.google.com/mail/u/0/#search/"+encodeURIComponent(c)};
-    try{await db.doc("recruiters/"+docKey(n,c)).set(doc); e.target.reset(); document.activeElement?.blur?.(); toast("Recruiter added"); render();}catch(_){toast("Couldn't add that.");}
+    try{await recStore.add(docKey(n,c),doc); e.target.reset(); document.activeElement?.blur?.(); toast("Recruiter added"); render();}catch(_){toast("Couldn't add that.");}
     return;
   }
   if(e.target.id==="addJob"){
@@ -1149,12 +1157,16 @@ render();
   Promise.resolve(window.claude?.use?.("mcp")).then(m=>{mcp=m||null; mcpState=m?"ready":"none";},()=>{mcpState="none";}).then(()=>{ if(tab==="people"||tab==="pipeline") render(); });
   try{ db=await window.claude?.use?.("db"); }catch(e){ db=null; }
   if(!db){ render(); return; }
+  let user=null; try{ user=await window.claude?.use?.("user"); }catch(_){ user=null; }
+  recStore=RS?RS.create({db,user,publicView:!TOOLS}):null;
+  if(recStore) await recStore.init();
+  if(savedTab&&showPeople()) tab=savedTab;
   render();
   db.collection("jobs").onSnapshot(s=>{jobs=s.docs.map(d=>({...d.data(),_id:d.id})); softRender();},()=>{});
   db.collection("companies").onSnapshot(s=>{companies=s.docs.map(d=>({...d.data(),_id:d.id})); if(tab==="watch"&&document.activeElement?.closest("form")) {renderTabs(); return;} if(tab==="watch") render(); else renderTabs();},()=>{});
   db.doc("meta/filters").onSnapshot(s=>{filters=s.exists?s.data():null; if(tab==="filters"&&document.activeElement?.closest("form")) return; softRender();},()=>{});
   db.doc("meta/config").onSnapshot(s=>{setConfig(s.exists?s.data():null); softRender();},()=>{});
-  db.collection("recruiters").onSnapshot(s=>{recruiters=s.docs.map(d=>({...d.data(),_id:d.id})); if(tab==="people") softRender(); else renderTabs();},()=>{});
+  if(recStore) recStore.subscribe(list=>{recruiters=list; if(tab==="people") softRender(); else renderTabs();});
   db.doc("meta/criteria").onSnapshot(s=>{criteria=s.exists?s.data():null; specData=criteria&&criteria.spec?parseSpec(criteria.spec).data||null:null; if(tab==="criteria"&&critDraft!==null) return; softRender();},()=>{});
   db.doc("meta/scan").onSnapshot(s=>{scan=s.exists?s.data():null; renderScan(); if(tab==="watch"&&!document.activeElement?.closest("form")) render();},()=>{});
 })();
